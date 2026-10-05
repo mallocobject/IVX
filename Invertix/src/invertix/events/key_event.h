@@ -30,7 +30,7 @@ namespace invertix {
 
 		std::string to_string() const override
 		{
-			return std::format("KeyPressedEvent: {} (repeat = {})", key_code_, is_repeat_);
+			return std::format("KeyPressedEvent: {} {}", key_code_, is_repeat_ ? "(repeat)" : "");
 		}
 
 		EVENT_CLASS_TYPE(kKeyPressed)

@@ -19,3 +19,5 @@
 #endif
 
 #define BIT(x) (1 << x)
+
+#define IVX_BIND_EVENT_FN(Arg, Fn) [this](Arg& e){ return Fn(e); } 

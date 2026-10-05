@@ -6,7 +6,6 @@
 #include <vector>
 
 namespace invertix {
-
 	class IVX_API LayerStack
 	{
 	public:

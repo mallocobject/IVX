@@ -2,9 +2,11 @@
 
 #include "ivx_pch.h"
 #include "invertix/core.h"
-#include "invertix/events/event.h"
 
 namespace invertix {
+
+	struct Event;
+
 	struct  WindowProps
 	{
 		std::string title{ "Invertix Engine" };

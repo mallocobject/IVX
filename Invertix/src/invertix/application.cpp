@@ -1,19 +1,23 @@
 #include "ivx_pch.h"
 #include "application.h"
+#include "invertix/core.h"
+
 
 namespace invertix {
 
-#define BIND_EVENT_FN(x) [this](auto& e){ return x(e); } 
 
 	Application::Application()
 	{
+		IVX_CORE_ASSERT(!app_, "Application already exists!");
+		app_ = this;
 		window_ = std::unique_ptr<Window>(Window::create());
-		window_->set_event_callback(BIND_EVENT_FN(on_event));
+		window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
 	}
 
 	Application::~Application()
 	{
 	}
+
 
 	void Application::run()
 	{
@@ -33,17 +37,19 @@ namespace invertix {
 	void Application::push_layer(Layer* layer)
 	{
 		layer_stack_.push_layer(layer);
+		layer->on_attach();
 	}
 
 	void Application::push_overlay(Layer* layer)
 	{
 		layer_stack_.push_overlay(layer);
+		layer->on_attach();
 	}
 
 	void Application::on_event(Event& e)
 	{
 		EventDispatcher dispatcher(e);
-		dispatcher.dispatch<WindowCloseEvent>(BIND_EVENT_FN(on_window_close));
+		dispatcher.dispatch(IVX_BIND_EVENT_FN(WindowCloseEvent, on_window_close));
 
 		IVX_CORE_TRACE("{}", e);
 

@@ -8,9 +8,11 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 IncludeDir = {}
 IncludeDir["GLFW"] = "Invertix/vendor/GLFW/include"
 IncludeDir["Glad"] = "Invertix/vendor/Glad/include"
+IncludeDir["ImGui"] = "Invertix/vendor/imgui"
 
 include "Invertix/vendor/GLFW"
 include "Invertix/vendor/Glad"
+include "Invertix/vendor/imgui"
 
 project "Invertix"
     location "Invertix"
@@ -31,10 +33,17 @@ project "Invertix"
         "%{prj.name}/src",
         "%{prj.name}/vendor/Elog",
         "%{IncludeDir.GLFW}",
-        "%{IncludeDir.Glad}"
+        "%{IncludeDir.Glad}",
+        "%{IncludeDir.ImGui}"
     }
 
-    links { "GLFW", "Glad", "opengl32.lib", "user32.lib", "gdi32.lib", "shell32.lib" }
+    links { "GLFW", 
+            "Glad", 
+            "ImGui",
+            "opengl32.lib", 
+            "user32.lib", 
+            "gdi32.lib", 
+            "shell32.lib" }
 
 
 

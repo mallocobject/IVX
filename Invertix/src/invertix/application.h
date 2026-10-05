@@ -1,10 +1,10 @@
 #pragma once
 
 #include "invertix/core.h"
-#include "invertix/events/event.h"
 #include "invertix/window.h"
-#include "invertix/events/application_event.h"
 #include "invertix/layer_stack.h"
+#include "invertix/events/event.h"
+#include "invertix/events/application_event.h"
 
 namespace invertix {
 	class IVX_API Application
@@ -12,6 +12,14 @@ namespace invertix {
 	public:
 		Application();
 		virtual ~Application();
+
+		static Application& get() {
+			return *app_;
+		}
+
+		Window& get_window() {
+			return *window_;
+		}
 
 		void run();
 
@@ -26,6 +34,8 @@ namespace invertix {
 		bool running_{ true };
 
 		LayerStack layer_stack_;
+
+		inline static Application* app_{ nullptr };
 	};
 
 

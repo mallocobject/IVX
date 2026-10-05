@@ -94,6 +94,13 @@ namespace invertix {
 			}
 			});
 
+		glfwSetCharCallback(window_, [](GLFWwindow* window, unsigned int codepoint)
+			{
+				auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
+				KeyTypedEvent event(codepoint);
+				data->event_callback(event);
+			});
+
 		glfwSetMouseButtonCallback(window_, [](GLFWwindow* window, int button, int action, int mods) {
 			auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 

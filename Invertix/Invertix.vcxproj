@@ -80,7 +80,7 @@
       <PrecompiledHeaderFile>ivx_pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>IVX_PLATFORM_WINDOWS;IVX_BUILD_DLL;GLFW_INCLUDE_NONE;IVX_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\Elog;vendor\GLFW\include;vendor\Glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\Elog;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -107,7 +107,7 @@ IF EXIST "..\bin\Debug-windows-x86_64\Invertix\Invertix.dll"\ (xcopy /Q /E /Y /I
       <PrecompiledHeaderFile>ivx_pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>IVX_PLATFORM_WINDOWS;IVX_BUILD_DLL;GLFW_INCLUDE_NONE;IVX_RELEASE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\Elog;vendor\GLFW\include;vendor\Glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\Elog;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -138,7 +138,7 @@ IF EXIST "..\bin\Release-windows-x86_64\Invertix\Invertix.dll"\ (xcopy /Q /E /Y 
       <PrecompiledHeaderFile>ivx_pch.h</PrecompiledHeaderFile>
       <WarningLevel>Level3</WarningLevel>
       <PreprocessorDefinitions>IVX_PLATFORM_WINDOWS;IVX_BUILD_DLL;GLFW_INCLUDE_NONE;IVX_DIST;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>src;vendor\Elog;vendor\GLFW\include;vendor\Glad\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>src;vendor\Elog;vendor\GLFW\include;vendor\Glad\include;vendor\imgui;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
@@ -172,21 +172,25 @@ IF EXIST "..\bin\Dist-windows-x86_64\Invertix\Invertix.dll"\ (xcopy /Q /E /Y /I 
     <ClInclude Include="src\invertix\events\event.h" />
     <ClInclude Include="src\invertix\events\key_event.h" />
     <ClInclude Include="src\invertix\events\mouse_event.h" />
+    <ClInclude Include="src\invertix\imgui\imgui_layer.h" />
     <ClInclude Include="src\invertix\layer.h" />
     <ClInclude Include="src\invertix\layer_stack.h" />
     <ClInclude Include="src\invertix\logger.h" />
     <ClInclude Include="src\invertix\window.h" />
     <ClInclude Include="src\ivx_pch.h" />
+    <ClInclude Include="src\platform\opengl\imgui_opengl_renderer.h" />
     <ClInclude Include="src\platform\win_window.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\invertix\application.cpp" />
+    <ClCompile Include="src\invertix\imgui\imgui_layer.cpp" />
     <ClCompile Include="src\invertix\layer.cpp" />
     <ClCompile Include="src\invertix\layer_stack.cpp" />
     <ClCompile Include="src\invertix\logger.cpp" />
     <ClCompile Include="src\ivx_pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\platform\opengl\imgui_opengl_renderer.cpp" />
     <ClCompile Include="src\platform\win_window.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -195,6 +199,9 @@ IF EXIST "..\bin\Dist-windows-x86_64\Invertix\Invertix.dll"\ (xcopy /Q /E /Y /I 
     </ProjectReference>
     <ProjectReference Include="vendor\Glad\Glad.vcxproj">
       <Project>{BDD6857C-A90D-870D-52FA-6C103E10030F}</Project>
+    </ProjectReference>
+    <ProjectReference Include="vendor\imgui\ImGui.vcxproj">
+      <Project>{C0FF640D-2C14-8DBE-F595-301E616989EF}</Project>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -9,6 +9,7 @@
 #include <string_view>
 #include <chrono>
 #include <memory>
+#include <type_traits>
 
 #include <algorithm>
 #include <ranges>

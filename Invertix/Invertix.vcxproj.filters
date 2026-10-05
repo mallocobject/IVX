@@ -7,8 +7,14 @@
     <Filter Include="invertix\events">
       <UniqueIdentifier>{428FEFC0-AE1A-5D85-B72B-E0792336B985}</UniqueIdentifier>
     </Filter>
+    <Filter Include="invertix\imgui">
+      <UniqueIdentifier>{E8EC04A9-D4BA-F8AE-BD4E-69D5A9BBD413}</UniqueIdentifier>
+    </Filter>
     <Filter Include="platform">
       <UniqueIdentifier>{4A63C33C-3630-1E48-5F49-0CF04B7553D6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="platform\opengl">
+      <UniqueIdentifier>{9E4DBFD0-0AD9-2C95-13EA-AF897FF48895}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -34,6 +40,9 @@
     <ClInclude Include="src\invertix\events\mouse_event.h">
       <Filter>invertix\events</Filter>
     </ClInclude>
+    <ClInclude Include="src\invertix\imgui\imgui_layer.h">
+      <Filter>invertix\imgui</Filter>
+    </ClInclude>
     <ClInclude Include="src\invertix\layer.h">
       <Filter>invertix</Filter>
     </ClInclude>
@@ -47,6 +56,9 @@
       <Filter>invertix</Filter>
     </ClInclude>
     <ClInclude Include="src\ivx_pch.h" />
+    <ClInclude Include="src\platform\opengl\imgui_opengl_renderer.h">
+      <Filter>platform\opengl</Filter>
+    </ClInclude>
     <ClInclude Include="src\platform\win_window.h">
       <Filter>platform</Filter>
     </ClInclude>
@@ -54,6 +66,9 @@
   <ItemGroup>
     <ClCompile Include="src\invertix\application.cpp">
       <Filter>invertix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\invertix\imgui\imgui_layer.cpp">
+      <Filter>invertix\imgui</Filter>
     </ClCompile>
     <ClCompile Include="src\invertix\layer.cpp">
       <Filter>invertix</Filter>
@@ -65,6 +80,9 @@
       <Filter>invertix</Filter>
     </ClCompile>
     <ClCompile Include="src\ivx_pch.cpp" />
+    <ClCompile Include="src\platform\opengl\imgui_opengl_renderer.cpp">
+      <Filter>platform\opengl</Filter>
+    </ClCompile>
     <ClCompile Include="src\platform\win_window.cpp">
       <Filter>platform</Filter>
     </ClCompile>

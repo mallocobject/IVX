@@ -18,6 +18,15 @@ project "Glad"
 		systemversion "latest"
 		staticruntime "On"
 
+	filter { "system:windows", "configurations:Debug" }
+		runtime "Debug"
+		buildoptions "/MTd"
+
 	filter { "system:windows", "configurations:Release" }
+		runtime "Release"
+		buildoptions "/MT"
+
+	filter { "system:windows", "configurations:Dist" }
+		runtime "Release"
 		buildoptions "/MT"
 

@@ -4,7 +4,6 @@
 #include "invertix/events/event.h"
 
 namespace invertix {
-
 	class IVX_API Layer
 	{
 	public:

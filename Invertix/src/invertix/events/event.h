@@ -3,6 +3,40 @@
 #include "ivx_pch.h"
 #include "invertix/core.h"
 
+namespace {
+	template <typename F>
+	struct function_traits;
+
+	// function pointer
+	template <typename R, typename Arg>
+	struct function_traits<R(*)(Arg)>
+	{
+		using arg_type = Arg;
+	};
+
+	// non-const member function pointer
+	template <typename C, typename R, typename Arg>
+	struct function_traits<R(C::*)(Arg)>
+	{
+		using arg_type = Arg;
+	};
+
+	// const member function pointer
+	template <typename C, typename R, typename Arg>
+	struct function_traits<R(C::*)(Arg) const>
+	{
+		using arg_type = Arg;
+	};
+
+	// function object / lambda: operator()
+	template <typename F>
+	struct function_traits : function_traits<decltype(&F::operator())> {};
+
+	template <typename F>
+	using first_arg_t = std::remove_cvref_t<
+		typename function_traits<std::decay_t<F>>::arg_type>;
+}
+
 
 namespace invertix {
 	enum class EventType : uint8_t
@@ -84,10 +118,11 @@ namespace invertix {
 		}
 
 		// F will be deduced by the compiler
-		template<typename T, typename F>
-			requires  std::is_invocable_r_v<bool, F, T&>
+		template<typename F>
+			requires requires (F& f, first_arg_t<F>& e) { { f(e) } -> std::convertible_to<bool>; }
 		bool dispatch(const F& func)
 		{
+			using T = first_arg_t<F>;
 			if (event_.get_event_type() == T::get_static_type())
 			{
 				event_.handled |= func(static_cast<T&>(event_));
