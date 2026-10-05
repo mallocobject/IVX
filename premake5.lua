@@ -2,6 +2,7 @@
 workspace "Invertix"
     architecture "x64"
     configurations { "Debug", "Release", "Dist" }
+    startproject "Sandbox"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
@@ -18,6 +19,8 @@ project "Invertix"
     location "Invertix"
     kind "SharedLib"
     language "C++"
+    staticruntime "off"
+
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
@@ -50,7 +53,6 @@ project "Invertix"
     filter "system:windows"
         cppdialect "C++20"
         buildoptions { "/utf-8" }
-        staticruntime "On"
         systemversion "latest"
         defines {
             "IVX_PLATFORM_WINDOWS",
@@ -59,29 +61,31 @@ project "Invertix"
         }
 
         postbuildcommands {
-            "{MKDIR} \"../bin/" .. outputdir .. "/Sandbox\"",
-            "{COPY} \"%{cfg.buildtarget.relpath}\" \"../bin/" .. outputdir .. "/Sandbox\""
+            ("IF NOT EXIST \"../bin/" .. outputdir .. "/Sandbox\" mkdir \"../bin/" .. outputdir .. "/Sandbox\""),
+            ("{COPY} \"%{cfg.buildtarget.relpath}\" \"../bin/" .. outputdir .. "/Sandbox\"")
         }
 
     filter "configurations:Debug"
         defines "IVX_DEBUG"
-        buildoptions "/MDd"
+        runtime "Debug"
         symbols "on"
 
     filter "configurations:Release"
         defines "IVX_RELEASE"
-        buildoptions "/MD"
+        runtime "Release"
         optimize "on"
 
     filter "configurations:Dist"
         defines "IVX_DIST"
-        buildoptions "/MD"
+        runtime "Release"
         optimize "on"
 
 project "Sandbox"
     location "Sandbox"
     kind "ConsoleApp"
     language "C++"
+    staticruntime "off"
+
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
@@ -100,7 +104,6 @@ project "Sandbox"
     filter "system:windows"
         cppdialect "C++20"
         buildoptions { "/utf-8" }
-        staticruntime "On"
         systemversion "latest"
         defines {
             "IVX_PLATFORM_WINDOWS"
@@ -108,15 +111,15 @@ project "Sandbox"
 
     filter "configurations:Debug"
         defines "IVX_DEBUG"
-        buildoptions "/MDd"
+        runtime "Debug"
         symbols "on"
 
     filter "configurations:Release"
         defines "IVX_RELEASE"
-        buildoptions "/MD"
+        runtime "Release"
         optimize "on"
 
     filter "configurations:Dist"
         defines "IVX_DIST"
-        buildoptions "/MD"
+        runtime "Release"
         optimize "on"

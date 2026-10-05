@@ -1,15 +1,13 @@
 #include "ivx_pch.h"
 #include "application.h"
 #include "invertix/core.h"
-
+#include "invertix/input.h"
 
 namespace invertix {
-
-
 	Application::Application()
 	{
-		IVX_CORE_ASSERT(!app_, "Application already exists!");
-		app_ = this;
+		IVX_CORE_ASSERT(!instance_, "Application already exists!");
+		instance_ = this;
 		window_ = std::unique_ptr<Window>(Window::create());
 		window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
 	}
@@ -28,6 +26,9 @@ namespace invertix {
 			for (auto&& layer : layer_stack_) {
 				layer->on_update();
 			}
+
+			//auto [x, y] = Input::get_mouse_pos();
+			//IVX_CORE_TRACE("{}, {}", x, y);
 
 
 			window_->on_update();
@@ -51,7 +52,7 @@ namespace invertix {
 		EventDispatcher dispatcher(e);
 		dispatcher.dispatch(IVX_BIND_EVENT_FN(WindowCloseEvent, on_window_close));
 
-		IVX_CORE_TRACE("{}", e);
+		//IVX_CORE_TRACE("{}", e);
 
 		for (auto&& layer : layer_stack_ | vws::reverse) {
 			if (e.handled) {

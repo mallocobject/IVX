@@ -164,9 +164,4 @@ namespace invertix {
 		data_.v_sync = enabled;
 	}
 
-	bool WinWindow::is_v_sync() const
-	{
-		return data_.v_sync;
-	}
-
 }

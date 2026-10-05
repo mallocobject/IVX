@@ -21,7 +21,14 @@ namespace invertix {
 		// Window attributes
 		inline void set_event_callback(const EventCallbackFn& callback) override { data_.event_callback = callback; }
 		void set_v_sync(bool enabled) override;
-		bool is_v_sync() const override;
+
+		bool is_v_sync() const override {
+			return data_.v_sync;
+		}
+
+		void* get_native_window() override {
+			return reinterpret_cast<void*>(window_);
+		}
 
 	private:
 		struct WindowData

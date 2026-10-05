@@ -203,7 +203,7 @@ namespace elog {
 			//	loc.function_name(),
 			//	msg);
 
-			std::string fmsg = std::format("[{:%H:%M:%S}] {} > {}",
+			std::string fmsg = std::format("[{:%H:%M:%S}] [{}] {}",
 				now,
 				who,
 				msg);

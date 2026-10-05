@@ -33,6 +33,8 @@ namespace invertix {
 		virtual void set_v_sync(bool enabled) = 0;
 		virtual bool is_v_sync() const = 0;
 
+		virtual void* get_native_window() = 0;
+
 		static Window* create(const WindowProps& props = WindowProps{});
 	};
 }

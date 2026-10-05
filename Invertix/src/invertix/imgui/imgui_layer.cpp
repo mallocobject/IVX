@@ -2,7 +2,6 @@
 #include "imgui_layer.h"
 #include "imgui.h"
 #include "platform/opengl/imgui_opengl_renderer.h"
-#include <GLFW//glfw3.h>
 #include "invertix/application.h"
 
 #include "invertix/events/key_event.h"

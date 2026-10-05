@@ -14,7 +14,7 @@ namespace invertix {
 		virtual ~Application();
 
 		static Application& get() {
-			return *app_;
+			return *instance_;
 		}
 
 		Window& get_window() {
@@ -35,7 +35,7 @@ namespace invertix {
 
 		LayerStack layer_stack_;
 
-		inline static Application* app_{ nullptr };
+		inline static Application* instance_{ nullptr };
 	};
 
 

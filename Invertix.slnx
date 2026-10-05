@@ -13,6 +13,6 @@
   </Project>
   <Project Path="Invertix\Invertix.vcxproj" Id="DEFCA308-CAC9-FE13-F3E2-ECBBDF0E34A2">
   </Project>
-  <Project Path="Sandbox\Sandbox.vcxproj" Id="F4C124E3-60A1-A37E-69B9-2E55D5170AE0">
+  <Project Path="Sandbox\Sandbox.vcxproj" Id="F4C124E3-60A1-A37E-69B9-2E55D5170AE0" DefaultStartup="true">
   </Project>
 </Solution>

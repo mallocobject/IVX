@@ -10,7 +10,12 @@
 #error "Invertix only supports Windows!"
 #endif
 
-#ifdef IVX_ENABLE_ASSERTS
+#ifdef IVX_DEBUG
+#define IVX_ENABLE_ASSERTS 1
+#elif IVX_ENABLE_ASSERTS 0
+#endif
+
+#if IVX_ENABLE_ASSERTS
 #define IVX_ASSERT(x, ...) { if(!(x)) { IVX_ERROR("Assertion Failed: {}", __VA_ARGS__); __debugbreak(); } }
 #define IVX_CORE_ASSERT(x, ...) { if(!(x)) { IVX_CORE_ERROR("Assertion Failed: {}", __VA_ARGS__); __debugbreak(); } }
 #else

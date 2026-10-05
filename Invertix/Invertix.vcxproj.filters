@@ -62,6 +62,9 @@
     <ClInclude Include="src\platform\win_window.h">
       <Filter>platform</Filter>
     </ClInclude>
+    <ClInclude Include="src\invertix\input.h" />
+    <ClInclude Include="src\platform\win_input.h" />
+    <ClInclude Include="src\invertix\mouse_button_codes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\invertix\application.cpp">
@@ -86,5 +89,6 @@
     <ClCompile Include="src\platform\win_window.cpp">
       <Filter>platform</Filter>
     </ClCompile>
+    <ClCompile Include="src\platform\win_input.cpp" />
   </ItemGroup>
 </Project>
