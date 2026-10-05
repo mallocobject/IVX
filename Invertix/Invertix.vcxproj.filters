@@ -1,36 +1,72 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="源文件">
-      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
-      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    <Filter Include="invertix">
+      <UniqueIdentifier>{FE98DE90-EA65-399C-137F-2744FFAA6E2A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="头文件">
-      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
-      <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    <Filter Include="invertix\events">
+      <UniqueIdentifier>{428FEFC0-AE1A-5D85-B72B-E0792336B985}</UniqueIdentifier>
     </Filter>
-    <Filter Include="资源文件">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    <Filter Include="platform">
+      <UniqueIdentifier>{4A63C33C-3630-1E48-5F49-0CF04B7553D6}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\invertix.h" />
     <ClInclude Include="src\invertix\application.h">
-      <Filter>头文件</Filter>
+      <Filter>invertix</Filter>
     </ClInclude>
     <ClInclude Include="src\invertix\core.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
-    <ClInclude Include="src\invertix.h">
-      <Filter>头文件</Filter>
+      <Filter>invertix</Filter>
     </ClInclude>
     <ClInclude Include="src\invertix\entry_point.h">
-      <Filter>头文件</Filter>
+      <Filter>invertix</Filter>
+    </ClInclude>
+    <ClInclude Include="src\invertix\events\application_event.h">
+      <Filter>invertix\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\invertix\events\event.h">
+      <Filter>invertix\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\invertix\events\key_event.h">
+      <Filter>invertix\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\invertix\events\mouse_event.h">
+      <Filter>invertix\events</Filter>
+    </ClInclude>
+    <ClInclude Include="src\invertix\layer.h">
+      <Filter>invertix</Filter>
+    </ClInclude>
+    <ClInclude Include="src\invertix\layer_stack.h">
+      <Filter>invertix</Filter>
+    </ClInclude>
+    <ClInclude Include="src\invertix\logger.h">
+      <Filter>invertix</Filter>
+    </ClInclude>
+    <ClInclude Include="src\invertix\window.h">
+      <Filter>invertix</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ivx_pch.h" />
+    <ClInclude Include="src\platform\win_window.h">
+      <Filter>platform</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\invertix\application.cpp">
-      <Filter>源文件</Filter>
+      <Filter>invertix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\invertix\layer.cpp">
+      <Filter>invertix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\invertix\layer_stack.cpp">
+      <Filter>invertix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\invertix\logger.cpp">
+      <Filter>invertix</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ivx_pch.cpp" />
+    <ClCompile Include="src\platform\win_window.cpp">
+      <Filter>platform</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

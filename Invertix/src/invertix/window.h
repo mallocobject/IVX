@@ -1,0 +1,35 @@
+#pragma once
+
+#include "ivx_pch.h"
+#include "invertix/core.h"
+#include "invertix/events/event.h"
+
+namespace invertix {
+	struct  WindowProps
+	{
+		std::string title{ "Invertix Engine" };
+		uint32_t width{ 1280 };
+		uint32_t height{ 720 };
+	};
+
+	// Interface representing a desktop system based Window
+	class IVX_API Window
+	{
+	public:
+		using EventCallbackFn = std::function<void(Event&)>;
+
+		virtual ~Window() {}
+
+		virtual void on_update() = 0;
+
+		virtual uint32_t get_width() const = 0;
+		virtual uint32_t get_height() const = 0;
+
+		// Window attributes
+		virtual void set_event_callback(const EventCallbackFn& callback) = 0;
+		virtual void set_v_sync(bool enabled) = 0;
+		virtual bool is_v_sync() const = 0;
+
+		static Window* create(const WindowProps& props = WindowProps{});
+	};
+}
