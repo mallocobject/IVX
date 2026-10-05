@@ -4,6 +4,9 @@
 #include "invertix/events/key_event.h"
 #include "invertix/events/mouse_event.h"
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 namespace invertix {
 
 	static bool GLFW_Initialized = false;
@@ -48,6 +51,8 @@ namespace invertix {
 
 		window_ = glfwCreateWindow(static_cast<int>(props.width), static_cast<int>(props.height), data_.title.c_str(), nullptr, nullptr);
 		glfwMakeContextCurrent(window_);
+		int status = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
+		IVX_CORE_ASSERT(status, "Failed to initailize Glad!");
 		glfwSetWindowUserPointer(window_, &data_);
 		set_v_sync(true);
 
@@ -130,6 +135,12 @@ namespace invertix {
 	{
 		glfwPollEvents();
 		glfwSwapBuffers(window_);
+	}
+
+	void WinWindow::clear()
+	{
+		glClearColor(0, 0, 0, 0);
+		glClear(GL_COLOR_BUFFER_BIT);
 	}
 
 	void WinWindow::set_v_sync(bool enabled)

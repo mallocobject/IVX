@@ -1,8 +1,6 @@
 #include "ivx_pch.h"
 #include "application.h"
 
-#include <GLFW/glfw3.h>
-
 namespace invertix {
 
 #define BIND_EVENT_FN(x) [this](auto& e){ return x(e); } 
@@ -20,8 +18,7 @@ namespace invertix {
 	void Application::run()
 	{
 		while (running_) {
-			glClearColor(0, 0, 0, 0);
-			glClear(GL_COLOR_BUFFER_BIT);
+			window_->clear();
 
 			// do something
 			for (auto&& layer : layer_stack_) {

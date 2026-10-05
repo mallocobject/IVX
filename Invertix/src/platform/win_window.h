@@ -1,7 +1,8 @@
 #pragma once
 
 #include "invertix/window.h"
-#include <GLFW/glfw3.h>
+
+struct GLFWwindow;
 
 namespace invertix {
 
@@ -12,6 +13,7 @@ namespace invertix {
 		virtual ~WinWindow();
 
 		void on_update() override;
+		void clear() override;
 
 		inline uint32_t get_width() const override { return data_.width; }
 		inline uint32_t get_height() const override { return data_.height; }

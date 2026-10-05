@@ -7,7 +7,10 @@ outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
 IncludeDir["GLFW"] = "Invertix/vendor/GLFW/include"
+IncludeDir["Glad"] = "Invertix/vendor/Glad/include"
+
 include "Invertix/vendor/GLFW"
+include "Invertix/vendor/Glad"
 
 project "Invertix"
     location "Invertix"
@@ -27,10 +30,11 @@ project "Invertix"
     includedirs {
         "%{prj.name}/src",
         "%{prj.name}/vendor/Elog",
-        "%{IncludeDir.GLFW}"
+        "%{IncludeDir.GLFW}",
+        "%{IncludeDir.Glad}"
     }
 
-    links { "GLFW", "opengl32.lib", "user32.lib", "gdi32.lib", "shell32.lib" }
+    links { "GLFW", "Glad", "opengl32.lib", "user32.lib", "gdi32.lib", "shell32.lib" }
 
 
 
@@ -41,7 +45,8 @@ project "Invertix"
         systemversion "latest"
         defines {
             "IVX_PLATFORM_WINDOWS",
-            "IVX_BUILD_DLL"
+            "IVX_BUILD_DLL",
+            "GLFW_INCLUDE_NONE"
         }
 
         postbuildcommands {

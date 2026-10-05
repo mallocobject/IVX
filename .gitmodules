@@ -1,0 +1,3 @@
+[submodule "Invertix/vendor/GLFW"]
+	path = Invertix/vendor/GLFW
+	url = https://github.com/mallocobject/glfw.git
