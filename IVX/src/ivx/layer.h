@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ivx/core.h"
-#include "ivx/events/event.h"
+#include "ivx/event/event.h"
 
 namespace ivx {
 	class Layer

@@ -4,6 +4,7 @@
 #include "ivx/input.h"
 #include "ivx/imgui/imgui_layer.h"
 
+#include <glad/glad.h>
 #include <glm/glm.hpp>
 
 namespace ivx {
@@ -16,6 +17,30 @@ namespace ivx {
 
 		imgui_layer_ = new ImGuiLayer;
 		push_overlay(imgui_layer_);
+
+		glGenVertexArrays(1, &VAO);
+		glBindVertexArray(VAO);
+
+		glGenBuffers(1, &VBO);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+		float vertices[3 * 3] = {
+			-0.5f, -0.5f, 0.f,
+			 0.5f, -0.5f, 0.f,
+			 0.0f,  0.5f, 0.f
+		};
+
+		glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), reinterpret_cast<const void*>(static_cast<std::uintptr_t>(0)));
+
+		glGenBuffers(1, &EBO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+		uint32_t indices[3] = { 0, 1, 2 };
+		glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	}
 
 	Application::~Application()
@@ -26,19 +51,27 @@ namespace ivx {
 	void Application::run()
 	{
 		while (running_) {
+			// clear
 			window_->clear();
 
-			// do something
+			// draw
+			glBindVertexArray(VAO);
+			glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
+			//glDrawArrays(GL_TRIANGLES, 0, 3);
+
+			// update
 			for (auto&& layer : layer_stack_) {
 				layer->on_update();
 			}
 
+			// render
 			imgui_layer_->begin();
 			for (auto&& layer : layer_stack_) {
 				layer->on_render();
 			}
 			imgui_layer_->end();
 
+			// roll and swap buffer
 			window_->on_update();
 		}
 	}

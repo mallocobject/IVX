@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/events/event.h"
+#include "ivx/event/event.h"
 
 namespace ivx {
 

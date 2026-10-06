@@ -9,7 +9,7 @@ namespace ivx {
 
 	struct  WindowProps
 	{
-		std::string title{ "Invertix Engine" };
+		std::string title{ "IVX Engine" };
 		uint32_t width{ 1280 };
 		uint32_t height{ 720 };
 	};

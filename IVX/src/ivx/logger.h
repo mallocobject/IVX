@@ -52,4 +52,3 @@ namespace ivx {
 #define IVX_CORE_ERROR(...) ::ivx::log_fmt(::ivx::LogLevel::ERROR, "IVX", __VA_ARGS__)
 #define IVX_CORE_FATAL(...) ::ivx::log_fmt(::ivx::LogLevel::FATAL, "IVX", __VA_ARGS__)
 
-

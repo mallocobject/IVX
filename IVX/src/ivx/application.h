@@ -3,8 +3,8 @@
 #include "ivx/core.h"
 #include "ivx/window.h"
 #include "ivx/layer_stack.h"
-#include "ivx/events/event.h"
-#include "ivx/events/application_event.h"
+#include "ivx/event/event.h"
+#include "ivx/event/application_event.h"
 //#include "ivx/imgui/imgui_layer.h"
 
 namespace ivx {
@@ -40,6 +40,10 @@ namespace ivx {
 		ImGuiLayer* imgui_layer_{ nullptr };
 
 		inline static Application* instance_{ nullptr };
+
+		uint32_t VAO{ 0 };
+		uint32_t VBO{ 0 };
+		uint32_t EBO{ 0 };
 	};
 
 

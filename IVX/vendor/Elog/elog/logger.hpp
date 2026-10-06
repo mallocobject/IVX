@@ -244,7 +244,7 @@ namespace elog {
 
 
 	template <typename... Args>
-	constexpr void log(LogLevel lv, std::string_view who,
+	constexpr void log_fmt(LogLevel lv, std::string_view who,
 		details::WithSourceLocation<std::format_string<Args...>> fmt,
 		Args &&...args) {
 		if (lv < details::g_log_threshold) {
@@ -262,7 +262,7 @@ namespace elog {
 		std::string_view who,												   \
         details::WithSourceLocation<std::format_string<Args...>> fmt,          \
         Args &&...args) {                                                      \
-        return log(                                                            \
+        return log_fmt(                                                            \
             LogLevel::name, who, std::move(fmt), std::forward<Args>(args)...); \
     }
 	ELOG_FOREACH_LOG_LEVEL(_FUNCTION)

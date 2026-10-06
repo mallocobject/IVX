@@ -98,7 +98,7 @@ project "Sandbox"
 
     includedirs {
         "IVX/src",
-        "IVX/vendor",
+        "IVX/vendor"
     }
 
     links { "IVX" }

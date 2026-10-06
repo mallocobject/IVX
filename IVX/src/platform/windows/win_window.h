@@ -1,8 +1,9 @@
 #pragma once
 
 #include "ivx/window.h"
+#include "ivx/render/graphics_context.h"
 
-struct GLFWwindow;
+#include <GLFW/glfw3.h>
 
 namespace ivx {
 
@@ -27,7 +28,7 @@ namespace ivx {
 		}
 
 		void* get_native_window() override {
-			return reinterpret_cast<void*>(window_);
+			return reinterpret_cast<void*>(window_handle_);
 		}
 
 	private:
@@ -44,7 +45,8 @@ namespace ivx {
 		virtual void init(const WindowProps& props);
 		virtual void shutdown();
 
-		GLFWwindow* window_;
+		GLFWwindow* window_handle_;
+		GraphicsContext* context_;
 		WindowData data_;
 	};
 

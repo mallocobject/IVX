@@ -13,11 +13,11 @@
     <Filter Include="src\ivx\imgui">
       <UniqueIdentifier>{7DEDD169-E9AD-4DA0-B2E8-961D1E68927C}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\platform">
-      <UniqueIdentifier>{41663D6D-2DC9-CC11-D64E-05C8C2909894}</UniqueIdentifier>
+    <Filter Include="src\platforms">
+      <UniqueIdentifier>{D42EEA14-40EF-654B-092A-AFC875A9AA27}</UniqueIdentifier>
     </Filter>
-    <Filter Include="src\platform\windows">
-      <UniqueIdentifier>{9B5931A8-87E8-BA71-3007-CF6C1C75CB17}</UniqueIdentifier>
+    <Filter Include="src\platforms\windows">
+      <UniqueIdentifier>{2E059B57-9A71-5652-6365-EEAFCF9078BA}</UniqueIdentifier>
     </Filter>
     <Filter Include="vendor">
       <UniqueIdentifier>{B3738122-9F15-ACF8-88D0-BF4C74113349}</UniqueIdentifier>
@@ -60,16 +60,16 @@
     <ClInclude Include="src\ivx\entry_point.h">
       <Filter>src\ivx</Filter>
     </ClInclude>
-    <ClInclude Include="src\ivx\events\application_event.h">
+    <ClInclude Include="src\ivx\event\application_event.h">
       <Filter>src\ivx\events</Filter>
     </ClInclude>
-    <ClInclude Include="src\ivx\events\event.h">
+    <ClInclude Include="src\ivx\event\event.h">
       <Filter>src\ivx\events</Filter>
     </ClInclude>
-    <ClInclude Include="src\ivx\events\key_event.h">
+    <ClInclude Include="src\ivx\event\key_event.h">
       <Filter>src\ivx\events</Filter>
     </ClInclude>
-    <ClInclude Include="src\ivx\events\mouse_event.h">
+    <ClInclude Include="src\ivx\event\mouse_event.h">
       <Filter>src\ivx\events</Filter>
     </ClInclude>
     <ClInclude Include="src\ivx\imgui\imgui_layer.h">
@@ -100,10 +100,10 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="src\platform\windows\win_input.h">
-      <Filter>src\platform\windows</Filter>
+      <Filter>src\platforms\windows</Filter>
     </ClInclude>
     <ClInclude Include="src\platform\windows\win_window.h">
-      <Filter>src\platform\windows</Filter>
+      <Filter>src\platforms\windows</Filter>
     </ClInclude>
     <ClInclude Include="vendor\Elog\elog\async_logger.hpp">
       <Filter>vendor\Elog\elog</Filter>
@@ -1374,6 +1374,8 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp">
       <Filter>vendor\glm\glm</Filter>
     </ClInclude>
+    <ClInclude Include="src\ivx\render\graphics_context.h" />
+    <ClInclude Include="src\backend\opengl\opengl_context.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ivx\application.cpp">
@@ -1398,10 +1400,11 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="src\platform\windows\win_input.cpp">
-      <Filter>src\platform\windows</Filter>
+      <Filter>src\platforms\windows</Filter>
     </ClCompile>
     <ClCompile Include="src\platform\windows\win_window.cpp">
-      <Filter>src\platform\windows</Filter>
+      <Filter>src\platforms\windows</Filter>
     </ClCompile>
+    <ClCompile Include="src\backend\opengl\opengl_context.cpp" />
   </ItemGroup>
 </Project>

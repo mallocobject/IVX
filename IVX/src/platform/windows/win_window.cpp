@@ -1,11 +1,10 @@
 #include "ivxpch.h"
 #include "platform/windows/win_window.h"
-#include "ivx/events/application_event.h"
-#include "ivx/events/key_event.h"
-#include "ivx/events/mouse_event.h"
+#include "ivx/event/application_event.h"
+#include "ivx/event/key_event.h"
+#include "ivx/event/mouse_event.h"
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include "backend/opengl/opengl_context.h"
 
 namespace ivx {
 
@@ -49,15 +48,16 @@ namespace ivx {
 			GLFW_Initialized = true;
 		}
 
-		window_ = glfwCreateWindow(static_cast<int>(props.width), static_cast<int>(props.height), data_.title.c_str(), nullptr, nullptr);
-		glfwMakeContextCurrent(window_);
-		int status = gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
-		IVX_CORE_ASSERT(status, "Failed to initailize Glad!");
-		glfwSetWindowUserPointer(window_, &data_);
+		window_handle_ = glfwCreateWindow(static_cast<int>(props.width), static_cast<int>(props.height), data_.title.c_str(), nullptr, nullptr);
+
+		context_ = new OpenGLContext(window_handle_);
+		context_->init();
+
+		glfwSetWindowUserPointer(window_handle_, &data_);
 		set_v_sync(true);
 
 		// set GLFW callbacks
-		glfwSetWindowSizeCallback(window_, [](GLFWwindow* window, int width, int height) {
+		glfwSetWindowSizeCallback(window_handle_, [](GLFWwindow* window, int width, int height) {
 			auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			data->width = width;
 			data->height = height;
@@ -66,13 +66,13 @@ namespace ivx {
 			data->event_callback(event);
 			});
 
-		glfwSetWindowCloseCallback(window_, [](GLFWwindow* window) {
+		glfwSetWindowCloseCallback(window_handle_, [](GLFWwindow* window) {
 			auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			WindowCloseEvent event;
 			data->event_callback(event);
 			});
 
-		glfwSetKeyCallback(window_, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
+		glfwSetKeyCallback(window_handle_, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
 			auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 			switch (action) {
@@ -94,14 +94,14 @@ namespace ivx {
 			}
 			});
 
-		glfwSetCharCallback(window_, [](GLFWwindow* window, unsigned int codepoint)
+		glfwSetCharCallback(window_handle_, [](GLFWwindow* window, unsigned int codepoint)
 			{
 				auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 				KeyTypedEvent event(codepoint);
 				data->event_callback(event);
 			});
 
-		glfwSetMouseButtonCallback(window_, [](GLFWwindow* window, int button, int action, int mods) {
+		glfwSetMouseButtonCallback(window_handle_, [](GLFWwindow* window, int button, int action, int mods) {
 			auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 
 			switch (action) {
@@ -119,13 +119,13 @@ namespace ivx {
 			});
 
 
-		glfwSetScrollCallback(window_, [](GLFWwindow* window, double xoffset, double yoffset) {
+		glfwSetScrollCallback(window_handle_, [](GLFWwindow* window, double xoffset, double yoffset) {
 			auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			MouseScrolledEvent event(static_cast<float>(xoffset), static_cast<float>(yoffset));
 			data->event_callback(event);
 			});
 
-		glfwSetCursorPosCallback(window_, [](GLFWwindow* window, double xpos, double ypos) {
+		glfwSetCursorPosCallback(window_handle_, [](GLFWwindow* window, double xpos, double ypos) {
 			auto data = reinterpret_cast<WindowData*>(glfwGetWindowUserPointer(window));
 			MouseMovedEvent event(static_cast<float>(xpos), static_cast<float>(ypos));
 			data->event_callback(event);
@@ -135,19 +135,19 @@ namespace ivx {
 
 	void WinWindow::shutdown()
 	{
-		glfwDestroyWindow(window_);
+		glfwDestroyWindow(window_handle_);
 	}
 
 	void WinWindow::on_update()
 	{
 		glfwPollEvents();
-		glfwSwapBuffers(window_);
+
+		context_->swap_buffer();
 	}
 
 	void WinWindow::clear()
 	{
-		glClearColor(0, 0, 0, 0);
-		glClear(GL_COLOR_BUFFER_BIT);
+		context_->clear();
 	}
 
 	void WinWindow::set_v_sync(bool enabled)

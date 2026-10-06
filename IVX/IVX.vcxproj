@@ -105,14 +105,16 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="src\backend\opengl\opengl_context.h" />
+    <ClInclude Include="src\ivx\render\graphics_context.h" />
     <ClInclude Include="src\ivx.h" />
     <ClInclude Include="src\ivx\application.h" />
     <ClInclude Include="src\ivx\core.h" />
     <ClInclude Include="src\ivx\entry_point.h" />
-    <ClInclude Include="src\ivx\events\application_event.h" />
-    <ClInclude Include="src\ivx\events\event.h" />
-    <ClInclude Include="src\ivx\events\key_event.h" />
-    <ClInclude Include="src\ivx\events\mouse_event.h" />
+    <ClInclude Include="src\ivx\event\application_event.h" />
+    <ClInclude Include="src\ivx\event\event.h" />
+    <ClInclude Include="src\ivx\event\key_event.h" />
+    <ClInclude Include="src\ivx\event\mouse_event.h" />
     <ClInclude Include="src\ivx\imgui\imgui_layer.h" />
     <ClInclude Include="src\ivx\input.h" />
     <ClInclude Include="src\ivx\key_codes.h" />
@@ -549,6 +551,7 @@
     <ClInclude Include="vendor\glm\glm\vector_relational.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\backend\opengl\opengl_context.cpp" />
     <ClCompile Include="src\ivx\application.cpp" />
     <ClCompile Include="src\ivx\imgui\imgui_build.cpp" />
     <ClCompile Include="src\ivx\imgui\imgui_layer.cpp" />
