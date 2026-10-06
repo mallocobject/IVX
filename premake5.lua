@@ -1,33 +1,34 @@
 -- premake5.lua
-workspace "Invertix"
+workspace "IVX"
     architecture "x64"
-    configurations { "Debug", "Release", "Dist" }
+    configurations { "Debug", "Release" }
     startproject "Sandbox"
 
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
-IncludeDir["Elog"] = "Invertix/vendor/Elog/"
-IncludeDir["GLFW"] = "Invertix/vendor/GLFW/include"
-IncludeDir["Glad"] = "Invertix/vendor/Glad/include"
-IncludeDir["ImGui"] = "Invertix/vendor/imgui"
-IncludeDir["glm"] = "Invertix/vendor/glm"
+IncludeDir["Elog"] = "IVX/vendor/Elog/"
+IncludeDir["GLFW"] = "IVX/vendor/GLFW/include"
+IncludeDir["Glad"] = "IVX/vendor/Glad/include"
+IncludeDir["ImGui"] = "IVX/vendor/imgui"
+IncludeDir["glm"] = "IVX/vendor/glm"
 
-include "Invertix/vendor/GLFW"
-include "Invertix/vendor/Glad"
-include "Invertix/vendor/imgui"
+include "IVX/vendor/GLFW"
+include "IVX/vendor/Glad"
+include "IVX/vendor/imgui"
 
-project "Invertix"
-    location "Invertix"
-    kind "SharedLib"
+project "IVX"
+    location "IVX"
+    kind "StaticLib"
     language "C++"
-    staticruntime "off"
+    cppdialect "C++20"
+    staticruntime "on"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
 
-    pchheader "ivx_pch.h"
-    pchsource "Invertix/src/ivx_pch.cpp"
+    pchheader "ivxpch.h"
+    pchsource "IVX/src/ivxpch.cpp"
 
     files {
         "%{prj.name}/src/**.h",
@@ -36,6 +37,11 @@ project "Invertix"
         "%{IncludeDir.glm}/glm/**.hpp",
         "%{IncludeDir.glm}/glm/**.inl"
     }
+
+    defines
+	{
+		"_CRT_SECURE_NO_WARNINGS"
+	}
 
     includedirs {
         "%{prj.name}/src",
@@ -49,49 +55,37 @@ project "Invertix"
     links { "GLFW", 
             "Glad", 
             "ImGui",
-            "opengl32.lib", 
-            "user32.lib", 
-            "gdi32.lib", 
-            "shell32.lib" }
+            "opengl32.lib" }
 
 
 
     filter "system:windows"
-        cppdialect "C++20"
         buildoptions { "/utf-8" }
         systemversion "latest"
         defines {
             "IVX_PLATFORM_WINDOWS",
             "IVX_BUILD_DLL",
-            "IVX_IMGUI_EXPORTS",
             "GLFW_INCLUDE_NONE"
         }
 
-        postbuildcommands {
-            ("IF NOT EXIST \"../bin/" .. outputdir .. "/Sandbox\" mkdir \"../bin/" .. outputdir .. "/Sandbox\""),
-            ("{COPY} \"%{cfg.buildtarget.relpath}\" \"../bin/" .. outputdir .. "/Sandbox\"")
-        }
 
     filter "configurations:Debug"
-        defines "IVX_DEBUG"
+        defines "IVX_CONFIG_DEBUG"
         runtime "Debug"
         symbols "on"
 
     filter "configurations:Release"
-        defines "IVX_RELEASE"
+        defines "IVX_CONFIG_RELEASE"
         runtime "Release"
         optimize "on"
 
-    filter "configurations:Dist"
-        defines "IVX_DIST"
-        runtime "Release"
-        optimize "on"
 
 project "Sandbox"
     location "Sandbox"
     kind "ConsoleApp"
     language "C++"
-    staticruntime "off"
+    cppdialect "C++20"
+    staticruntime "on"
 
     targetdir ("bin/" .. outputdir .. "/%{prj.name}")
     objdir ("bin-int/" .. outputdir .. "/%{prj.name}")
@@ -101,33 +95,27 @@ project "Sandbox"
         "%{prj.name}/src/**.cpp"
     }
 
+
     includedirs {
-        "Invertix/src",
-        "Invertix/vendor",
+        "IVX/src",
+        "IVX/vendor",
     }
 
-    links { "Invertix" }
+    links { "IVX" }
 
     filter "system:windows"
-        cppdialect "C++20"
         buildoptions { "/utf-8" }
         systemversion "latest"
         defines {
-            "IVX_PLATFORM_WINDOWS",
-            "IVX_IMGUI_IMPORTS"
+            "IVX_PLATFORM_WINDOWS"
         }
 
     filter "configurations:Debug"
-        defines "IVX_DEBUG"
+        defines "IVX_CONFIG_DEBUG"
         runtime "Debug"
         symbols "on"
 
     filter "configurations:Release"
-        defines "IVX_RELEASE"
-        runtime "Release"
-        optimize "on"
-
-    filter "configurations:Dist"
-        defines "IVX_DIST"
+        defines "IVX_CONFIG_RELEASE"
         runtime "Release"
         optimize "on"

@@ -1,7 +1,7 @@
-#include <invertix.h>
+#include <ivx.h>
 #include <imgui/imgui.h>
 
-class ExampleLayer : public invertix::Layer
+class ExampleLayer : public ivx::Layer
 {
 public:
 	ExampleLayer()
@@ -11,7 +11,7 @@ public:
 
 	void on_update() override
 	{
-		if (invertix::Input::is_key_pressed(IVX_KEY_TAB)) {
+		if (ivx::Input::is_key_pressed(IVX_KEY_TAB)) {
 			IVX_TRACE("Tab key is pressed!");
 		}
 	}
@@ -23,19 +23,18 @@ public:
 		ImGui::End();
 	}
 
-	void on_event(invertix::Event& event) override
+	void on_event(ivx::Event& event) override
 	{
 		//IVX_TRACE("{}", event);
 	}
 
 };
 
-class Sandbox : public invertix::Application
+class Sandbox : public ivx::Application
 {
 public:
 	Sandbox() {
 		push_layer(new ExampleLayer);
-		//push_layer(new invertix::ImGuiLayer);
 	}
 
 	~Sandbox() {
@@ -43,6 +42,6 @@ public:
 	}
 };
 
-invertix::Application* invertix::create_application() {
+ivx::Application* ivx::create_application() {
 	return new Sandbox;
 }
