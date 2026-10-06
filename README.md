@@ -1,2 +1,2 @@
-# Invertix
-Invertix Engine
+# IVX
+IVX Engine
