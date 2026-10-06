@@ -2,6 +2,9 @@
 #include "application.h"
 #include "invertix/core.h"
 #include "invertix/input.h"
+#include "invertix/imgui/imgui_layer.h"
+
+#include <glm/glm.hpp>
 
 namespace invertix {
 	Application::Application()
@@ -10,6 +13,9 @@ namespace invertix {
 		instance_ = this;
 		window_ = std::unique_ptr<Window>(Window::create());
 		window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
+
+		imgui_layer_ = new ImGuiLayer;
+		push_overlay(imgui_layer_);
 	}
 
 	Application::~Application()
@@ -27,9 +33,11 @@ namespace invertix {
 				layer->on_update();
 			}
 
-			//auto [x, y] = Input::get_mouse_pos();
-			//IVX_CORE_TRACE("{}, {}", x, y);
-
+			imgui_layer_->begin();
+			for (auto&& layer : layer_stack_) {
+				layer->on_render();
+			}
+			imgui_layer_->end();
 
 			window_->on_update();
 		}
@@ -38,13 +46,11 @@ namespace invertix {
 	void Application::push_layer(Layer* layer)
 	{
 		layer_stack_.push_layer(layer);
-		layer->on_attach();
 	}
 
 	void Application::push_overlay(Layer* layer)
 	{
 		layer_stack_.push_overlay(layer);
-		layer->on_attach();
 	}
 
 	void Application::on_event(Event& e)

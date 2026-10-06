@@ -5,8 +5,11 @@
 #include "invertix/layer_stack.h"
 #include "invertix/events/event.h"
 #include "invertix/events/application_event.h"
+//#include "invertix/imgui/imgui_layer.h"
 
 namespace invertix {
+	class ImGuiLayer;
+
 	class IVX_API Application
 	{
 	public:
@@ -34,6 +37,7 @@ namespace invertix {
 		bool running_{ true };
 
 		LayerStack layer_stack_;
+		ImGuiLayer* imgui_layer_{ nullptr };
 
 		inline static Application* instance_{ nullptr };
 	};

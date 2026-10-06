@@ -15,6 +15,9 @@ namespace invertix {
 		virtual void on_update() {}
 		virtual void on_event(Event& event) {}
 
+		// for imgui
+		virtual void on_render() {};
+
 		inline std::string_view get_name() const { return debug_name_; }
 
 	protected:

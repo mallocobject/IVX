@@ -1,7 +1,5 @@
 #pragma once
 
-#ifdef IVX_PLATFORM_WINDOWS
-
 extern invertix::Application* invertix::create_application();
 
 int main(int argc, char* argv[]) {
@@ -11,5 +9,3 @@ int main(int argc, char* argv[]) {
 	app->run();
 	delete app;
 }
-
-#endif

@@ -3,7 +3,7 @@
 #include "ivx_pch.h"
 #include "invertix/core.h"
 
-namespace {
+namespace invertix::detail {
 	template <typename F>
 	struct function_traits;
 
@@ -119,10 +119,10 @@ namespace invertix {
 
 		// F will be deduced by the compiler
 		template<typename F>
-			requires requires (F& f, first_arg_t<F>& e) { { f(e) } -> std::convertible_to<bool>; }
+			requires requires (F& f, detail::first_arg_t<F>& e) { { f(e) } -> std::convertible_to<bool>; }
 		bool dispatch(const F& func)
 		{
-			using T = first_arg_t<F>;
+			using T = detail::first_arg_t<F>;
 			if (event_.get_event_type() == T::get_static_type())
 			{
 				event_.handled |= func(static_cast<T&>(event_));
@@ -135,10 +135,10 @@ namespace invertix {
 		Event& event_;
 	};
 
-	inline std::ostream& operator<<(std::ostream& os, const Event& e)
-	{
-		return os << e.get_name();
-	}
+	//inline std::ostream& operator<<(std::ostream& os, const Event& e)
+	//{
+	//	return os << e.get_name();
+	//}
 }
 
 template <>

@@ -7,9 +7,11 @@ workspace "Invertix"
 outputdir = "%{cfg.buildcfg}-%{cfg.system}-%{cfg.architecture}"
 
 IncludeDir = {}
+IncludeDir["Elog"] = "Invertix/vendor/Elog/"
 IncludeDir["GLFW"] = "Invertix/vendor/GLFW/include"
 IncludeDir["Glad"] = "Invertix/vendor/Glad/include"
 IncludeDir["ImGui"] = "Invertix/vendor/imgui"
+IncludeDir["glm"] = "Invertix/vendor/glm"
 
 include "Invertix/vendor/GLFW"
 include "Invertix/vendor/Glad"
@@ -29,15 +31,19 @@ project "Invertix"
 
     files {
         "%{prj.name}/src/**.h",
-        "%{prj.name}/src/**.cpp"
+        "%{prj.name}/src/**.cpp",
+        "%{IncludeDir.Elog}/elog/**.hpp",
+        "%{IncludeDir.glm}/glm/**.hpp",
+        "%{IncludeDir.glm}/glm/**.inl"
     }
 
     includedirs {
         "%{prj.name}/src",
-        "%{prj.name}/vendor/Elog",
+        "%{IncludeDir.Elog}",
         "%{IncludeDir.GLFW}",
         "%{IncludeDir.Glad}",
-        "%{IncludeDir.ImGui}"
+        "%{IncludeDir.ImGui}",
+        "%{IncludeDir.glm}"
     }
 
     links { "GLFW", 
@@ -57,6 +63,7 @@ project "Invertix"
         defines {
             "IVX_PLATFORM_WINDOWS",
             "IVX_BUILD_DLL",
+            "IVX_IMGUI_EXPORTS",
             "GLFW_INCLUDE_NONE"
         }
 
@@ -96,7 +103,7 @@ project "Sandbox"
 
     includedirs {
         "Invertix/src",
-        "Invertix/vendor/Elog"
+        "Invertix/vendor",
     }
 
     links { "Invertix" }
@@ -106,7 +113,8 @@ project "Sandbox"
         buildoptions { "/utf-8" }
         systemversion "latest"
         defines {
-            "IVX_PLATFORM_WINDOWS"
+            "IVX_PLATFORM_WINDOWS",
+            "IVX_IMGUI_IMPORTS"
         }
 
     filter "configurations:Debug"
