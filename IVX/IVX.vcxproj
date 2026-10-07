@@ -122,6 +122,7 @@
     <ClInclude Include="src\ivx\layer_stack.h" />
     <ClInclude Include="src\ivx\logger.h" />
     <ClInclude Include="src\ivx\mouse_button_codes.h" />
+    <ClInclude Include="src\ivx\render\shader.h" />
     <ClInclude Include="src\ivx\window.h" />
     <ClInclude Include="src\ivxpch.h" />
     <ClInclude Include="src\platform\windows\win_input.h" />
@@ -561,6 +562,7 @@
     <ClCompile Include="src\ivxpch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="src\ivx\render\shader.cpp" />
     <ClCompile Include="src\platform\windows\win_input.cpp" />
     <ClCompile Include="src\platform\windows\win_window.cpp" />
   </ItemGroup>

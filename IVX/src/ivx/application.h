@@ -1,53 +1,51 @@
 #pragma once
 
 #include "ivx/core.h"
-#include "ivx/window.h"
-#include "ivx/layer_stack.h"
-#include "ivx/event/event.h"
 #include "ivx/event/application_event.h"
-//#include "ivx/imgui/imgui_layer.h"
+#include "ivx/event/event.h"
+#include "ivx/layer_stack.h"
+#include "ivx/window.h"
+
+// #include "ivx/imgui/imgui_layer.h"
 
 namespace ivx {
-	class ImGuiLayer;
+class ImGuiLayer;
 
-	class Application
-	{
-	public:
-		Application();
-		virtual ~Application();
+class Application {
+  public:
+    Application();
+    virtual ~Application();
 
-		static Application& get() {
-			return *instance_;
-		}
+    static Application &get() {
+        return *instance_;
+    }
 
-		Window& get_window() {
-			return *window_;
-		}
+    Window &get_window() {
+        return *window_;
+    }
 
-		void run();
+    void run();
 
-		void push_layer(Layer* layer);
-		void push_overlay(Layer* layer);
+    void push_layer(Layer *layer);
+    void push_overlay(Layer *layer);
 
-	private:
-		void on_event(Event& e);
-		bool on_window_close(WindowCloseEvent& e);
+  private:
+    void on_event(Event &e);
+    bool on_window_close(WindowCloseEvent &e);
 
-		std::unique_ptr<Window> window_;
-		bool running_{ true };
+    std::unique_ptr<Window> window_;
+    bool running_{true};
 
-		LayerStack layer_stack_;
-		ImGuiLayer* imgui_layer_{ nullptr };
+    LayerStack layer_stack_;
+    ImGuiLayer *imgui_layer_{nullptr};
 
-		inline static Application* instance_{ nullptr };
+    inline static Application *instance_{nullptr};
 
-		uint32_t VAO{ 0 };
-		uint32_t VBO{ 0 };
-		uint32_t EBO{ 0 };
-	};
+    uint32_t VAO{0};
+    uint32_t VBO{0};
+    uint32_t EBO{0};
+};
 
-
-	// defined by client
-	Application* create_application();
-}
-
+// defined by client
+Application *create_application();
+} // namespace ivx

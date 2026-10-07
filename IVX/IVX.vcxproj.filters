@@ -1376,6 +1376,7 @@
     </ClInclude>
     <ClInclude Include="src\ivx\render\graphics_context.h" />
     <ClInclude Include="src\backend\opengl\opengl_context.h" />
+    <ClInclude Include="src\ivx\render\shader.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\ivx\application.cpp">
@@ -1406,5 +1407,6 @@
       <Filter>src\platforms\windows</Filter>
     </ClCompile>
     <ClCompile Include="src\backend\opengl\opengl_context.cpp" />
+    <ClCompile Include="src\ivx\render\shader.cpp" />
   </ItemGroup>
 </Project>

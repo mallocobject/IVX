@@ -2,24 +2,24 @@
 
 #include <cstdint>
 
-#include <iostream>
-#include <format>
-#include <string>
-#include <functional>
-#include <string_view>
 #include <chrono>
+#include <format>
+#include <functional>
+#include <iostream>
 #include <memory>
+#include <string>
+#include <string_view>
 #include <type_traits>
 
 #include <algorithm>
 #include <ranges>
 
-#include <vector>
 #include <map>
+#include <queue>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
-#include <queue>
+#include <vector>
 
 #include "ivx/logger.h"
 
@@ -31,7 +31,6 @@
 #endif
 
 namespace ivx {
-	namespace rg = std::ranges;
-	namespace vws = std::views;
-}
-
+namespace rg = std::ranges;
+namespace vws = std::views;
+} // namespace ivx

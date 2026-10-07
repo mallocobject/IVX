@@ -1,0 +1,54 @@
+# Cpp
+Language: Cpp
+BasedOnStyle: LLVM
+
+# Indentation
+IndentWidth: 4
+ContinuationIndentWidth: 4
+TabWidth: 4
+UseTab: Never
+ColumnLimit: 80
+
+# Braces: keep the opening brace on the same line as the declaration/statement
+BreakBeforeBraces: Attach
+BraceWrapping:
+  AfterCaseLabel: false
+  AfterClass: false
+  AfterControlStatement: Never
+  AfterEnum: false
+  AfterExternBlock: false
+  AfterFunction: false
+  AfterNamespace: false
+  AfterStruct: false
+  AfterUnion: false
+  BeforeCatch: false
+  BeforeElse: false
+  BeforeLambdaBody: false
+  BeforeWhile: false
+  IndentBraces: false
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
+
+# Templates: always put a line break after the template declaration
+AlwaysBreakTemplateDeclarations: true
+
+# Common readability settings
+AllowShortFunctionsOnASingleLine: None
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortLoopsOnASingleLine: false
+BinPackArguments: false
+BinPackParameters: false
+SortIncludes: CaseSensitive
+PointerAlignment: Right
+ReferenceAlignment: Pointer
+SpaceAfterTemplateKeyword: true
+
+# Includes: ivxpch.h is always located at first
+IncludeBlocks: Preserve
+IncludeCategories:
+  - Regex: '^"ivxpch\.h"$'
+    Priority: -1
+    SortPriority: -1
+  - Regex: '.*'
+    Priority: 1

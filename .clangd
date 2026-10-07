@@ -1,0 +1,20 @@
+CompileFlags:
+  Compiler: clang-cl
+  Add:
+    - --target=x86_64-pc-windows-msvc
+    - /std:c++20
+    - /Zc:__cplusplus
+    - -DIVX_PLATFORM_WINDOWS
+    - -DIVX_STATIC
+    - -DIVX_CONFIG_DEBUG
+    - -D_CRT_SECURE_NO_WARNINGS
+    - -DNOMINMAX
+
+    - -IE:/src/repos/IVX/IVX/src
+    - -IE:/src/repos/IVX/IVX/vendor
+    - -IE:/src/repos/IVX/IVX/vendor/imgui
+    - -IE:/src/repos/IVX/IVX/vendor/imgui/backends
+    - -IE:/src/repos/IVX/IVX/vendor/Elog
+    - -IE:/src/repos/IVX/IVX/vendor/GLFW/include
+    - -IE:/src/repos/IVX/IVX/vendor/Glad/include
+    - -IE:/src/repos/IVX/IVX/vendor/glm

@@ -4,10 +4,9 @@
 #include "ivx/layer.h"
 #include "ivx/logger.h"
 
+#include "ivx/input.h"
 #include "ivx/key_codes.h"
 #include "ivx/mouse_button_codes.h"
-#include "ivx/input.h"
-
 
 // Entry Point
 // --------------------------------------

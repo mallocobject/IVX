@@ -1,9 +1,0 @@
-[submodule "IVX/vendor/GLFW"]
-	path = IVX/vendor/GLFW
-	url = https://github.com/mallocobject/glfw.git
-[submodule "IVX/vendor/imgui"]
-	path = IVX/vendor/imgui
-	url = https://github.com/mallocobject/imgui.git
-[submodule "IVX/vendor/glm"]
-	path = IVX/vendor/glm
-	url = https://github.com/icaven/glm.git
