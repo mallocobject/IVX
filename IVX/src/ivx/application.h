@@ -18,7 +18,7 @@ class ImGuiLayer;
 class Application {
   public:
     Application();
-    virtual ~Application();
+    virtual ~Application() = default;
 
     static Application &get() {
         return *instance_;

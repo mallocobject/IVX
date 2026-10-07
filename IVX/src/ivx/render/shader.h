@@ -8,8 +8,7 @@ namespace ivx {
 class Shader {
   public:
     // Shader(const std::string &vs_src, const std::string &fs_src);
-    virtual ~Shader() {
-    }
+    virtual ~Shader() = default;
 
     virtual void bind() = 0;
     virtual void unbind() = 0;

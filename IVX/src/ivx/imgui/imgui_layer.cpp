@@ -12,9 +12,6 @@ namespace ivx {
 ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {
 }
 
-ImGuiLayer::~ImGuiLayer() {
-}
-
 void ImGuiLayer::on_attach() {
     Application &app = Application::get();
     GLFWwindow *window =

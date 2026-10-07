@@ -4,9 +4,6 @@
 
 namespace ivx {
 
-LayerStack::LayerStack() {
-}
-
 LayerStack::~LayerStack() {
     for (auto &&layer : layers_) {
         delete layer;

@@ -6,7 +6,7 @@ namespace ivx {
 class ImGuiLayer : public Layer {
   public:
     ImGuiLayer();
-    ~ImGuiLayer();
+    ~ImGuiLayer() = default;
 
     void on_attach() override;
     void on_detach() override;

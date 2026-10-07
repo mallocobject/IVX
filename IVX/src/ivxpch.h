@@ -14,6 +14,7 @@
 #include <algorithm>
 #include <ranges>
 
+#include <initializer_list>
 #include <map>
 #include <queue>
 #include <set>

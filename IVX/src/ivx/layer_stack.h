@@ -11,7 +11,7 @@ class LayerStack {
   public:
     // using Iterator = std::vector<Layer *>::iterator;
 
-    LayerStack();
+    LayerStack() = default;
     ~LayerStack();
 
     void push_layer(Layer *layer);

@@ -18,8 +18,7 @@ class Window {
   public:
     using EventCallbackFn = std::function<void(Event &)>;
 
-    virtual ~Window() {
-    }
+    virtual ~Window() = default;
 
     virtual void on_update() = 0;
     // virtual void clear() = 0;

@@ -6,8 +6,8 @@
 namespace ivx {
 class Layer {
   public:
-    Layer(std::string name = "Layer");
-    virtual ~Layer();
+    Layer(const std::string &name = "Layer");
+    virtual ~Layer() = default;
 
     virtual void on_attach() {
     }

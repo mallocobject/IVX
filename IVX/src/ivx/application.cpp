@@ -48,6 +48,9 @@ Application::Application() {
         3 * sizeof(float),
         reinterpret_cast<const void *>(static_cast<std::uintptr_t>(0)));
 
+    BufferLayout bl{{"a_Position", ShaderDataType::vec3},
+                    {"o_color", ShaderDataType::vec4}};
+
     // glGenBuffers(1, &EBO);
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
@@ -86,9 +89,6 @@ Application::Application() {
     shader_.reset(Shader::create(vs_src, fs_src));
     renderer_.reset(new OpenGLRenderer);
     renderer_->set_clear_color(glm::vec4(0.f));
-}
-
-Application::~Application() {
 }
 
 void Application::run() {

@@ -7,8 +7,7 @@ namespace ivx {
 
 class Input {
   public:
-    virtual ~Input() {
-    }
+    virtual ~Input() = default;
 
     static bool is_key_pressed(int keycode) {
         return instance_->is_key_pressed_impl(keycode);
