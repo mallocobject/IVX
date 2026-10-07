@@ -1,5 +1,5 @@
 #include "ivxpch.h"
-#include "opengl_context.h"
+#include "backend/opengl/opengl_context.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>
@@ -31,8 +31,8 @@ void OpenGLContext::swap_buffer() {
     glfwSwapBuffers(window_handle_);
 }
 
-void OpenGLContext::clear() {
-    glClearColor(0, 0, 0, 0);
-    glClear(GL_COLOR_BUFFER_BIT);
-}
+// void OpenGLContext::clear() {
+//     glClearColor(0, 0, 0, 0);
+//     glClear(GL_COLOR_BUFFER_BIT);
+// }
 } // namespace ivx

@@ -11,7 +11,7 @@ class OpenGLContext : public GraphicsContext {
 
     virtual void init() override;
     virtual void swap_buffer() override;
-    virtual void clear() override;
+    // virtual void clear() override;
 
   private:
     GLFWwindow *window_handle_;

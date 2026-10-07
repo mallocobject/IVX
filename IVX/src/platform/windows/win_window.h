@@ -13,7 +13,7 @@ class WinWindow : public Window {
     virtual ~WinWindow();
 
     void on_update() override;
-    void clear() override;
+    // void clear() override;
 
     inline uint32_t get_width() const override {
         return data_.width;

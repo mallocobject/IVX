@@ -14,7 +14,7 @@ class ExampleLayer : public ivx::Layer {
 
     void on_render() override {
         ImGui::Begin("Test");
-        ImGui::Text("Hello IVX55");
+        ImGui::Text("Hello World!");
         ImGui::End();
     }
 

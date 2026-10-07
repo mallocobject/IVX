@@ -3,12 +3,13 @@
 #include "ivx/core.h"
 #include "ivx/layer.h"
 
+#include <cstdint>
 #include <vector>
 
 namespace ivx {
 class LayerStack {
   public:
-    using Iterator = std::vector<Layer *>::iterator;
+    // using Iterator = std::vector<Layer *>::iterator;
 
     LayerStack();
     ~LayerStack();
@@ -27,6 +28,6 @@ class LayerStack {
 
   private:
     std::vector<Layer *> layers_;
-    // Iterator layer_insert_;
+    uint32_t layer_insert_idx_{0};
 };
 } // namespace ivx

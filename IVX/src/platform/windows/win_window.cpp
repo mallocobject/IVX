@@ -159,9 +159,9 @@ void WinWindow::on_update() {
     context_->swap_buffer();
 }
 
-void WinWindow::clear() {
-    context_->clear();
-}
+// void WinWindow::clear() {
+//     context_->clear();
+// }
 
 void WinWindow::set_v_sync(bool enabled) {
     if (enabled) {

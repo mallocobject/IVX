@@ -1,18 +1,19 @@
 #pragma once
 
+#include <cstdint>
 #include <glad/glad.h>
-#include <string_view>
+#include <string>
 
 namespace ivx {
-	class Shader {
-	public:
-		Shader(const std::string& vs_src, const std::string& fs_src);
-		~Shader();
+class Shader {
+  public:
+    // Shader(const std::string &vs_src, const std::string &fs_src);
+    virtual ~Shader() {
+    }
 
-		void bind();
-		void unbind();
+    virtual void bind() = 0;
+    virtual void unbind() = 0;
 
-	private:
-		GLuint program_{ 0 };
-	};
-}
+    static Shader *create(const std::string &vs_src, const std::string &fs_src);
+};
+} // namespace ivx
