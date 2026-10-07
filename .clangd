@@ -9,12 +9,13 @@ CompileFlags:
     - -DIVX_CONFIG_DEBUG
     - -D_CRT_SECURE_NO_WARNINGS
     - -DNOMINMAX
-
+    # IVX
     - -IE:/src/repos/IVX/IVX/src
-    - -IE:/src/repos/IVX/IVX/vendor
-    - -IE:/src/repos/IVX/IVX/vendor/imgui
-    - -IE:/src/repos/IVX/IVX/vendor/imgui/backends
-    - -IE:/src/repos/IVX/IVX/vendor/Elog
-    - -IE:/src/repos/IVX/IVX/vendor/GLFW/include
+    # Glad / Elog
     - -IE:/src/repos/IVX/IVX/vendor/Glad/include
-    - -IE:/src/repos/IVX/IVX/vendor/glm
+    - -IE:/src/repos/IVX/IVX/vendor/Elog
+    # GLFW / imgui / glm
+    - -IE:/src/repos/IVX/deps/glfw/include
+    - -IE:/src/repos/IVX/deps/imgui
+    - -IE:/src/repos/IVX/deps/imgui/backends
+    - -IE:/src/repos/IVX/deps/glm

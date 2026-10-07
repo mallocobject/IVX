@@ -1,5 +1,4 @@
 #include "ivxpch.h"
-//
 #include "layer.h"
 
 namespace ivx {

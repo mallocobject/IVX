@@ -1,4 +1,4 @@
-#include <imgui/imgui.h>
+#include <imgui.h>
 #include <ivx.h>
 
 class ExampleLayer : public ivx::Layer {

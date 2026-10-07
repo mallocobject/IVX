@@ -3,7 +3,6 @@
 #include "ivx/render/graphics_context.h"
 #include "ivx/window.h"
 
-
 #include <GLFW/glfw3.h>
 
 namespace ivx {

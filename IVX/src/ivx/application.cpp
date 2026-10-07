@@ -1,5 +1,4 @@
 #include "ivxpch.h"
-//
 #include "ivx/application.h"
 #include "ivx/core.h"
 #include "ivx/imgui/imgui_layer.h"

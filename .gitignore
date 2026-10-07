@@ -5,3 +5,4 @@ bin-int/
 build*/
 .cache/
 .vscode/
+deps/

@@ -9,7 +9,6 @@
 #include <string_view> // std::string_view
 #include <utility>     // std::forward
 
-
 namespace ivx {
 #define FOREACH_LOG_LEVEL(f) f(TRACE) f(DEBUG) f(INFO) f(WARN) f(ERROR) f(FATAL)
 

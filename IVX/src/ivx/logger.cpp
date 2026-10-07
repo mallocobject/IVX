@@ -1,5 +1,4 @@
 #include "ivxpch.h"
-//
 #include "ivx/logger.h"
 #include <elog/logger.hpp>
 
