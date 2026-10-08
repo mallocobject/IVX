@@ -7,6 +7,7 @@
 
 #include "render/buffer.h"
 #include "render/shader.h"
+#include "render/vertex_array.h"
 #include <cstdint>
 #include <glad/glad.h>
 #include <glm/glm.hpp>
@@ -21,55 +22,66 @@ Application::Application() {
     window_ = std::unique_ptr<Window>(Window::create());
     window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
 
-    // imgui_layer_ = new ImGuiLayer;
-    // push_overlay(imgui_layer_);
+    imgui_layer_ = new ImGuiLayer;
+    push_overlay(imgui_layer_);
 
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
+    // glGenVertexArrays(1, &VAO);
+    // glBindVertexArray(VAO);
+
+    vertex_array_.reset(VertexArray::create());
 
     // glGenBuffers(1, &VBO);
     // glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-    float vertices[3 * 3] = {
-        -0.5f, -0.5f, 0.f, 0.5f, -0.5f, 0.f, 0.0f, 0.5f, 0.f};
+    float vertices[] = {
+        -0.5f, -0.5f, 0.f, 0.8f, 0.3f, 0.2f, 1.f,  0.5f, -0.5f, 0.f, 0.2f,
+        0.3f,  0.3f,  1.f, 0.0f, 0.5f, 0.f,  0.2f, 0.3f, 0.8f,  1.f,
+    };
 
     // glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,
     // GL_STATIC_DRAW);
 
-    vertex_buf_.reset(
+    // vertex_buf_.reset(
+    //     VertexBuffer::create(vertices, sizeof(vertices) / sizeof(float)));
+
+    auto vertex_buf = std::shared_ptr<VertexBuffer>(
         VertexBuffer::create(vertices, sizeof(vertices) / sizeof(float)));
 
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(
-        0,
-        3,
-        GL_FLOAT,
-        GL_FALSE,
-        3 * sizeof(float),
-        reinterpret_cast<const void *>(static_cast<std::uintptr_t>(0)));
+    BufferLayout bl{{ShaderDataType::vec3, "a_Position", false},
+                    {ShaderDataType::vec4, "a_Color", false}};
+    vertex_buf->set_buffer_layout(bl);
 
-    BufferLayout bl{{"a_Position", ShaderDataType::vec3},
-                    {"o_color", ShaderDataType::vec4}};
+    vertex_array_->add_vertex_buffer(vertex_buf);
+
+    // glEnableVertexAttribArray(0);
+    // glVertexAttribPointer(
+    //     0,
+    //     3,
+    //     GL_FLOAT,
+    //     GL_FALSE,
+    //     3 * sizeof(float),
+    //     reinterpret_cast<const void *>(static_cast<std::uintptr_t>(0)));
 
     // glGenBuffers(1, &EBO);
     // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
     uint32_t indices[3] = {0, 1, 2};
-    // glBufferData(
-    //     GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
-    index_buf_.reset(
+    auto index_buf = std::shared_ptr<IndexBuffer>(
         IndexBuffer::create(indices, sizeof(indices) / sizeof(uint32_t)));
+
+    vertex_array_->set_index_buffer(index_buf);
 
     std::string vs_src = R"(
         #version 330 core
 
         layout(location = 0) in vec3 a_Position;
+        layout(location = 1) in vec4 a_Color;
 
-        out vec3 v_Position;
+        out vec4 v_Color;
 
         void main() {
-            v_Position = a_Position;
+            v_Color = a_Color;
             gl_Position = vec4(a_Position, 1.0);
         }
     )";
@@ -79,10 +91,10 @@ Application::Application() {
 
         layout(location = 0) out vec4 color;
 
-        in vec3 v_Position;
+        in vec4 v_Color;
 
         void main() {
-            color = vec4(v_Position * 0.5 + 0.5, 1.0);
+            color = v_Color;
         }
     )";
 
@@ -98,7 +110,9 @@ void Application::run() {
 
         // draw
         shader_->bind();
-        glBindVertexArray(VAO);
+        // glBindVertexArray(VAO);
+        vertex_array_->bind();
+
         glDrawElements(GL_TRIANGLES, 3, GL_UNSIGNED_INT, nullptr);
         // glDrawArrays(GL_TRIANGLES, 0, 3);
 
@@ -108,11 +122,11 @@ void Application::run() {
         }
 
         // render
-        // imgui_layer_->begin();
-        // for (auto &&layer : layer_stack_) {
-        //     layer->on_render();
-        // }
-        // imgui_layer_->end();
+        imgui_layer_->begin();
+        for (auto &&layer : layer_stack_) {
+            layer->on_render();
+        }
+        imgui_layer_->end();
 
         // roll and swap buffer
         window_->on_update();

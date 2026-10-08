@@ -24,7 +24,8 @@ void OpenGLVertexBuffer::unbind() {
     glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t *indices, uint32_t count) {
+OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t *indices, uint32_t count)
+    : count_(count) {
     glCreateBuffers(1, &ibo_);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER,

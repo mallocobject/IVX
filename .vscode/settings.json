@@ -1,0 +1,7 @@
+{
+  "cmake.sourceDirectory": "${workspaceFolder}",
+  "cmake.buildDirectory": "${workspaceFolder}/build",
+  "cmake.generator": "Visual Studio 18 2026",
+  "cmake.platform": "x64",
+  "cmake.configureOnOpen": true
+}

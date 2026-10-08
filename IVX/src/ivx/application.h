@@ -8,6 +8,7 @@
 #include "render/buffer.h"
 #include "render/renderer.h"
 #include "render/shader.h"
+#include "render/vertex_array.h"
 #include <memory>
 
 // #include "ivx/imgui/imgui_layer.h"
@@ -42,14 +43,16 @@ class Application {
 
     LayerStack layer_stack_;
     ImGuiLayer *imgui_layer_{nullptr};
-    std::unique_ptr<Shader> shader_;
-    std::unique_ptr<Renderer> renderer_;
+    std::shared_ptr<Shader> shader_;
+    std::shared_ptr<Renderer> renderer_;
 
     inline static Application *instance_{nullptr};
 
-    uint32_t VAO{0};
-    std::unique_ptr<VertexBuffer> vertex_buf_;
-    std::unique_ptr<IndexBuffer> index_buf_;
+    // uint32_t VAO{0};
+    // std::unique_ptr<VertexBuffer> vertex_buf_;
+    // std::unique_ptr<IndexBuffer> index_buf_;
+
+    std::shared_ptr<VertexArray> vertex_array_;
 };
 
 // defined by client

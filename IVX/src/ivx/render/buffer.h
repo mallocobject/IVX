@@ -2,6 +2,7 @@
 
 #include "ivx/core.h"
 #include "ivx/logger.h"
+#include <algorithm>
 #include <cstdint>
 #include <initializer_list>
 #include <vector>
@@ -21,7 +22,7 @@ enum class ShaderDataType : uint8_t {
     mat4,
 };
 
-inline uint32_t size_of(ShaderDataType type) {
+inline constexpr uint32_t size_of(ShaderDataType type) {
     using enum ShaderDataType;
     switch (type) {
     case boolean:
@@ -50,7 +51,7 @@ inline uint32_t size_of(ShaderDataType type) {
     return 0;
 }
 
-inline uint32_t count_of(ShaderDataType type) {
+inline constexpr uint32_t count_of(ShaderDataType type) {
     using enum ShaderDataType;
     switch (type) {
     case boolean:
@@ -80,19 +81,20 @@ inline uint32_t count_of(ShaderDataType type) {
 }
 
 struct BufferElement {
-    std::string name;
     ShaderDataType type;
+    std::string name;
     uint32_t size;
     uint32_t offset;
     bool normalized;
 
-    BufferElement(const std::string &name,
-                  ShaderDataType type,
+    BufferElement(ShaderDataType type,
+                  const std::string &name,
                   bool normalized = false);
 };
 
 class BufferLayout {
   public:
+    BufferLayout() = default;
     BufferLayout(const std::initializer_list<BufferElement> &elements);
     uint32_t get_stride() const {
         return stride_;
@@ -129,7 +131,18 @@ class VertexBuffer {
     virtual void bind() = 0;
     virtual void unbind() = 0;
 
+    void set_buffer_layout(BufferLayout buf_layout) {
+        buf_layout_ = std::move(buf_layout);
+    }
+
+    const BufferLayout &get_buffer_layout() const {
+        return buf_layout_;
+    }
+
     static VertexBuffer *create(float *vertices, uint32_t count);
+
+  private:
+    BufferLayout buf_layout_;
 };
 
 class IndexBuffer {
@@ -138,6 +151,8 @@ class IndexBuffer {
 
     virtual void bind() = 0;
     virtual void unbind() = 0;
+
+    virtual uint32_t get_count() const = 0;
 
     static IndexBuffer *create(uint32_t *indices, uint32_t count);
 };

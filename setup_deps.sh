@@ -1,9 +1,8 @@
 #!/usr/bin/env bash
-# setup_deps.sh - 自动克隆 IVX 所需的三个第三方仓库到 deps/
+# setup_deps.sh
 
 set -u
 
-# 获取脚本所在目录（项目根目录）
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DEPS="$ROOT/deps"
 
@@ -12,7 +11,6 @@ echo " IVX Dependency Setup"
 echo "========================================"
 echo
 
-# 创建 deps 目录
 if [ ! -d "$DEPS" ]; then
     echo "Creating deps directory..."
     mkdir -p "$DEPS"
@@ -20,7 +18,6 @@ fi
 
 cd "$DEPS" || { echo "[ERROR] Cannot enter $DEPS"; exit 1; }
 
-# 克隆函数：$1=目录名 $2=仓库URL $3=分支（可选）
 clone_if_missing() {
     local name="$1"
     local url="$2"
@@ -54,7 +51,7 @@ echo
 echo "[2/3] Cloning GLM..."
 clone_if_missing glm "https://github.com/icaven/glm.git" master || exit 1
 
-# 3. ImGui (docking 分支)
+# 3. ImGui (docking branch)
 echo
 echo "[3/3] Cloning ImGui (docking branch)..."
 clone_if_missing imgui "https://github.com/mallocobject/imgui.git" docking || exit 1

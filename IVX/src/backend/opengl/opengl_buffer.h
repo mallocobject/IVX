@@ -24,7 +24,12 @@ class OpenGLIndexBuffer : public IndexBuffer {
     virtual void bind() override;
     virtual void unbind() override;
 
+    virtual uint32_t get_count() const override {
+        return count_;
+    }
+
   private:
     uint32_t ibo_{0};
+    uint32_t count_;
 };
 } // namespace ivx
