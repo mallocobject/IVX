@@ -1,5 +1,4 @@
-# cmake -S . -B build -A x64
-# cmd /c '"E:\Software\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat" && cmake -S . -B build-clangd --fresh -G Ninja -DCMAKE_BUILD_TYPE=Debug'
+# cmake -S . -B build -G "Visual Studio 18 2026" -A x64
 
 cmake_minimum_required(VERSION 3.21)
 project(IVX LANGUAGES C CXX)
@@ -13,33 +12,29 @@ if (MSVC)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX)
 endif()
 
-set(VENDOR "${CMAKE_CURRENT_SOURCE_DIR}/IVX/vendor")
+set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
-include(FetchContent)
+if (NOT EXISTS "${DEPS_DIR}/glfw" OR
+    NOT EXISTS "${DEPS_DIR}/glm"  OR
+    NOT EXISTS "${DEPS_DIR}/imgui")
+    message(FATAL_ERROR
+        "Missing dependencies in ${DEPS_DIR}.\n"
+        "Please run setup_deps.bat(Windows) or ./setup_deps.sh(Linux/macOS)")
+endif()
 
-set(FETCHCONTENT_SOURCE_DIR_GLFW "${CMAKE_SOURCE_DIR}/deps/glfw" CACHE PATH "local glfw src")
-set(FETCHCONTENT_SOURCE_DIR_GLM  "${CMAKE_SOURCE_DIR}/deps/glm"  CACHE PATH "local glm src")
-set(FETCHCONTENT_SOURCE_DIR_IMGUI "${CMAKE_SOURCE_DIR}/deps/imgui" CACHE PATH "local imgui src")
-
+# ---- GLFW ----
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(glfw
-    GIT_REPOSITORY https://github.com/mallocobject/glfw.git
-    GIT_TAG        master)
+add_subdirectory("${DEPS_DIR}/glfw" "${CMAKE_BINARY_DIR}/_deps/glfw-build")
 
-set(GLM_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-FetchContent_Declare(glm
-    GIT_REPOSITORY https://github.com/icaven/glm.git
-    GIT_TAG        master)
+# ---- GLM ----
+set(GLM_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
+set(GLM_BUILD_INSTALL  OFF CACHE BOOL "" FORCE)
+add_subdirectory("${DEPS_DIR}/glm" "${CMAKE_BINARY_DIR}/_deps/glm-build")
 
-FetchContent_Declare(imgui
-    GIT_REPOSITORY https://github.com/mallocobject/imgui.git
-    GIT_TAG        docking)
-
-FetchContent_MakeAvailable(glfw glm)
-
-set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/deps/imgui")
+# ---- ImGui ----
+set(IMGUI_DIR "${DEPS_DIR}/imgui")
 add_library(imgui STATIC
     "${IMGUI_DIR}/imgui.cpp"
     "${IMGUI_DIR}/imgui_draw.cpp"

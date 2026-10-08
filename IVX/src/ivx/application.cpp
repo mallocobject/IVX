@@ -21,8 +21,8 @@ Application::Application() {
     window_ = std::unique_ptr<Window>(Window::create());
     window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
 
-    imgui_layer_ = new ImGuiLayer;
-    push_overlay(imgui_layer_);
+    // imgui_layer_ = new ImGuiLayer;
+    // push_overlay(imgui_layer_);
 
     glGenVertexArrays(1, &VAO);
     glBindVertexArray(VAO);
@@ -108,11 +108,11 @@ void Application::run() {
         }
 
         // render
-        imgui_layer_->begin();
-        for (auto &&layer : layer_stack_) {
-            layer->on_render();
-        }
-        imgui_layer_->end();
+        // imgui_layer_->begin();
+        // for (auto &&layer : layer_stack_) {
+        //     layer->on_render();
+        // }
+        // imgui_layer_->end();
 
         // roll and swap buffer
         window_->on_update();
