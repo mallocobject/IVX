@@ -1,13 +1,13 @@
 #include "ivxpch.h"
-#include "ivx/render/vertex_array.h"
+#include "vertex_array.h"
 #include "backend/opengl/opengl_vertex_array.h"
 #include "ivx/core.h"
-#include "ivx/render/renderer.h"
+#include "renderer_api.h"
 
 namespace ivx {
 VertexArray *VertexArray::create() {
-    using enum Renderer::API;
-    switch (Renderer::get_api()) {
+    using enum RendererAPI::API;
+    switch (RendererAPI::get_api()) {
     case kOpenGL:
         return new OpenGLVertexArray;
     case kNone:

@@ -1,5 +1,5 @@
 #include "ivxpch.h"
-#include "backend/opengl/opengl_shader.h"
+#include "opengl_shader.h"
 
 #include <glad/glad.h>
 

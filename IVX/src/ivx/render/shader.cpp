@@ -1,14 +1,14 @@
 #include "ivxpch.h"
-#include "ivx/render/shader.h"
+#include "shader.h"
 
 #include "backend/opengl/opengl_shader.h"
 #include "ivx/core.h"
-#include "ivx/render/renderer.h"
+#include "renderer_api.h"
 
 namespace ivx {
 Shader *Shader::create(const std::string &vs_src, const std::string &fs_src) {
-    using enum Renderer::API;
-    switch (Renderer::get_api()) {
+    using enum RendererAPI::API;
+    switch (RendererAPI::get_api()) {
     case kOpenGL:
         return new OpenGLShader(vs_src, fs_src);
     case kNone:

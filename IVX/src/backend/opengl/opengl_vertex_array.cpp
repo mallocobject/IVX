@@ -1,5 +1,5 @@
 #include "ivxpch.h"
-#include "backend/opengl/opengl_vertex_array.h"
+#include "opengl_vertex_array.h"
 #include "ivx/core.h"
 
 #include "ivx/render/buffer.h"
@@ -57,7 +57,7 @@ void OpenGLVertexArray::add_vertex_buffer(
                     "Vertex Buffer has no layout!");
 
     glBindVertexArray(vao_);
-    // vertex_buf->bind();
+    vertex_buf->bind();
 
     auto &buffer_layout_vec = vertex_buf->get_buffer_layout().get_elements();
     for (int i = 0; i < buffer_layout_vec.size(); i++) {
@@ -72,6 +72,8 @@ void OpenGLVertexArray::add_vertex_buffer(
                 static_cast<std::uintptr_t>(buffer_layout_vec[i].offset)));
     }
 
+    glBindVertexArray(0);
+
     vertex_bufs_.push_back(std::move(vertex_buf));
 }
 
@@ -79,6 +81,8 @@ void OpenGLVertexArray::set_index_buffer(
     std::shared_ptr<IndexBuffer> index_buf) {
     glBindVertexArray(vao_);
     index_buf->bind();
+
+    glBindVertexArray(0);
 
     index_buf_ = std::move(index_buf);
 }

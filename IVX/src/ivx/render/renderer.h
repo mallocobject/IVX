@@ -1,30 +1,18 @@
 #pragma once
 
-#include <cstdint>
-#include <glm/glm.hpp>
+#include "render_command.h"
+#include "renderer_api.h"
+#include "vertex_array.h"
+#include <memory>
 
 namespace ivx {
 class Renderer {
   public:
-    enum class API : uint8_t {
-        kNone = 0,
-        kOpenGL,
-        kDirectX,
-        kVulkan,
-        kMetal,
-    };
-
-    virtual ~Renderer() = default;
-
-    virtual void set_clear_color(const glm::vec4 &color) = 0;
-    virtual void clear() = 0;
-    virtual void draw() = 0;
-
-    static API get_api() {
-        return api_;
+    static void begin_scene();
+    static void end_scene();
+    static void submit(const std::shared_ptr<VertexArray> &vertex_array);
+    static RendererAPI::API get_api() {
+        return RendererAPI::get_api();
     }
-
-  private:
-    static API api_;
 };
 } // namespace ivx

@@ -1,10 +1,10 @@
 #include "ivxpch.h"
-#include "ivx/render/buffer.h"
+#include "buffer.h"
 
 #include "backend/opengl/opengl_buffer.h"
 #include "buffer.h"
 #include "ivx/core.h"
-#include "renderer.h"
+#include "renderer_api.h"
 
 namespace ivx {
 BufferElement::BufferElement(ShaderDataType type,
@@ -29,8 +29,8 @@ void BufferLayout::calc_stride() {
 }
 
 VertexBuffer *VertexBuffer::create(float *vertices, uint32_t count) {
-    using enum Renderer::API;
-    switch (Renderer::get_api()) {
+    using enum RendererAPI::API;
+    switch (RendererAPI::get_api()) {
     case kOpenGL:
         return new OpenGLVertexBuffer(vertices, count);
     case kNone:
@@ -42,8 +42,8 @@ VertexBuffer *VertexBuffer::create(float *vertices, uint32_t count) {
 }
 
 IndexBuffer *IndexBuffer::create(uint32_t *indices, uint32_t count) {
-    using enum Renderer::API;
-    switch (Renderer::get_api()) {
+    using enum RendererAPI::API;
+    switch (RendererAPI::get_api()) {
     case kOpenGL:
         return new OpenGLIndexBuffer(indices, count);
     case kNone:

@@ -1,5 +1,5 @@
 #include "ivxpch.h"
-#include "backend/opengl/opengl_context.h"
+#include "opengl_context.h"
 
 #include <GLFW/glfw3.h>
 #include <glad/glad.h>

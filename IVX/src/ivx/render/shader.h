@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <glad/glad.h>
 #include <string>
 
 namespace ivx {

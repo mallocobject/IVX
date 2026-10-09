@@ -44,15 +44,11 @@ class Application {
     LayerStack layer_stack_;
     ImGuiLayer *imgui_layer_{nullptr};
     std::shared_ptr<Shader> shader_;
-    std::shared_ptr<Renderer> renderer_;
 
     inline static Application *instance_{nullptr};
 
-    // uint32_t VAO{0};
-    // std::unique_ptr<VertexBuffer> vertex_buf_;
-    // std::unique_ptr<IndexBuffer> index_buf_;
-
     std::shared_ptr<VertexArray> vertex_array_;
+    std::shared_ptr<VertexArray> vertex_array2_;
 };
 
 // defined by client

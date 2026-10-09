@@ -1,5 +1,5 @@
 #include "ivxpch.h"
-#include "backend/opengl/opengl_buffer.h"
+#include "opengl_buffer.h"
 #include <cstdint>
 
 #include <glad/glad.h>
@@ -10,6 +10,8 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(float *vertices, uint32_t count) {
     glBindBuffer(GL_ARRAY_BUFFER, vbo_);
     glBufferData(
         GL_ARRAY_BUFFER, count * sizeof(float), vertices, GL_STATIC_DRAW);
+
+    // glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 OpenGLVertexBuffer::~OpenGLVertexBuffer() {
@@ -32,6 +34,8 @@ OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t *indices, uint32_t count)
                  count * sizeof(uint32_t),
                  indices,
                  GL_STATIC_DRAW);
+
+    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 OpenGLIndexBuffer::~OpenGLIndexBuffer() {
