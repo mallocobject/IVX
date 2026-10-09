@@ -7,10 +7,10 @@
 #include "renderer_api.h"
 
 namespace ivx {
-BufferElement::BufferElement(ShaderDataType type,
-                             const std::string &name,
+BufferElement::BufferElement(const std::string &name,
+                             ShaderDataType type,
                              bool normalized)
-    : type(type), name(name), size(size_of(type)), offset(0),
+    : name(name), type(type), size(size_of(type)), offset(0),
       normalized(normalized) {
 }
 

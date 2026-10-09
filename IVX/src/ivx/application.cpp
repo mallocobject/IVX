@@ -38,8 +38,8 @@ Application::Application() {
     auto vertex_buf = std::shared_ptr<VertexBuffer>(
         VertexBuffer::create(vertices, sizeof(vertices) / sizeof(float)));
 
-    BufferLayout bl{{ShaderDataType::vec3, "a_Position", false},
-                    {ShaderDataType::vec4, "a_Color", false}};
+    BufferLayout bl{{"a_Position", ShaderDataType::vec3, false},
+                    {"a_Color", ShaderDataType::vec4, false}};
     vertex_buf->set_buffer_layout(bl);
 
     vertex_array_->add_vertex_buffer(vertex_buf);

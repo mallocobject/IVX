@@ -81,14 +81,14 @@ inline constexpr uint32_t count_of(ShaderDataType type) {
 }
 
 struct BufferElement {
-    ShaderDataType type;
     std::string name;
+    ShaderDataType type;
     uint32_t size;
     uint32_t offset;
     bool normalized;
 
-    BufferElement(ShaderDataType type,
-                  const std::string &name,
+    BufferElement(const std::string &name,
+                  ShaderDataType type,
                   bool normalized = false);
 };
 
