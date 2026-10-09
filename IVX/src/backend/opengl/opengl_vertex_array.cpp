@@ -73,6 +73,7 @@ void OpenGLVertexArray::add_vertex_buffer(
     }
 
     glBindVertexArray(0);
+    vertex_buf->unbind();
 
     vertex_bufs_.push_back(std::move(vertex_buf));
 }
@@ -83,6 +84,7 @@ void OpenGLVertexArray::set_index_buffer(
     index_buf->bind();
 
     glBindVertexArray(0);
+    index_buf->unbind();
 
     index_buf_ = std::move(index_buf);
 }

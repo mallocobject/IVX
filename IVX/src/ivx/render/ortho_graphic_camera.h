@@ -7,6 +7,7 @@
 
 namespace ivx {
 class OrthoGraphicCamera {
+  public:
     OrthoGraphicCamera(float left, float right, float bottom, float top);
 
     void set_position(const glm::vec3 &position) {

@@ -44,6 +44,7 @@ class Application {
     LayerStack layer_stack_;
     ImGuiLayer *imgui_layer_{nullptr};
     std::shared_ptr<Shader> shader_;
+    std::shared_ptr<Shader> shader2_;
 
     inline static Application *instance_{nullptr};
 

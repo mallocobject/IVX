@@ -14,6 +14,8 @@
 #include <glm/glm.hpp>
 #include <memory>
 
+#include "render/ortho_graphic_camera.h"
+
 // #include "backend/opengl/opengl_renderer.h"
 
 namespace ivx {
@@ -77,6 +79,24 @@ Application::Application() {
         layout(location = 0) in vec3 a_Position;
         layout(location = 1) in vec4 a_Color;
 
+        uniform mat4 vp;
+
+        out vec4 v_Color;
+
+        void main() {
+            v_Color = a_Color;
+            gl_Position = vp * vec4(a_Position, 1.0);
+        }
+    )";
+
+    std::string vs_src2 = R"(
+        #version 330 core
+
+        layout(location = 0) in vec3 a_Position;
+        layout(location = 1) in vec4 a_Color;
+
+        // uniform mat4 vp;
+
         out vec4 v_Color;
 
         void main() {
@@ -98,8 +118,17 @@ Application::Application() {
     )";
 
     shader_.reset(Shader::create(vs_src, fs_src));
+    shader2_.reset(Shader::create(vs_src2, fs_src));
 
     RenderCommand::set_clear_color(glm::vec4(0.f));
+
+    OrthoGraphicCamera camera(-1.92f, 1.92f, -1.08f, 1.08f);
+    camera.set_position({-0.2f, -0.2f, 0});
+    camera.set_degrees(45.f);
+
+    auto vp = camera.get_proj_matrix() * camera.get_view_matrix();
+
+    shader_->set("vp", vp);
 
     // vertex_array_->unbind();
     // vertex_array2_->unbind();
@@ -113,9 +142,7 @@ void Application::run() {
         // draw
         Renderer::begin_scene();
 
-        shader_->bind();
-
-        Renderer::submit(vertex_array_);
+        Renderer::submit(shader_, vertex_array_);
 
         Renderer::end_scene();
 

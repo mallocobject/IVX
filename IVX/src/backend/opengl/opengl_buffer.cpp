@@ -11,7 +11,7 @@ OpenGLVertexBuffer::OpenGLVertexBuffer(float *vertices, uint32_t count) {
     glBufferData(
         GL_ARRAY_BUFFER, count * sizeof(float), vertices, GL_STATIC_DRAW);
 
-    // glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 OpenGLVertexBuffer::~OpenGLVertexBuffer() {
@@ -35,7 +35,7 @@ OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t *indices, uint32_t count)
                  indices,
                  GL_STATIC_DRAW);
 
-    // glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 OpenGLIndexBuffer::~OpenGLIndexBuffer() {
