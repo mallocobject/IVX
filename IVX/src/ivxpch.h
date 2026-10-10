@@ -22,6 +22,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include <chrono>
+
 #include "ivx/logger.h"
 
 #ifdef IVX_PLATFORM_WINDOWS

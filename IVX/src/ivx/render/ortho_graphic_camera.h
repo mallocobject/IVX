@@ -18,7 +18,7 @@ class OrthoGraphicCamera {
     }
 
     // radians
-    void set_degrees(float degrees) {
+    void set_rotation(float degrees) {
         degrees_ = degrees;
     }
     float get_degrees() const {

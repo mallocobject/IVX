@@ -6,6 +6,8 @@
 
 #include "backend/opengl/opengl_context.h"
 
+#include <GL/GL.h>
+
 namespace ivx {
 
 static bool GLFW_Initialized = false;
@@ -61,6 +63,8 @@ void WinWindow::init(const WindowProps &props) {
     // set GLFW callbacks
     glfwSetWindowSizeCallback(window_handle_,
                               [](GLFWwindow *window, int width, int height) {
+                                  glViewport(0, 0, width, height);
+
                                   auto data = reinterpret_cast<WindowData *>(
                                       glfwGetWindowUserPointer(window));
                                   data->width = width;

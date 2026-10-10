@@ -129,67 +129,119 @@ void OpenGLShader::unbind() {
     glUseProgram(0);
 }
 
-int OpenGLShader::location(const std::string &name) const {
-    return glGetUniformLocation(program_, name.c_str());
+GLint OpenGLShader::location(const std::string &name) {
+    auto loc = glGetUniformLocation(program_, name.c_str());
+    uniform_mp_[name] = loc;
+    return loc;
 }
 
-void OpenGLShader::set(const std::string &name, bool val) const {
+void OpenGLShader::set(const std::string &name, bool val) {
     glUseProgram(program_);
-    glUniform1i(location(name), static_cast<GLint>(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform1i(location(name), static_cast<GLint>(val));
+    } else {
+        glUniform1i(it->second, static_cast<GLint>(val));
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, float val) const {
+void OpenGLShader::set(const std::string &name, float val) {
     glUseProgram(program_);
-    glUniform1f(location(name), val);
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform1f(location(name), val);
+    } else {
+        glUniform1f(it->second, val);
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, const glm::vec2 &val) const {
+void OpenGLShader::set(const std::string &name, const glm::vec2 &val) {
     glUseProgram(program_);
-    glUniform2fv(location(name), 1, glm::value_ptr(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform2fv(location(name), 1, glm::value_ptr(val));
+    } else {
+        glUniform2fv(it->second, 1, glm::value_ptr(val));
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, const glm::vec3 &val) const {
+void OpenGLShader::set(const std::string &name, const glm::vec3 &val) {
     glUseProgram(program_);
-    glUniform3fv(location(name), 1, glm::value_ptr(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform3fv(location(name), 1, glm::value_ptr(val));
+    } else {
+        glUniform3fv(it->second, 1, glm::value_ptr(val));
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, const glm::vec4 &val) const {
+void OpenGLShader::set(const std::string &name, const glm::vec4 &val) {
     glUseProgram(program_);
-    glUniform4fv(location(name), 1, glm::value_ptr(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform4fv(location(name), 1, glm::value_ptr(val));
+    } else {
+        glUniform4fv(it->second, 1, glm::value_ptr(val));
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, const glm::ivec2 &val) const {
+void OpenGLShader::set(const std::string &name, const glm::ivec2 &val) {
     glUseProgram(program_);
-    glUniform2iv(location(name), 1, glm::value_ptr(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform2iv(location(name), 1, glm::value_ptr(val));
+    } else {
+        glUniform2iv(it->second, 1, glm::value_ptr(val));
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, const glm::ivec3 &val) const {
+void OpenGLShader::set(const std::string &name, const glm::ivec3 &val) {
     glUseProgram(program_);
-    glUniform3iv(location(name), 1, glm::value_ptr(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform3iv(location(name), 1, glm::value_ptr(val));
+    } else {
+        glUniform3iv(it->second, 1, glm::value_ptr(val));
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, const glm::ivec4 &val) const {
+void OpenGLShader::set(const std::string &name, const glm::ivec4 &val) {
     glUseProgram(program_);
-    glUniform4iv(location(name), 1, glm::value_ptr(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform4iv(location(name), 1, glm::value_ptr(val));
+    } else {
+        glUniform4iv(it->second, 1, glm::value_ptr(val));
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, const glm::mat3 &val) const {
+void OpenGLShader::set(const std::string &name, const glm::mat3 &val) {
     glUseProgram(program_);
-    glUniformMatrix3fv(location(name), 1, GL_FALSE, glm::value_ptr(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniformMatrix3fv(location(name), 1, GL_FALSE, glm::value_ptr(val));
+    } else {
+        glUniformMatrix3fv(it->second, 1, GL_FALSE, glm::value_ptr(val));
+    }
+
     glUseProgram(0);
 }
 
-void OpenGLShader::set(const std::string &name, const glm::mat4 &val) const {
+void OpenGLShader::set(const std::string &name, const glm::mat4 &val) {
     glUseProgram(program_);
-    glUniformMatrix4fv(location(name), 1, GL_FALSE, glm::value_ptr(val));
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniformMatrix4fv(location(name), 1, GL_FALSE, glm::value_ptr(val));
+    } else {
+        glUniformMatrix4fv(it->second, 1, GL_FALSE, glm::value_ptr(val));
+    }
+
     glUseProgram(0);
 }
 } // namespace ivx
