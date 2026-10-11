@@ -1,7 +1,7 @@
 #include "ivxpch.h"
 #include "render_command.h"
-
 #include "backend/opengl/opengl_renderer_api.h"
+#include "ivx/core/ref.hpp"
 
 namespace ivx {
 RendererAPI *RenderCommand::renderer_api_ = new OpenGLRendererAPI;
@@ -14,7 +14,7 @@ void RenderCommand::clear() {
     renderer_api_->clear();
 }
 
-void RenderCommand::draw(const std::shared_ptr<VertexArray> &vertex_array) {
+void RenderCommand::draw(const Ref<VertexArray> &vertex_array) {
     renderer_api_->draw(vertex_array);
 }
 } // namespace ivx

@@ -16,9 +16,9 @@ static void GLFW_error_callback(int error_code, const char *description) {
     IVX_CORE_ERROR("GLFW Error ({}): {}", error_code, description);
 }
 
-Window *Window::create(const WindowProps &props) {
-    return new WinWindow(props);
-}
+// Window *Window::create(const WindowProps &props) {
+//     return new WinWindow(props);
+// }
 
 WinWindow::WinWindow(const WindowProps &props) {
     init(props);

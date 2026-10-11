@@ -2,6 +2,7 @@
 #include "opengl_vertex_array.h"
 #include "ivx/core.h"
 
+#include "ivx/core/ref.hpp"
 #include "ivx/render/buffer.h"
 #include <glad/glad.h>
 
@@ -51,8 +52,7 @@ void OpenGLVertexArray::unbind() {
     glBindVertexArray(0);
 }
 
-void OpenGLVertexArray::add_vertex_buffer(
-    std::shared_ptr<VertexBuffer> vertex_buf) {
+void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
     IVX_CORE_ASSERT(vertex_buf->get_buffer_layout().get_elements().size(),
                     "Vertex Buffer has no layout!");
 
@@ -78,8 +78,7 @@ void OpenGLVertexArray::add_vertex_buffer(
     vertex_bufs_.push_back(std::move(vertex_buf));
 }
 
-void OpenGLVertexArray::set_index_buffer(
-    std::shared_ptr<IndexBuffer> index_buf) {
+void OpenGLVertexArray::set_index_buffer(const Ref<IndexBuffer> &index_buf) {
     glBindVertexArray(vao_);
     index_buf->bind();
 

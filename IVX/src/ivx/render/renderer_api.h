@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ivx/core/ref.hpp"
 #include "vertex_array.h"
 #include <cstdint>
 #include <glm/glm.hpp>
@@ -18,7 +19,7 @@ class RendererAPI {
 
     virtual void set_clear_color(const glm::vec4 &color) = 0;
     virtual void clear() = 0;
-    virtual void draw(const std::shared_ptr<VertexArray> &vertex_array) = 0;
+    virtual void draw(const Ref<VertexArray> &vertex_array) = 0;
 
     static API get_api() {
         return api_;

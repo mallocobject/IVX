@@ -2,6 +2,7 @@
 #include "opengl_renderer_api.h"
 
 // #include <gl/gl.h>
+#include "ivx/core/ref.hpp"
 #include <glad/glad.h>
 
 namespace ivx {
@@ -14,7 +15,7 @@ void OpenGLRendererAPI::clear() {
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void OpenGLRendererAPI::draw(const std::shared_ptr<VertexArray> &vertex_array) {
+void OpenGLRendererAPI::draw(const Ref<VertexArray> &vertex_array) {
     // glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid
     // *indices)
     glDrawElements(GL_TRIANGLES,

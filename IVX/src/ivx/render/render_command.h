@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ivx/core/ref.hpp"
 #include "renderer_api.h"
 #include "vertex_array.h"
 #include <glm/glm.hpp>
@@ -9,7 +10,7 @@ class RenderCommand {
   public:
     static void set_clear_color(const glm::vec4 &color);
     static void clear();
-    static void draw(const std::shared_ptr<VertexArray> &vertex_array);
+    static void draw(const Ref<VertexArray> &vertex_array);
 
   private:
     static RendererAPI *renderer_api_;

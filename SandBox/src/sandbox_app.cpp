@@ -1,7 +1,9 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float3.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "glm/trigonometric.hpp"
+#include "ivx/core/ref.hpp"
 #include "ivx/input.h"
 #include "ivx/key_codes.h"
 #include "ivx/logger.h"
@@ -22,9 +24,8 @@ class ExampleLayer : public ivx::Layer {
             1.f,   0.0f, -0.5f, 0.f,  0.2f, 0.3f, 0.8f, 1.f,
         };
 
-        auto vertex_buf =
-            std::shared_ptr<ivx::VertexBuffer>(ivx::VertexBuffer::create(
-                vertices, sizeof(vertices) / sizeof(float)));
+        auto vertex_buf = ivx::Ref<ivx::VertexBuffer>(ivx::VertexBuffer::create(
+            vertices, sizeof(vertices) / sizeof(float)));
 
         ivx::BufferLayout bl{{"a_Position", ivx::ShaderDataType::vec3, false},
                              {"a_Color", ivx::ShaderDataType::vec4, false}};
@@ -49,15 +50,13 @@ class ExampleLayer : public ivx::Layer {
             2,
         };
 
-        auto index_buf =
-            std::shared_ptr<ivx::IndexBuffer>(ivx::IndexBuffer::create(
-                indices, sizeof(indices) / sizeof(uint32_t)));
+        auto index_buf = ivx::Ref<ivx::IndexBuffer>(ivx::IndexBuffer::create(
+            indices, sizeof(indices) / sizeof(uint32_t)));
 
         vertex_array_->set_index_buffer(index_buf);
 
-        auto index_buf2 =
-            std::shared_ptr<ivx::IndexBuffer>(ivx::IndexBuffer::create(
-                indices2, sizeof(indices2) / sizeof(uint32_t)));
+        auto index_buf2 = ivx::Ref<ivx::IndexBuffer>(ivx::IndexBuffer::create(
+            indices2, sizeof(indices2) / sizeof(uint32_t)));
 
         vertex_array2_->set_index_buffer(index_buf2);
 
@@ -83,9 +82,10 @@ class ExampleLayer : public ivx::Layer {
         layout(location = 0) out vec4 color;
 
         in vec4 v_Color;
+        uniform vec3 u_Color;
 
         void main() {
-            color = v_Color;
+            color = vec4(u_Color, 1.0);
         }
     )";
 
@@ -134,13 +134,15 @@ class ExampleLayer : public ivx::Layer {
         camera_->set_rotation(degrees);
 
         // draw
-        ivx::Renderer::begin_scene(*camera_);
+        ivx::Renderer::begin_scene(camera_);
+
+        shader_->set("u_Color", color_);
 
         auto scale = glm::scale(glm::mat4{1.f}, glm::vec3{0.1f, 0.1f, 1.f});
         auto rotation = glm::rotate(
             glm::mat4{1.f}, glm::radians(-45.f), glm::vec3{0.f, 0.f, 1.f});
-        for (int j = 0; j < 10; j++) {
-            for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 10; i++) {
+            for (int j = 0; j < 10; j++) {
                 auto translation = glm::translate(
                     glm::mat4{1.f},
                     glm::vec3{0.11f * i + 0.5f, -0.11f * j + 0.5f, 0.f});
@@ -155,18 +157,23 @@ class ExampleLayer : public ivx::Layer {
     }
 
     void on_render() override {
+        ImGui::Begin("Settings");
+        ImGui::ColorEdit3("Color palette", glm::value_ptr(color_));
+        ImGui::End();
     }
 
     void on_event(ivx::Event &event) override {
     }
 
   private:
-    std::shared_ptr<ivx::Shader> shader_;
+    ivx::Ref<ivx::Shader> shader_;
 
-    std::shared_ptr<ivx::VertexArray> vertex_array_;
-    std::shared_ptr<ivx::VertexArray> vertex_array2_;
+    ivx::Ref<ivx::VertexArray> vertex_array_;
+    ivx::Ref<ivx::VertexArray> vertex_array2_;
 
-    std::shared_ptr<ivx::OrthoGraphicCamera> camera_;
+    ivx::Ref<ivx::OrthoGraphicCamera> camera_;
+
+    glm::vec3 color_{1.f};
 };
 
 class SandboxApp : public ivx::Application {

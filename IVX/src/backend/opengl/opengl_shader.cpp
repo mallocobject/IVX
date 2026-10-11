@@ -36,7 +36,7 @@ OpenGLShader::OpenGLShader(const std::string &vs_src,
 
         // Use the infoLog as you see fit.
         IVX_CORE_ERROR("{}", infoLog.data());
-        IVX_CORE_ASSERT(false, "Vertex hader link failure!");
+        IVX_CORE_ASSERT(false, "Vertex shader compile failure!");
         // In this simple program, we'll just leave
         return;
     }
@@ -68,7 +68,7 @@ OpenGLShader::OpenGLShader(const std::string &vs_src,
 
         // Use the infoLog as you see fit.
         IVX_CORE_ERROR("{}", infoLog.data());
-        IVX_CORE_ASSERT(false, "Fragment hader link failure!");
+        IVX_CORE_ASSERT(false, "Fragment shader compile failure!");
         // In this simple program, we'll just leave
         return;
     }
@@ -105,7 +105,8 @@ OpenGLShader::OpenGLShader(const std::string &vs_src,
         glDeleteShader(fragmentShader);
 
         // Use the infoLog as you see fit.
-
+        IVX_CORE_ERROR("{}", infoLog.data());
+        IVX_CORE_ASSERT(false, "Program link failure!");
         // In this simple program, we'll just leave
         return;
     }
