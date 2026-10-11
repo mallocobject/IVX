@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/ref.hpp"
 #include "ivx/core.h"
 #include "ivx/layer.h"
 
@@ -12,7 +13,7 @@ class LayerStack {
     // using Iterator = std::vector<Layer *>::iterator;
 
     LayerStack() = default;
-    ~LayerStack();
+    ~LayerStack() = default;
 
     void push_layer(Layer *layer);
     void push_overlay(Layer *overlay);
@@ -27,7 +28,7 @@ class LayerStack {
     }
 
   private:
-    std::vector<Layer *> layers_;
+    std::vector<Ref<Layer>> layers_;
     uint32_t layer_insert_idx_{0};
 };
 } // namespace ivx

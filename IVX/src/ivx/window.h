@@ -1,7 +1,9 @@
 #pragma once
 
 #include "ivxpch.h"
+#include "core/ref.hpp"
 #include "ivx/core.h"
+#include "ivx/core/ref_counted.hpp"
 
 namespace ivx {
 
@@ -14,7 +16,7 @@ struct WindowProps {
 };
 
 // Interface representing a desktop system based Window
-class Window {
+class Window : public RefCounted {
   public:
     using EventCallbackFn = std::function<void(Event &)>;
 
@@ -33,6 +35,6 @@ class Window {
 
     virtual void *get_native_window() = 0;
 
-    static Window *create(const WindowProps &props = WindowProps{});
+    static Ref<Window> create(const WindowProps &props = WindowProps{});
 };
 } // namespace ivx

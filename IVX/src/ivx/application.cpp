@@ -1,8 +1,10 @@
 #include "ivxpch.h"
 #include "application.h"
 #include "core.h"
+#include "core/ref.hpp"
 #include "event/application_event.h"
 
+#include "imgui/imgui_layer.h"
 #include "render/render_command.h"
 #include <glm/glm.hpp>
 #include <memory>
@@ -11,11 +13,11 @@ namespace ivx {
 Application::Application() {
     IVX_CORE_ASSERT(!instance_, "Application already exists!");
     instance_ = this;
-    window_ = std::unique_ptr<Window>(Window::create());
+    window_ = Window::create();
     window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
 
-    imgui_layer_ = new ImGuiLayer;
-    push_overlay(imgui_layer_);
+    imgui_layer_ = make_ref<ImGuiLayer>();
+    push_overlay(imgui_layer_.get());
 }
 
 void Application::run() {

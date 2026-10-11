@@ -8,6 +8,12 @@
 #include "glm/trigonometric.hpp"
 
 namespace ivx {
+Ref<OrthoGraphicCamera>
+OrthoGraphicCamera::create(float left, float right, float bottom, float top) {
+    return Ref<OrthoGraphicCamera>(
+        new OrthoGraphicCamera(left, right, bottom, top));
+}
+
 OrthoGraphicCamera::OrthoGraphicCamera(float left,
                                        float right,
                                        float bottom,

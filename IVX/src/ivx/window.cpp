@@ -4,7 +4,7 @@
 #include "platform/windows/win_window.h"
 
 namespace ivx {
-Window *Window::create(const WindowProps &props) {
-    return new WinWindow(props);
+Ref<Window> Window::create(const WindowProps &props) {
+    return make_ref<WinWindow>(props);
 }
 } // namespace ivx

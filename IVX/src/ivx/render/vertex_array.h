@@ -1,13 +1,14 @@
 #pragma once
 
 #include "ivx/core/ref.hpp"
+#include "ivx/core/ref_counted.hpp"
 #include "ivx/render/buffer.h"
 #include <memory>
 #include <utility>
 #include <vector>
 
 namespace ivx {
-class VertexArray {
+class VertexArray : public RefCounted {
   public:
     virtual ~VertexArray() = default;
     virtual void bind() = 0;
@@ -22,6 +23,6 @@ class VertexArray {
 
     virtual const Ref<IndexBuffer> &get_index_buffer() const = 0;
 
-    static VertexArray *create();
+    static Ref<VertexArray> create();
 };
 } // namespace ivx

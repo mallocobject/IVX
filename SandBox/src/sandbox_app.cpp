@@ -15,8 +15,8 @@
 class ExampleLayer : public ivx::Layer {
   public:
     ExampleLayer() : Layer("Example") {
-        vertex_array_.reset(ivx::VertexArray::create());
-        vertex_array2_.reset(ivx::VertexArray::create());
+        vertex_array_ = ivx::VertexArray::create();
+        vertex_array2_ = ivx::VertexArray::create();
 
         float vertices[] = {
             -0.5f, 0.f,  0.f,   0.8f, 0.3f, 0.2f, 1.f,  0.5f, 0.f,  0.f,
@@ -24,8 +24,8 @@ class ExampleLayer : public ivx::Layer {
             1.f,   0.0f, -0.5f, 0.f,  0.2f, 0.3f, 0.8f, 1.f,
         };
 
-        auto vertex_buf = ivx::Ref<ivx::VertexBuffer>(ivx::VertexBuffer::create(
-            vertices, sizeof(vertices) / sizeof(float)));
+        auto vertex_buf = ivx::VertexBuffer::create(
+            vertices, sizeof(vertices) / sizeof(float));
 
         ivx::BufferLayout bl{{"a_Position", ivx::ShaderDataType::vec3, false},
                              {"a_Color", ivx::ShaderDataType::vec4, false}};
@@ -50,13 +50,13 @@ class ExampleLayer : public ivx::Layer {
             2,
         };
 
-        auto index_buf = ivx::Ref<ivx::IndexBuffer>(ivx::IndexBuffer::create(
-            indices, sizeof(indices) / sizeof(uint32_t)));
+        auto index_buf = ivx::IndexBuffer::create(
+            indices, sizeof(indices) / sizeof(uint32_t));
 
         vertex_array_->set_index_buffer(index_buf);
 
-        auto index_buf2 = ivx::Ref<ivx::IndexBuffer>(ivx::IndexBuffer::create(
-            indices2, sizeof(indices2) / sizeof(uint32_t)));
+        auto index_buf2 = ivx::IndexBuffer::create(
+            indices2, sizeof(indices2) / sizeof(uint32_t));
 
         vertex_array2_->set_index_buffer(index_buf2);
 
@@ -89,12 +89,11 @@ class ExampleLayer : public ivx::Layer {
         }
     )";
 
-        shader_.reset(ivx::Shader::create(vs_src, fs_src));
+        shader_ = ivx::Shader::create(vs_src, fs_src);
 
         ivx::RenderCommand::set_clear_color(glm::vec4(0.f));
 
-        camera_.reset(
-            new ivx::OrthoGraphicCamera(-1.92f, 1.92f, -1.08f, 1.08f));
+        camera_ = ivx::OrthoGraphicCamera::create(-1.92f, 1.92f, -1.08f, 1.08f);
     }
 
     void on_update() override {

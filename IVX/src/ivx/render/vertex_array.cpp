@@ -5,11 +5,11 @@
 #include "renderer_api.h"
 
 namespace ivx {
-VertexArray *VertexArray::create() {
+Ref<VertexArray> VertexArray::create() {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
     case kOpenGL:
-        return new OpenGLVertexArray;
+        return make_ref<OpenGLVertexArray>();
     case kNone:
     default: {
         IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");

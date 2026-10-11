@@ -4,11 +4,14 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/glm.hpp"
+#include "ivx/core/ref.hpp"
+#include "ivx/core/ref_counted.hpp"
 
 namespace ivx {
-class OrthoGraphicCamera {
+class OrthoGraphicCamera : public RefCounted {
   public:
-    OrthoGraphicCamera(float left, float right, float bottom, float top);
+    static Ref<OrthoGraphicCamera>
+    create(float left, float right, float bottom, float top);
 
     void set_position(const glm::vec3 &position) {
         position_ = position;
@@ -29,6 +32,11 @@ class OrthoGraphicCamera {
     // function
     glm::mat4 get_view_matrix() const;
     glm::mat4 get_proj_matrix() const;
+
+  protected:
+    // Objects are created through create(), so that every instance is owned by
+    // a Ref.
+    OrthoGraphicCamera(float left, float right, float bottom, float top);
 
   private:
     float left_;

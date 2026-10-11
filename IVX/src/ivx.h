@@ -9,6 +9,7 @@
 #include "ivx/key_codes.h"
 #include "ivx/mouse_button_codes.h"
 
+#include "ivx/core/ref.hpp"
 #include "ivx/render/render_command.h"
 #include "ivx/render/renderer.h"
 

@@ -28,11 +28,11 @@ void BufferLayout::calc_stride() {
     }
 }
 
-VertexBuffer *VertexBuffer::create(float *vertices, uint32_t count) {
+Ref<VertexBuffer> VertexBuffer::create(float *vertices, uint32_t count) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
     case kOpenGL:
-        return new OpenGLVertexBuffer(vertices, count);
+        return make_ref<OpenGLVertexBuffer>(vertices, count);
     case kNone:
     default: {
         IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");
@@ -41,11 +41,11 @@ VertexBuffer *VertexBuffer::create(float *vertices, uint32_t count) {
     }
 }
 
-IndexBuffer *IndexBuffer::create(uint32_t *indices, uint32_t count) {
+Ref<IndexBuffer> IndexBuffer::create(uint32_t *indices, uint32_t count) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
     case kOpenGL:
-        return new OpenGLIndexBuffer(indices, count);
+        return make_ref<OpenGLIndexBuffer>(indices, count);
     case kNone:
     default: {
         IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");

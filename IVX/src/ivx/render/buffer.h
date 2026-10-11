@@ -1,6 +1,8 @@
 #pragma once
 
 #include "ivx/core.h"
+#include "ivx/core/ref.hpp"
+#include "ivx/core/ref_counted.hpp"
 #include "ivx/logger.h"
 #include <algorithm>
 #include <cstdint>
@@ -124,7 +126,7 @@ class BufferLayout {
     uint32_t stride_{0};
 };
 
-class VertexBuffer {
+class VertexBuffer : public RefCounted {
   public:
     virtual ~VertexBuffer() = default;
 
@@ -139,13 +141,13 @@ class VertexBuffer {
         return buf_layout_;
     }
 
-    static VertexBuffer *create(float *vertices, uint32_t count);
+    static Ref<VertexBuffer> create(float *vertices, uint32_t count);
 
   private:
     BufferLayout buf_layout_;
 };
 
-class IndexBuffer {
+class IndexBuffer : public RefCounted {
   public:
     virtual ~IndexBuffer() = default;
 
@@ -154,6 +156,6 @@ class IndexBuffer {
 
     virtual uint32_t get_count() const = 0;
 
-    static IndexBuffer *create(uint32_t *indices, uint32_t count);
+    static Ref<IndexBuffer> create(uint32_t *indices, uint32_t count);
 };
 } // namespace ivx

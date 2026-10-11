@@ -1,10 +1,11 @@
 #pragma once
 
 #include "ivx/core.h"
+#include "ivx/core/ref_counted.hpp"
 #include "ivx/event/event.h"
 
 namespace ivx {
-class Layer {
+class Layer : public RefCounted {
   public:
     Layer(const std::string &name = "Layer");
     virtual ~Layer() = default;

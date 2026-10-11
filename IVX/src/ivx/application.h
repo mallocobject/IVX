@@ -1,5 +1,6 @@
 #pragma once
 
+#include "core/ref.hpp"
 #include "ivx/core.h"
 #include "ivx/imgui/imgui_layer.h"
 #include "ivx/layer_stack.h"
@@ -10,7 +11,6 @@ namespace ivx {
 
 class Application {
   public:
-    Application();
     virtual ~Application() = default;
 
     static Application &get() {
@@ -26,14 +26,17 @@ class Application {
     void push_layer(Layer *layer);
     void push_overlay(Layer *layer);
 
+  protected:
+    Application();
+
   private:
     void on_event(Event &e);
 
-    std::unique_ptr<Window> window_;
+    Ref<Window> window_;
     bool running_{true};
 
     LayerStack layer_stack_;
-    ImGuiLayer *imgui_layer_{nullptr};
+    Ref<ImGuiLayer> imgui_layer_;
 
     inline static Application *instance_{nullptr};
 };

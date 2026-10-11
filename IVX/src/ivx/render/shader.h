@@ -1,12 +1,14 @@
 #pragma once
 
+#include "ivx/core/ref.hpp"
+#include "ivx/core/ref_counted.hpp"
 #include <cstdint>
 #include <string>
 
 #include <glm/glm.hpp>
 
 namespace ivx {
-class Shader {
+class Shader : public RefCounted {
   public:
     // Shader(const std::string &vs_src, const std::string &fs_src);
     virtual ~Shader() = default;
@@ -14,7 +16,8 @@ class Shader {
     virtual void bind() = 0;
     virtual void unbind() = 0;
 
-    static Shader *create(const std::string &vs_src, const std::string &fs_src);
+    static Ref<Shader> create(const std::string &vs_src,
+                              const std::string &fs_src);
 
     virtual void set(const std::string &name, bool val) = 0;
     virtual void set(const std::string &name, float val) = 0;
