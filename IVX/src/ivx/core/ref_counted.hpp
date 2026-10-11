@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace ivx {
-#if 1
+#if defined(IVX_INTRUSIVE_REF)
 template <typename T>
 class Ref;
 
@@ -41,6 +41,9 @@ class RefCounted {
     mutable std::atomic<uint32_t> ref_count_{0};
 };
 #else
-class RefCounted {};
+class RefCounted {
+  public:
+    virtual ~RefCounted() = default;
+};
 #endif
 }; // namespace ivx

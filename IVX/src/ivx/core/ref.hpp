@@ -2,11 +2,12 @@
 
 #include <concepts>
 #include <cstddef>
+#include <memory>
 #include <utility>
 
 namespace ivx {
-#if 1
 
+#if defined(IVX_INTRUSIVE_REF)
 template <typename T>
 class Ref {
     // Ref<U> hands its pointer over to Ref<T> on a converting move, which
@@ -88,7 +89,9 @@ class Ref {
         return ptr_ == ptr;
     }
 
-    bool operator==(const Ref<T> &other) const noexcept {
+    template <typename U>
+        requires std::convertible_to<U *, T *>
+    bool operator==(const Ref<U> &other) const noexcept {
         return ptr_ == other.ptr_;
     }
 
@@ -147,11 +150,14 @@ template <typename T, typename... Args>
 [[nodiscard]] Ref<T> make_ref(Args &&...args) {
     return Ref<T>(new T(std::forward<Args>(args)...));
 }
-
 #else
-#include <memory>
 template <typename T>
 using Ref = std::shared_ptr<T>;
 
+template <typename T, typename... Args>
+    requires std::constructible_from<T, Args...>
+[[nodiscard]] Ref<T> make_ref(Args &&...args) {
+    return std::make_shared<T>(std::forward<Args>(args)...);
+}
 #endif
 } // namespace ivx

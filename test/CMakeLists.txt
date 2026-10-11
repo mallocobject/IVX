@@ -13,3 +13,7 @@ add_executable(ref
 target_include_directories(ref PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/../IVX/src"
 )
+
+# ref_test.cpp asserts intrusive-implementation behaviour (count layout,
+# non-copyable RefCounted, ref_count()), so this target pins the intrusive mode.
+target_compile_definitions(ref PRIVATE IVX_INTRUSIVE_REF)

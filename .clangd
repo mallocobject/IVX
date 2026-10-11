@@ -9,6 +9,7 @@ CompileFlags:
     - -DIVX_CONFIG_DEBUG
     - -D_CRT_SECURE_NO_WARNINGS
     - -DNOMINMAX
+    - -IVX_INTRUSIVE_REF
     # IVX
     - -IE:/src/repos/IVX/IVX/src
     # Glad / Elog
