@@ -7,8 +7,17 @@
 #include <memory>
 
 namespace ivx {
+Renderer::SceneData *Renderer::scene_data_ = new Renderer::SceneData{
+    .view_proj_matrix = glm::mat4{1.f},
+};
+
+void Renderer::init() {
+    RenderCommand::init();
+}
+
 void Renderer::begin_scene(const Ref<OrthoGraphicCamera> &camera) {
-    vp_ = camera->get_proj_matrix() * camera->get_view_matrix();
+    scene_data_->view_proj_matrix =
+        camera->get_proj_matrix() * camera->get_view_matrix();
 }
 
 void Renderer::end_scene() {
@@ -17,7 +26,7 @@ void Renderer::end_scene() {
 void Renderer::submit(const Ref<Shader> &shader,
                       const Ref<VertexArray> &vertex_array,
                       const glm::mat4 &transform) {
-    auto mvp = vp_ * transform;
+    auto mvp = scene_data_->view_proj_matrix * transform;
     shader->set("mvp", mvp);
     shader->bind();
     vertex_array->bind();
@@ -25,4 +34,5 @@ void Renderer::submit(const Ref<Shader> &shader,
     shader->unbind();
     vertex_array->unbind();
 }
+
 } // namespace ivx

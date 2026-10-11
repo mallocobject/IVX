@@ -3,7 +3,8 @@
 #include "ivxpch.h"
 #include "ivx/core.h"
 
-namespace ivx::detail {
+namespace ivx {
+namespace {
 template <typename F>
 struct function_traits;
 
@@ -32,9 +33,8 @@ struct function_traits : function_traits<decltype(&F::operator())> {};
 template <typename F>
 using first_arg_t =
     std::remove_cvref_t<typename function_traits<std::decay_t<F>>::arg_type>;
-} // namespace ivx::detail
+} // namespace
 
-namespace ivx {
 enum class EventType : uint8_t {
     kNone = 0,
     kWindowClose,
@@ -119,11 +119,11 @@ class EventDispatcher {
 
     // F will be deduced by the compiler
     template <typename F>
-        requires requires(F &f, detail::first_arg_t<F> &e) {
+        requires requires(F &f, first_arg_t<F> &e) {
             { f(e) } -> std::convertible_to<bool>;
         }
     bool dispatch(const F &func) {
-        using T = detail::first_arg_t<F>;
+        using T = first_arg_t<F>;
         if (event_.get_event_type() == T::get_static_type()) {
             event_.handled |= func(static_cast<T &>(event_));
             return true;

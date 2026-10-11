@@ -8,7 +8,7 @@
 
 namespace ivx {
 namespace {
-GLenum ChannelsToInternalFormat(int channels) {
+GLenum channels_to_internal_format(int channels) {
     switch (channels) {
     case 1:
         return GL_R8;
@@ -24,7 +24,7 @@ GLenum ChannelsToInternalFormat(int channels) {
     }
 }
 
-GLenum ChannelsToFormat(int channels) {
+GLenum channels_to_format(int channels) {
     switch (channels) {
     case 1:
         return GL_RED;
@@ -50,8 +50,8 @@ OpenGLTexture2D::OpenGLTexture2D(const std::string &path) {
     width_ = static_cast<uint32_t>(width);
     height_ = static_cast<uint32_t>(height);
 
-    const GLenum internal_format = ChannelsToInternalFormat(channels);
-    const GLenum format = ChannelsToFormat(channels);
+    const GLenum internal_format = channels_to_internal_format(channels);
+    const GLenum format = channels_to_format(channels);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &texture_);
     glTextureStorage2D(texture_, 1, internal_format, width, height);

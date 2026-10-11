@@ -6,6 +6,7 @@
 
 #include "imgui/imgui_layer.h"
 #include "render/render_command.h"
+#include "render/renderer.h"
 #include <glm/glm.hpp>
 #include <memory>
 
@@ -15,6 +16,8 @@ Application::Application() {
     instance_ = this;
     window_ = Window::create();
     window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
+
+    Renderer::init();
 
     imgui_layer_ = make_ref<ImGuiLayer>();
     push_overlay(imgui_layer_.get());

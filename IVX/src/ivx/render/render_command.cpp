@@ -6,6 +6,10 @@
 namespace ivx {
 RendererAPI *RenderCommand::renderer_api_ = new OpenGLRendererAPI;
 
+void RenderCommand::init() {
+    renderer_api_->init();
+}
+
 void RenderCommand::set_clear_color(const glm::vec4 &color) {
     renderer_api_->set_clear_color(color);
 }

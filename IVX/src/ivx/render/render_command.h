@@ -8,6 +8,7 @@
 namespace ivx {
 class RenderCommand {
   public:
+    static void init();
     static void set_clear_color(const glm::vec4 &color);
     static void clear();
     static void draw(const Ref<VertexArray> &vertex_array);

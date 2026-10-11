@@ -86,7 +86,9 @@ class ExampleLayer : public ivx::Layer {
         camera_ = ivx::OrthoGraphicCamera::create(-1.92f, 1.92f, -1.08f, 1.08f);
 
         texture_ = ivx::Texture2D::create(TEXTURES "Checkerboard.png");
-        texture_->bind(1);
+        texture2_ = ivx::Texture2D::create(TEXTURES "ChernoLogo.png");
+
+        shader_->set("u_Texture", 1);
     }
 
     void on_update() override {
@@ -142,8 +144,10 @@ class ExampleLayer : public ivx::Layer {
         //             shader_, vertex_array_, translation * scale);
         //     }
         // }
-        shader_->set("u_Texture", 1);
         auto scale = glm::scale(glm::mat4{1.f}, glm::vec3{2.f});
+        texture_->bind(1);
+        ivx::Renderer::submit(shader_, vertex_array_, scale);
+        texture2_->bind(1);
         ivx::Renderer::submit(shader_, vertex_array_, scale);
 
         ivx::Renderer::end_scene();
@@ -166,6 +170,7 @@ class ExampleLayer : public ivx::Layer {
     ivx::Ref<ivx::OrthoGraphicCamera> camera_;
 
     ivx::Ref<ivx::Texture2D> texture_;
+    ivx::Ref<ivx::Texture2D> texture2_;
 
     glm::vec3 color_{1.f};
 };
