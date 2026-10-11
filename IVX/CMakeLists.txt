@@ -25,7 +25,7 @@ target_include_directories(IVX PUBLIC
     "${CMAKE_SOURCE_DIR}/IVX/vendor") # Glad/Elog
 
 target_link_libraries(IVX PUBLIC
-    elog glfw glad imgui glm
+    elog glfw glad imgui glm stb_image
     opengl32)
 
 target_compile_definitions(IVX PUBLIC

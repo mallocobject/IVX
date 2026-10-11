@@ -19,6 +19,7 @@ class OpenGLShader : public Shader {
 
     void set(const std::string &name, bool val) override;
     void set(const std::string &name, float val) override;
+    void set(const std::string &name, int val) override;
     void set(const std::string &name, const glm::vec2 &val) override;
     void set(const std::string &name, const glm::vec3 &val) override;
     void set(const std::string &name, const glm::vec4 &val) override;

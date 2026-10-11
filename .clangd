@@ -9,12 +9,14 @@ CompileFlags:
     - -DIVX_CONFIG_DEBUG
     - -D_CRT_SECURE_NO_WARNINGS
     - -DNOMINMAX
-    - -IVX_INTRUSIVE_REF
+    - -DIVX_INTRUSIVE_REF
+    - -DTEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/"
     # IVX
     - -IE:/src/repos/IVX/IVX/src
-    # Glad / Elog
+    # Glad / Elog / stb_image
     - -IE:/src/repos/IVX/IVX/vendor/Glad/include
     - -IE:/src/repos/IVX/IVX/vendor/Elog
+    - -IE:/src/repos/IVX/IVX/vendor/stb_image
     # GLFW / imgui / glm
     - -IE:/src/repos/IVX/deps/glfw/include
     - -IE:/src/repos/IVX/deps/imgui

@@ -94,7 +94,7 @@ struct BufferElement {
                   bool normalized = false);
 };
 
-class BufferLayout {
+class BufferLayout : public RefCounted {
   public:
     BufferLayout() = default;
     BufferLayout(const std::initializer_list<BufferElement> &elements);
@@ -133,18 +133,18 @@ class VertexBuffer : public RefCounted {
     virtual void bind() = 0;
     virtual void unbind() = 0;
 
-    void set_buffer_layout(BufferLayout buf_layout) {
-        buf_layout_ = std::move(buf_layout);
+    void set_buffer_layout(const Ref<BufferLayout> &buf_layout) {
+        buf_layout_ = buf_layout;
     }
 
-    const BufferLayout &get_buffer_layout() const {
+    const Ref<BufferLayout> get_buffer_layout() const {
         return buf_layout_;
     }
 
     static Ref<VertexBuffer> create(float *vertices, uint32_t count);
 
   private:
-    BufferLayout buf_layout_;
+    Ref<BufferLayout> buf_layout_;
 };
 
 class IndexBuffer : public RefCounted {

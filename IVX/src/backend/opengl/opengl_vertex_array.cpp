@@ -53,13 +53,13 @@ void OpenGLVertexArray::unbind() {
 }
 
 void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
-    IVX_CORE_ASSERT(vertex_buf->get_buffer_layout().get_elements().size(),
+    IVX_CORE_ASSERT(vertex_buf->get_buffer_layout()->get_elements().size(),
                     "Vertex Buffer has no layout!");
 
     glBindVertexArray(vao_);
     vertex_buf->bind();
 
-    auto &buffer_layout_vec = vertex_buf->get_buffer_layout().get_elements();
+    auto &buffer_layout_vec = vertex_buf->get_buffer_layout()->get_elements();
     for (int i = 0; i < buffer_layout_vec.size(); i++) {
         glEnableVertexAttribArray(i);
         glVertexAttribPointer(
@@ -67,7 +67,7 @@ void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
             count_of(buffer_layout_vec[i].type),
             shader_data_type_to_opengl_base_type(buffer_layout_vec[i].type),
             buffer_layout_vec[i].normalized ? GL_TRUE : GL_FALSE,
-            vertex_buf->get_buffer_layout().get_stride(),
+            vertex_buf->get_buffer_layout()->get_stride(),
             reinterpret_cast<const void *>(
                 static_cast<std::uintptr_t>(buffer_layout_vec[i].offset)));
     }
@@ -75,7 +75,7 @@ void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
     glBindVertexArray(0);
     vertex_buf->unbind();
 
-    vertex_bufs_.push_back(std::move(vertex_buf));
+    vertex_bufs_.push_back(vertex_buf);
 }
 
 void OpenGLVertexArray::set_index_buffer(const Ref<IndexBuffer> &index_buf) {
@@ -85,6 +85,6 @@ void OpenGLVertexArray::set_index_buffer(const Ref<IndexBuffer> &index_buf) {
     glBindVertexArray(0);
     index_buf->unbind();
 
-    index_buf_ = std::move(index_buf);
+    index_buf_ = index_buf;
 }
 } // namespace ivx

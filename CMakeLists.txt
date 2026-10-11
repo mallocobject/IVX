@@ -45,11 +45,19 @@ target_include_directories(imgui PUBLIC
     "${IMGUI_DIR}"
     "${IMGUI_DIR}/backends")
 
-add_library(glad STATIC "${CMAKE_SOURCE_DIR}/IVX/vendor/Glad/src/glad.c")
-target_include_directories(glad PUBLIC "${CMAKE_SOURCE_DIR}/IVX/vendor/Glad/include")
+set(VENDOR_DIR "${CMAKE_SOURCE_DIR}/IVX/vendor")
 
+# ---- Glad ----
+add_library(glad STATIC "${VENDOR_DIR}/Glad/src/glad.c")
+target_include_directories(glad PUBLIC "${VENDOR_DIR}/Glad/include")
+
+# ---- Elog ----
 add_library(elog INTERFACE)
-target_include_directories(elog INTERFACE "${CMAKE_SOURCE_DIR}/IVX/vendor/Elog")
+target_include_directories(elog INTERFACE "${VENDOR_DIR}/Elog")
+
+# ---- stb_image ----
+add_library(stb_image STATIC "${VENDOR_DIR}/stb_image/stb_image.cpp")
+target_include_directories(stb_image PUBLIC "${VENDOR_DIR}/stb_image")
 
 add_subdirectory(IVX)
 add_subdirectory(Sandbox)

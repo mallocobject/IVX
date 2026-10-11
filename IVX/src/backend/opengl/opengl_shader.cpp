@@ -158,6 +158,17 @@ void OpenGLShader::set(const std::string &name, float val) {
     glUseProgram(0);
 }
 
+void OpenGLShader::set(const std::string &name, int val) {
+    glUseProgram(program_);
+    if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
+        glUniform1i(location(name), val);
+    } else {
+        glUniform1i(it->second, val);
+    }
+
+    glUseProgram(0);
+}
+
 void OpenGLShader::set(const std::string &name, const glm::vec2 &val) {
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
