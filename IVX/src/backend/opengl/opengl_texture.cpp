@@ -41,11 +41,12 @@ static GLenum channels_to_format(int channels) {
 }
 } // namespace
 
-OpenGLTexture2D::OpenGLTexture2D(const std::string &path) {
+OpenGLTexture2D::OpenGLTexture2D(const std::filesystem::path &filepath) {
     int width, height, channels;
     stbi_set_flip_vertically_on_load(1);
-    stbi_uc *data = stbi_load(path.c_str(), &width, &height, &channels, 0);
-    IVX_CORE_ASSERT(data, "Failed to load image: {}", path);
+    stbi_uc *data =
+        stbi_load(filepath.string().c_str(), &width, &height, &channels, 0);
+    IVX_CORE_ASSERT(data, "Failed to load image: {}", filepath.string());
 
     width_ = static_cast<uint32_t>(width);
     height_ = static_cast<uint32_t>(height);

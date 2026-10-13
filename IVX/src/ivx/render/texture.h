@@ -3,6 +3,7 @@
 #include "ivx/core/ref.hpp"
 #include "ivx/core/ref_counted.hpp"
 #include <cstdint>
+#include <filesystem>
 #include <string>
 
 namespace ivx {
@@ -18,6 +19,6 @@ class Texture : public RefCounted {
 
 class Texture2D : public Texture {
   public:
-    static Ref<Texture2D> create(const std::string &path);
+    static Ref<Texture2D> create(const std::filesystem::path &filepath);
 };
 } // namespace ivx

@@ -4,23 +4,24 @@
 #include "ivx/logger.h"
 #include <fstream>
 #include <glad/glad.h>
+#include <iostream>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 namespace ivx {
 namespace {
-static std::string read_file(const std::string &path) {
-    std::ifstream file(path, std::ios::in | std::ios::binary);
+static std::string read_file(const std::filesystem::path &filepath) {
+    std::ifstream file(filepath.string(), std::ios::in | std::ios::binary);
     if (!file) {
-        IVX_CORE_ERROR("Failed to open shader file: {}", path);
+        IVX_CORE_ERROR("Failed to open shader file: {}", filepath.string());
     }
 
     std::stringstream stream;
     stream << file.rdbuf();
 
     if (file.bad()) {
-        IVX_CORE_ERROR("Failed to read shader file: {}", path);
+        IVX_CORE_ERROR("Failed to read shader file: {}", filepath.string());
     }
 
     return stream.str();
@@ -130,8 +131,10 @@ pre_process(const std::string &code) {
 }
 } // namespace
 
-OpenGLShader::OpenGLShader(const std::string &path) {
-    std::string src = read_file(path);
+OpenGLShader::OpenGLShader(const std::filesystem::path &filepath,
+                           const std::string &label) {
+    label_ = label.empty() ? filepath.stem().string() : label;
+    std::string src = read_file(filepath);
     std::unordered_map<GLuint, std::string> mp = pre_process(src);
 
     GLuint program = glCreateProgram();
@@ -140,10 +143,15 @@ OpenGLShader::OpenGLShader(const std::string &path) {
     compile_and_link_shader(program, mp);
 
     glUseProgram(0);
+
+    // IVX_CORE_TRACE("{}", filepath.stem().string());
 }
 
 OpenGLShader::OpenGLShader(const std::string &vs_src,
-                           const std::string &fs_src) {
+                           const std::string &fs_src,
+                           const std::string &label)
+    : label_(label) {
+
     GLuint program = glCreateProgram();
     program_ = program;
 

@@ -6,11 +6,11 @@
 #include "renderer_api.h"
 
 namespace ivx {
-Ref<Texture2D> Texture2D::create(const std::string &path) {
+Ref<Texture2D> Texture2D::create(const std::filesystem::path &filepath) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
     case kOpenGL:
-        return make_ref<OpenGLTexture2D>(path);
+        return make_ref<OpenGLTexture2D>(filepath);
     case kNone:
     default: {
         IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");

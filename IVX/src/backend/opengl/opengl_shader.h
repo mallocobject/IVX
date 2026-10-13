@@ -10,12 +10,18 @@
 namespace ivx {
 class OpenGLShader : public Shader {
   public:
-    OpenGLShader(const std::string &vs_src, const std::string &fs_src);
-    OpenGLShader(const std::string &path);
+    OpenGLShader(const std::string &vs_src,
+                 const std::string &fs_src,
+                 const std::string &label);
+    OpenGLShader(const std::filesystem::path &filepath,
+                 const std::string &label = {});
     virtual ~OpenGLShader();
 
     virtual void bind() override;
     virtual void unbind() override;
+    virtual const std::string &get_label() const override {
+        return label_;
+    }
 
     void set(const std::string &name, bool val) override;
     void set(const std::string &name, float val) override;
@@ -34,5 +40,6 @@ class OpenGLShader : public Shader {
 
     uint32_t program_{0};
     std::unordered_map<std::string, int> uniform_mp_;
+    std::string label_;
 };
 } // namespace ivx

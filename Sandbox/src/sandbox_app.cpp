@@ -49,7 +49,7 @@ class ExampleLayer : public ivx::Layer {
 
         vertex_array_->set_index_buffer(index_buf);
 
-        shader_ = ivx::Shader::create(SHADERS "texture.glsl");
+        shader_ = ivx::ShaderLibrary::load(SHADERS "texture.glsl");
 
         ivx::RenderCommand::set_clear_color(glm::vec4(0.f));
 
