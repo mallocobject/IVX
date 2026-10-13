@@ -8,7 +8,7 @@
 
 namespace ivx {
 namespace {
-GLenum channels_to_internal_format(int channels) {
+static GLenum channels_to_internal_format(int channels) {
     switch (channels) {
     case 1:
         return GL_R8;
@@ -24,7 +24,7 @@ GLenum channels_to_internal_format(int channels) {
     }
 }
 
-GLenum channels_to_format(int channels) {
+static GLenum channels_to_format(int channels) {
     switch (channels) {
     case 1:
         return GL_RED;

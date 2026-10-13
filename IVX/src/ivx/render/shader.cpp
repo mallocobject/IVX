@@ -19,4 +19,16 @@ Ref<Shader> Shader::create(const std::string &vs_src,
     }
     }
 }
+Ref<Shader> Shader::create(const std::string &path) {
+    using enum RendererAPI::API;
+    switch (RendererAPI::get_api()) {
+    case kOpenGL:
+        return make_ref<OpenGLShader>(path);
+    case kNone:
+    default: {
+        IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");
+        return nullptr;
+    }
+    }
+}
 } // namespace ivx

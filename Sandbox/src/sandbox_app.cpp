@@ -49,37 +49,7 @@ class ExampleLayer : public ivx::Layer {
 
         vertex_array_->set_index_buffer(index_buf);
 
-        std::string vs_src = R"(
-        #version 330 core
-
-        layout(location = 0) in vec3 a_Position;
-        layout(location = 1) in vec2 a_Texcoord;
-
-        out vec2 v_Texcoord;
-
-        uniform mat4 mvp;
-
-        void main() {
-            v_Texcoord = a_Texcoord;
-            gl_Position = mvp * vec4(a_Position, 1.0);
-        }
-    )";
-
-        std::string fs_src = R"(
-        #version 330 core
-
-        layout(location = 0) out vec4 color;
-
-        in vec2 v_Texcoord;
-
-        uniform sampler2D u_Texture;
-
-        void main() {
-            color = texture(u_Texture, v_Texcoord);
-        }
-    )";
-
-        shader_ = ivx::Shader::create(vs_src, fs_src);
+        shader_ = ivx::Shader::create(SHADERS "texture.glsl");
 
         ivx::RenderCommand::set_clear_color(glm::vec4(0.f));
 

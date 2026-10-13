@@ -11,6 +11,7 @@ CompileFlags:
     - -DNOMINMAX
     - -DIVX_INTRUSIVE_REF
     - -DTEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/"
+    - -DSHADERS="${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/"
     # IVX
     - -IE:/src/repos/IVX/IVX/src
     # Glad / Elog / stb_image

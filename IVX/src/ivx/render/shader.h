@@ -18,6 +18,7 @@ class Shader : public RefCounted {
 
     static Ref<Shader> create(const std::string &vs_src,
                               const std::string &fs_src);
+    static Ref<Shader> create(const std::string &path);
 
     virtual void set(const std::string &name, bool val) = 0;
     virtual void set(const std::string &name, float val) = 0;

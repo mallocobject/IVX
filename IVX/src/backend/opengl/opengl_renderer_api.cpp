@@ -20,8 +20,6 @@ void OpenGLRendererAPI::clear() {
 }
 
 void OpenGLRendererAPI::draw(const Ref<VertexArray> &vertex_array) {
-    // glDrawElements(GLenum mode, GLsizei count, GLenum type, const GLvoid
-    // *indices)
     glDrawElements(GL_TRIANGLES,
                    vertex_array->get_index_buffer()->get_count(),
                    GL_UNSIGNED_INT,

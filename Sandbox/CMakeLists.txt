@@ -8,4 +8,5 @@ add_executable(Sandbox ${SANDBOX_SOURCES})
 target_link_libraries(Sandbox PRIVATE IVX)
 
 target_compile_definitions(Sandbox PRIVATE
-    TEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/")
+    TEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/"
+    SHADERS="${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/")
