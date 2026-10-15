@@ -14,8 +14,8 @@ CameraController::CameraController(float aspect_ratio,
                                    bool enable_rotation)
     : aspect_ratio_(aspect_ratio), zoom_level_(zoom_level),
       enable_rotation_(enable_rotation) {
-    camera_ = make_ref<OrthoGraphicCamera>(-aspect_ratio * zoom_level,
-                                           aspect_ratio * zoom_level,
+    camera_ = make_ref<OrthoGraphicCamera>(-zoom_level * aspect_ratio,
+                                           zoom_level * aspect_ratio,
                                            -zoom_level,
                                            zoom_level);
 }
@@ -57,19 +57,28 @@ void CameraController::on_update(float delta_time) {
 void CameraController::on_event(Event &event) {
     EventDispatcher dispatcher(event);
     dispatcher.dispatch([this](WindowResizeEvent &e) {
-        aspect_ratio_ = static_cast<float>(e.get_width()) / e.get_height();
-        camera_->set_field(-aspect_ratio_ * zoom_level_,
-                           aspect_ratio_ * zoom_level_,
-                           -zoom_level_,
-                           zoom_level_);
+        float aspect_ratio = static_cast<float>(e.get_width()) / e.get_height();
+        if (aspect_ratio < aspect_ratio_) {
+            camera_->set_field(-zoom_level_,
+                               zoom_level_,
+                               -zoom_level_ / aspect_ratio,
+                               zoom_level_ / aspect_ratio);
+        } else {
+            camera_->set_field(-zoom_level_ * aspect_ratio,
+                               zoom_level_ * aspect_ratio,
+                               -zoom_level_,
+                               zoom_level_);
+        }
+        aspect_ratio_ = aspect_ratio;
+
         return false;
     });
 
     dispatcher.dispatch([this](MouseScrolledEvent &e) {
         zoom_level_ -= e.get_y_offset() * 0.5f;
         zoom_level_ = std::max(zoom_level_, 0.25f);
-        camera_->set_field(-aspect_ratio_ * zoom_level_,
-                           aspect_ratio_ * zoom_level_,
+        camera_->set_field(-zoom_level_ * aspect_ratio_,
+                           zoom_level_ * aspect_ratio_,
                            -zoom_level_,
                            zoom_level_);
         return false;
