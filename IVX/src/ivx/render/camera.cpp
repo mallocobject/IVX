@@ -1,5 +1,5 @@
 #include "ivxpch.h"
-#include "ortho_graphic_camera.h"
+#include "camera.h"
 #include "glm/ext/matrix_clip_space.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
@@ -8,12 +8,6 @@
 #include "glm/trigonometric.hpp"
 
 namespace ivx {
-Ref<OrthoGraphicCamera>
-OrthoGraphicCamera::create(float left, float right, float bottom, float top) {
-    return Ref<OrthoGraphicCamera>(
-        new OrthoGraphicCamera(left, right, bottom, top));
-}
-
 OrthoGraphicCamera::OrthoGraphicCamera(float left,
                                        float right,
                                        float bottom,

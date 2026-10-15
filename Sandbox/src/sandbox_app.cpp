@@ -4,12 +4,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/trigonometric.hpp"
-#include "ivx/core/ref.hpp"
-#include "ivx/input.h"
-#include "ivx/key_codes.h"
-#include "ivx/logger.h"
-#include "ivx/render/buffer.h"
-#include "ivx/render/texture.h"
+#include "ivx/render/camera_controller.h"
 #include <imgui.h>
 #include <iostream>
 #include <ivx.h>
@@ -53,7 +48,8 @@ class ExampleLayer : public ivx::Layer {
 
         ivx::RenderCommand::set_clear_color(glm::vec4(0.f));
 
-        camera_ = ivx::OrthoGraphicCamera::create(-1.92f, 1.92f, -1.08f, 1.08f);
+        camera_controller_ =
+            ivx::make_ref<ivx::CameraController>(1080.f / 720, 1.f, true);
 
         texture_ = ivx::Texture2D::create(TEXTURES "Checkerboard.png");
         texture2_ = ivx::Texture2D::create(TEXTURES "ChernoLogo.png");
@@ -61,44 +57,10 @@ class ExampleLayer : public ivx::Layer {
         shader_->set("u_Texture", 1);
     }
 
-    void on_update() override {
-        // set
-        // z must stay 0: the ortho depth range is [-1, 1], so camera z = 1
-        // puts the geometry exactly on the far clip plane and it flickers.
-        static glm::vec3 postion{0.f};
-        static float degrees = 0.f;
-        static constexpr float speed = 1.f;
-        static constexpr float delta = 30.f;
-
-        float delta_time = ivx::Timer::tick();
-
-        // IVX_INFO("delta time: {}", delta_time);
-
-        if (ivx::Input::is_key_pressed(IVX_KEY_W)) {
-            postion.y += speed * delta_time;
-        }
-        if (ivx::Input::is_key_pressed(IVX_KEY_S)) {
-            postion.y -= speed * delta_time;
-        }
-        if (ivx::Input::is_key_pressed(IVX_KEY_A)) {
-            postion.x -= speed * delta_time;
-        }
-        if (ivx::Input::is_key_pressed(IVX_KEY_D)) {
-            postion.x += speed * delta_time;
-        }
-
-        if (ivx::Input::IsMouseButtonPressed(IVX_MOUSE_BUTTON_LEFT)) {
-            degrees += delta * delta_time;
-        }
-        if (ivx::Input::IsMouseButtonPressed(IVX_MOUSE_BUTTON_RIGHT)) {
-            degrees -= delta * delta_time;
-        }
-
-        camera_->set_position(postion);
-        camera_->set_rotation(degrees);
-
+    void on_update(float delta_time) override {
+        camera_controller_->on_update(delta_time);
         // draw
-        ivx::Renderer::begin_scene(camera_);
+        ivx::Renderer::begin_scene(camera_controller_->get_camera());
 
         shader_->set("u_Color", color_);
 
@@ -130,6 +92,7 @@ class ExampleLayer : public ivx::Layer {
     }
 
     void on_event(ivx::Event &event) override {
+        camera_controller_->on_event(event);
     }
 
   private:
@@ -137,7 +100,7 @@ class ExampleLayer : public ivx::Layer {
 
     ivx::Ref<ivx::VertexArray> vertex_array_;
 
-    ivx::Ref<ivx::OrthoGraphicCamera> camera_;
+    ivx::Ref<ivx::CameraController> camera_controller_;
 
     ivx::Ref<ivx::Texture2D> texture_;
     ivx::Ref<ivx::Texture2D> texture2_;

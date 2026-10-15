@@ -2,6 +2,7 @@
 #include "application.h"
 #include "core.h"
 #include "core/ref.hpp"
+#include "core/timer.h"
 #include "event/application_event.h"
 
 #include "imgui/imgui_layer.h"
@@ -29,8 +30,9 @@ void Application::run() {
         RenderCommand::clear();
 
         // update
+        float delta_time = Timer::tick();
         for (auto &&layer : layer_stack_) {
-            layer->on_update();
+            layer->on_update(delta_time);
         }
 
         // render

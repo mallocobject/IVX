@@ -1,8 +1,8 @@
 #pragma once
 
+#include "camera.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "ivx/core/ref.hpp"
-#include "ortho_graphic_camera.h"
 #include "render_command.h"
 #include "renderer_api.h"
 #include "shader.h"

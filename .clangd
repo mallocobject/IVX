@@ -13,13 +13,13 @@ CompileFlags:
     - -DTEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/"
     - -DSHADERS="${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/"
     # IVX
-    - -IE:/src/repos/IVX/IVX/src
+    - -ID:/code/VSProjects/IVX/IVX/src
     # Glad / Elog / stb_image
-    - -IE:/src/repos/IVX/IVX/vendor/Glad/include
-    - -IE:/src/repos/IVX/IVX/vendor/Elog
-    - -IE:/src/repos/IVX/IVX/vendor/stb_image
+    - -ID:/code/VSProjects/IVX/IVX/vendor/Glad/include
+    - -ID:/code/VSProjects/IVX/IVX/vendor/Elog
+    - -ID:/code/VSProjects/IVX/IVX/vendor/stb_image
     # GLFW / imgui / glm
-    - -IE:/src/repos/IVX/deps/glfw/include
-    - -IE:/src/repos/IVX/deps/imgui
-    - -IE:/src/repos/IVX/deps/imgui/backends
-    - -IE:/src/repos/IVX/deps/glm
+    - -ID:/code/VSProjects/IVX/deps/glfw/include
+    - -ID:/code/VSProjects/IVX/deps/imgui
+    - -ID:/code/VSProjects/IVX/deps/imgui/backends
+    - -ID:/code/VSProjects/IVX/deps/glm

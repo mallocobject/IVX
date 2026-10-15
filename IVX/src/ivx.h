@@ -12,7 +12,7 @@
 #include "ivx/core/timer.h"
 
 #include "ivx/render/buffer.h"
-#include "ivx/render/ortho_graphic_camera.h"
+#include "ivx/render/camera_controller.h"
 #include "ivx/render/render_command.h"
 #include "ivx/render/renderer.h"
 #include "ivx/render/shader.h"

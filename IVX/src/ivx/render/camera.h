@@ -8,10 +8,10 @@
 #include "ivx/core/ref_counted.hpp"
 
 namespace ivx {
+
 class OrthoGraphicCamera : public RefCounted {
   public:
-    static Ref<OrthoGraphicCamera>
-    create(float left, float right, float bottom, float top);
+    OrthoGraphicCamera(float left, float right, float bottom, float top);
 
     void set_position(const glm::vec3 &position) {
         position_ = position;
@@ -28,15 +28,17 @@ class OrthoGraphicCamera : public RefCounted {
         return degrees_;
     }
 
+    void set_field(float left, float right, float bottom, float top) {
+        left_ = left;
+        right_ = right;
+        bottom_ = bottom;
+        top_ = top;
+    }
+
     // you need save result, because it always calculate matrix per call this
     // function
     glm::mat4 get_view_matrix() const;
     glm::mat4 get_proj_matrix() const;
-
-  protected:
-    // Objects are created through create(), so that every instance is owned by
-    // a Ref.
-    OrthoGraphicCamera(float left, float right, float bottom, float top);
 
   private:
     float left_;
