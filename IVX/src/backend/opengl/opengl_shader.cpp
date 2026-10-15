@@ -1,7 +1,7 @@
 #include "ivxpch.h"
 #include "opengl_shader.h"
-#include "ivx/core.h"
-#include "ivx/logger.h"
+#include "ivx/core/base.h"
+#include "ivx/core/logger.h"
 #include <fstream>
 #include <glad/glad.h>
 #include <iostream>

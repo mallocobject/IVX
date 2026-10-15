@@ -1,9 +1,9 @@
 #include "ivxpch.h"
 #include "renderer.h"
-#include "camera.h"
+#include "ivx/renderer/camera.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "ivx/core/ref.hpp"
-#include "render_command.h"
+#include "ivx/renderer/render_command.h"
 #include <memory>
 
 namespace ivx {
@@ -13,6 +13,10 @@ Renderer::SceneData *Renderer::scene_data_ = new Renderer::SceneData{
 
 void Renderer::init() {
     RenderCommand::init();
+}
+
+void Renderer::on_window_resize(WindowResizeEvent &event) {
+    RenderCommand::set_viewport(0, 0, event.get_width(), event.get_height());
 }
 
 void Renderer::begin_scene(const Ref<OrthoGraphicCamera> &camera) {

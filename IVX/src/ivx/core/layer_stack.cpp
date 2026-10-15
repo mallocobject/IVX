@@ -1,6 +1,6 @@
 #include "ivxpch.h"
 #include "layer_stack.h"
-#include "layer.h"
+#include "ivx/core/layer.h"
 #include <ranges>
 
 namespace ivx {

@@ -2,7 +2,7 @@
 
 #include "ivx/core/ref.hpp"
 #include "ivx/core/ref_counted.hpp"
-#include "ivx/render/buffer.h"
+#include "ivx/renderer/buffer.h"
 #include <memory>
 #include <utility>
 #include <vector>

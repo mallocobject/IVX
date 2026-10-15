@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/core.h"
+#include "ivx/core/base.h"
 #include <chrono>      // std::chrono::seconds
 #include <cstddef>     // size_t
 #include <cstdint>     // std::uint8_t

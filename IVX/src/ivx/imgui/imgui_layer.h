@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/layer.h"
+#include "ivx/core/layer.h"
 
 namespace ivx {
 class ImGuiLayer : public Layer {

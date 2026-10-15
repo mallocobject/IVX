@@ -1,10 +1,10 @@
 #pragma once
 
-#include "core/ref.hpp"
-#include "ivx/core.h"
+#include "ivx/core/base.h"
+#include "ivx/core/layer_stack.h"
+#include "ivx/core/ref.hpp"
+#include "ivx/core/window.h"
 #include "ivx/imgui/imgui_layer.h"
-#include "ivx/layer_stack.h"
-#include "ivx/window.h"
 #include <memory>
 
 namespace ivx {
@@ -34,6 +34,7 @@ class Application {
 
     Ref<Window> window_;
     bool running_{true};
+    bool minimized_{false};
 
     LayerStack layer_stack_;
     Ref<ImGuiLayer> imgui_layer_;

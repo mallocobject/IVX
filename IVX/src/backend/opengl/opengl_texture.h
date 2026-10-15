@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/render/texture.h"
+#include "ivx/renderer/texture.h"
 #include <cstdint>
 #include <string>
 

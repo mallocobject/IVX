@@ -1,8 +1,8 @@
 #pragma once
 
-#include "core/ref.hpp"
-#include "ivx/core.h"
-#include "ivx/layer.h"
+#include "ivx/core/ref.hpp"
+#include "ivx/core/base.h"
+#include "ivx/core/layer.h"
 
 #include <cstdint>
 #include <vector>

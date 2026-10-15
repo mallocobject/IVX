@@ -2,8 +2,8 @@
 #include "texture.h"
 
 #include "backend/opengl/opengl_texture.h"
-#include "ivx/core.h"
-#include "renderer_api.h"
+#include "ivx/core/base.h"
+#include "ivx/renderer/renderer_api.h"
 
 namespace ivx {
 Ref<Texture2D> Texture2D::create(const std::filesystem::path &filepath) {

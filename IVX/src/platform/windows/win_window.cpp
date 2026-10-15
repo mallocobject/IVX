@@ -1,12 +1,12 @@
 #include "ivxpch.h"
-#include "platform/windows/win_window.h"
+#include "win_window.h"
 #include "ivx/event/application_event.h"
 #include "ivx/event/key_event.h"
 #include "ivx/event/mouse_event.h"
 
 #include "backend/opengl/opengl_context.h"
 
-#include <GL/GL.h>
+// #include <GL/GL.h>
 
 namespace ivx {
 
@@ -59,7 +59,7 @@ void WinWindow::init(const WindowProps &props) {
     // set GLFW callbacks
     glfwSetWindowSizeCallback(window_handle_,
                               [](GLFWwindow *window, int width, int height) {
-                                  glViewport(0, 0, width, height);
+                                  //   glViewport(0, 0, width, height);
 
                                   auto data = reinterpret_cast<WindowData *>(
                                       glfwGetWindowUserPointer(window));

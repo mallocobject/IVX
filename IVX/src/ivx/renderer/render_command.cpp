@@ -10,6 +10,10 @@ void RenderCommand::init() {
     renderer_api_->init();
 }
 
+void RenderCommand::set_viewport(int x, int y, int width, int height) {
+    renderer_api_->set_viewport(x, y, width, height);
+}
+
 void RenderCommand::set_clear_color(const glm::vec4 &color) {
     renderer_api_->set_clear_color(color);
 }
@@ -21,4 +25,5 @@ void RenderCommand::clear() {
 void RenderCommand::draw(const Ref<VertexArray> &vertex_array) {
     renderer_api_->draw(vertex_array);
 }
+
 } // namespace ivx

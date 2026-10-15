@@ -1,6 +1,6 @@
 #include "ivxpch.h"
-#include "platform/windows/win_input.h"
-#include "ivx/Application.h"
+#include "win_input.h"
+#include "ivx/core/application.h"
 #include <GLFW/glfw3.h>
 
 namespace ivx {

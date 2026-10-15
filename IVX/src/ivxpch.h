@@ -20,7 +20,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "ivx/logger.h"
+#include "ivx/core/logger.h"
 
 #ifdef IVX_PLATFORM_WINDOWS
 #include <Windows.h>

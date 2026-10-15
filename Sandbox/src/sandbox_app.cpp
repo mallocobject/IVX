@@ -4,7 +4,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/trigonometric.hpp"
-#include "ivx/render/camera_controller.h"
+#include "ivx/renderer/camera_controller.h"
 #include <imgui.h>
 #include <iostream>
 #include <ivx.h>
@@ -15,8 +15,8 @@ class ExampleLayer : public ivx::Layer {
         vertex_array_ = ivx::VertexArray::create();
 
         float vertices[5 * 4] = {
-            -0.5f, -0.5f, 0.f, 0.f, 0.f, 0.5f,  -0.5f, 0.f, 1.f, 0.f,
-            0.5f,  0.5f,  0.f, 1.f, 1.f, -0.5f, 0.5f,  0.f, 0.f, 1.f,
+            -300.f, -300.f, 0.f, 0.f, 0.f, 300.f,  -300.f, 0.f, 1.f, 0.f,
+            300.f,  300.f,  0.f, 1.f, 1.f, -300.f, 300.f,  0.f, 0.f, 1.f,
         };
 
         auto vertex_buf = ivx::VertexBuffer::create(
@@ -49,7 +49,7 @@ class ExampleLayer : public ivx::Layer {
         ivx::RenderCommand::set_clear_color(glm::vec4(0.f));
 
         camera_controller_ =
-            ivx::make_ref<ivx::CameraController>(1080.f / 720, 1.f, true);
+            ivx::make_ref<ivx::CameraController>(1080, 720, 1.f, true);
 
         texture_ = ivx::Texture2D::create(TEXTURES "Checkerboard.png");
         texture2_ = ivx::Texture2D::create(TEXTURES "ChernoLogo.png");
@@ -76,7 +76,7 @@ class ExampleLayer : public ivx::Layer {
         //             shader_, vertex_array_, translation * scale);
         //     }
         // }
-        auto scale = glm::scale(glm::mat4{1.f}, glm::vec3{2.f});
+        auto scale = glm::scale(glm::mat4{1.f}, glm::vec3{1.f});
         texture_->bind(1);
         ivx::Renderer::submit(shader_, vertex_array_, scale);
         texture2_->bind(1);

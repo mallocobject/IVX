@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/Input.h"
+#include "ivx/core/input.h"
 
 namespace ivx {
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/core.h"
+#include "ivx/core/base.h"
 #include <utility>
 
 namespace ivx {

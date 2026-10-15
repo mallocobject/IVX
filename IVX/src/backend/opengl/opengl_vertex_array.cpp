@@ -1,9 +1,9 @@
 #include "ivxpch.h"
 #include "opengl_vertex_array.h"
-#include "ivx/core.h"
+#include "ivx/core/base.h"
 
 #include "ivx/core/ref.hpp"
-#include "ivx/render/buffer.h"
+#include "ivx/renderer/buffer.h"
 #include <glad/glad.h>
 
 namespace ivx {

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/render/graphics_context.h"
+#include "ivx/renderer/graphics_context.h"
 
 struct GLFWwindow;
 

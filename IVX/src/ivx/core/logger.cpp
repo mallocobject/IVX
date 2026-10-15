@@ -1,5 +1,5 @@
 #include "ivxpch.h"
-#include "ivx/logger.h"
+#include "logger.h"
 #include <elog/logger.hpp>
 
 namespace ivx {

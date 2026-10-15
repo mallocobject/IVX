@@ -1,13 +1,14 @@
 #pragma once
 
-#include "camera.h"
 #include "ivx/core/ref.hpp"
 #include "ivx/event/event.h"
+#include "ivx/renderer/camera.h"
 
 namespace ivx {
 class CameraController : public RefCounted {
   public:
-    CameraController(float aspect_ratio,
+    CameraController(int width,
+                     int hegiht,
                      float zoom_level = 1.f,
                      bool enable_rotation = false);
 
@@ -19,7 +20,8 @@ class CameraController : public RefCounted {
     }
 
   private:
-    float aspect_ratio_;
+    int width_;
+    int height_;
     float zoom_level_;
     Ref<OrthoGraphicCamera> camera_;
 

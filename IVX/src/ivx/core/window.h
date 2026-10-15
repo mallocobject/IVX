@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ivxpch.h"
-#include "core/ref.hpp"
-#include "ivx/core.h"
+#include "ivx/core/base.h"
+#include "ivx/core/ref.hpp"
 #include "ivx/core/ref_counted.hpp"
 
 namespace ivx {
@@ -11,7 +11,7 @@ class Event;
 
 struct WindowProps {
     std::string title{"IVX Engine"};
-    uint32_t width{1280};
+    uint32_t width{1080};
     uint32_t height{720};
 };
 

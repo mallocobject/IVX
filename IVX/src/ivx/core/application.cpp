@@ -1,13 +1,12 @@
 #include "ivxpch.h"
 #include "application.h"
-#include "core.h"
-#include "core/ref.hpp"
-#include "core/timer.h"
-#include "event/application_event.h"
-
-#include "imgui/imgui_layer.h"
-#include "render/render_command.h"
-#include "render/renderer.h"
+#include "ivx/imgui/imgui_layer.h"
+#include "ivx/core/base.h"
+#include "ivx/core/ref.hpp"
+#include "ivx/core/timer.h"
+#include "ivx/event/application_event.h"
+#include "ivx/renderer/render_command.h"
+#include "ivx/renderer/renderer.h"
 #include <glm/glm.hpp>
 #include <memory>
 
@@ -30,9 +29,11 @@ void Application::run() {
         RenderCommand::clear();
 
         // update
-        float delta_time = Timer::tick();
-        for (auto &&layer : layer_stack_) {
-            layer->on_update(delta_time);
+        if (!minimized_) {
+            float delta_time = Timer::tick();
+            for (auto &&layer : layer_stack_) {
+                layer->on_update(delta_time);
+            }
         }
 
         // render
@@ -60,6 +61,17 @@ void Application::on_event(Event &e) {
     dispatcher.dispatch([this](WindowCloseEvent &e) {
         running_ = false;
         return true;
+    });
+
+    dispatcher.dispatch([this](WindowResizeEvent &e) {
+        if (e.get_width() == 0 || e.get_height() == 0) {
+            minimized_ = true;
+        }
+
+        minimized_ = false;
+        Renderer::on_window_resize(e);
+
+        return false;
     });
 
     // IVX_CORE_TRACE("{}", e);

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ivx/render/graphics_context.h"
-#include "ivx/window.h"
+#include "ivx/renderer/graphics_context.h"
+#include "ivx/core/window.h"
 
 #include <GLFW/glfw3.h>
 

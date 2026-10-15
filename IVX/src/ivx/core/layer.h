@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/core.h"
+#include "ivx/core/base.h"
 #include "ivx/core/ref_counted.hpp"
 #include "ivx/event/event.h"
 

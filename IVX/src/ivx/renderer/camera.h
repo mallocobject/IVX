@@ -28,7 +28,7 @@ class OrthoGraphicCamera : public RefCounted {
         return degrees_;
     }
 
-    void set_field(float left, float right, float bottom, float top) {
+    void set_view_field(float left, float right, float bottom, float top) {
         left_ = left;
         right_ = right;
         bottom_ = bottom;

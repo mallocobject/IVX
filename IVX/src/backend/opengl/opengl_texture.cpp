@@ -1,7 +1,7 @@
 #include "ivxpch.h"
 #include "opengl_texture.h"
 
-#include "ivx/core.h"
+#include "ivx/core/base.h"
 #include <cstdint>
 #include <glad/glad.h>
 #include <stb_image.h>

@@ -1,7 +1,7 @@
 #include "ivxpch.h"
 #include "imgui_layer.h"
 #include "imgui.h"
-#include "ivx/application.h"
+#include "ivx/core/application.h"
 
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>

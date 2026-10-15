@@ -1,9 +1,9 @@
 #pragma once
 
-#include "ivx/core.h"
+#include "ivx/core/base.h"
 #include "ivx/core/ref.hpp"
 #include "ivx/core/ref_counted.hpp"
-#include "ivx/logger.h"
+#include "ivx/core/logger.h"
 #include <algorithm>
 #include <cstdint>
 #include <initializer_list>

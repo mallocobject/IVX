@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ivxpch.h"
-#include "ivx/core.h"
+#include "ivx/core/base.h"
 
 namespace ivx {
 namespace {
