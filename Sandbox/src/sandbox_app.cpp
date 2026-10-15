@@ -1,10 +1,7 @@
-#include "glm/ext/matrix_float3x3.hpp"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/gtc/type_ptr.hpp"
-#include "glm/trigonometric.hpp"
-#include "ivx/renderer/camera_controller.h"
 #include <imgui.h>
 #include <iostream>
 #include <ivx.h>
@@ -48,8 +45,8 @@ class ExampleLayer : public ivx::Layer {
 
         ivx::RenderCommand::set_clear_color(glm::vec4(0.f));
 
-        camera_controller_ =
-            ivx::make_ref<ivx::CameraController>(1080, 720, 1.f, true);
+        camera_controller_ = ivx::make_ref<ivx::OrthoGraphicCameraController>(
+            1080, 720, 1.f, true);
 
         texture_ = ivx::Texture2D::create(TEXTURES "Checkerboard.png");
         texture2_ = ivx::Texture2D::create(TEXTURES "ChernoLogo.png");
@@ -100,7 +97,7 @@ class ExampleLayer : public ivx::Layer {
 
     ivx::Ref<ivx::VertexArray> vertex_array_;
 
-    ivx::Ref<ivx::CameraController> camera_controller_;
+    ivx::Ref<ivx::OrthoGraphicCameraController> camera_controller_;
 
     ivx::Ref<ivx::Texture2D> texture_;
     ivx::Ref<ivx::Texture2D> texture2_;

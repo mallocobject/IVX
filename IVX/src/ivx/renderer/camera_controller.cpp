@@ -9,10 +9,10 @@
 #include <algorithm>
 
 namespace ivx {
-CameraController::CameraController(int width,
-                                   int height,
-                                   float zoom_level,
-                                   bool enable_rotation)
+OrthoGraphicCameraController::OrthoGraphicCameraController(int width,
+                                                           int height,
+                                                           float zoom_level,
+                                                           bool enable_rotation)
     : width_(width), height_(height), zoom_level_(zoom_level),
       enable_rotation_(enable_rotation) {
     camera_ = make_ref<OrthoGraphicCamera>(-zoom_level * width / 2,
@@ -21,10 +21,10 @@ CameraController::CameraController(int width,
                                            zoom_level * height / 2);
 }
 
-void CameraController::on_update(float delta_time) {
+void OrthoGraphicCameraController::on_update(float delta_time) {
     static glm::vec3 postion{0.f};
     static float degrees = 0.f;
-    static constexpr float speed = 5.f;
+    static constexpr float speed = 500.f;
     static constexpr float delta = 180.f;
 
     // IVX_INFO("delta time: {}", delta_time);
@@ -55,7 +55,7 @@ void CameraController::on_update(float delta_time) {
     camera_->set_rotation(degrees);
 }
 
-void CameraController::on_event(Event &event) {
+void OrthoGraphicCameraController::on_event(Event &event) {
     EventDispatcher dispatcher(event);
     dispatcher.dispatch([this](WindowResizeEvent &e) {
         // float aspect_ratio = static_cast<float>(e.get_width()) /

@@ -6,6 +6,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/matrix.hpp"
 #include "glm/trigonometric.hpp"
+#include <minwindef.h>
 
 namespace ivx {
 OrthoGraphicCamera::OrthoGraphicCamera(float left,
@@ -30,5 +31,29 @@ glm::mat4 OrthoGraphicCamera::get_proj_matrix() const {
     auto proj = glm::ortho(left_, right_, bottom_, top_, -1.f, 1.f);
 
     return proj;
+}
+
+PerspectiveCamera::PerspectiveCamera(const glm::vec3 &eye,
+                                     const glm::vec3 &center,
+                                     const glm::vec3 &up,
+                                     float fov,
+                                     int width,
+                                     int height,
+                                     float near,
+                                     float far)
+    : eye_(eye), center_(center), up_(up), fov_(fov), width_(width),
+      height_(height), near_(near), far_(far) {
+}
+
+glm::mat4 PerspectiveCamera::get_view_matrix() const {
+    return glm::lookAtLH(eye_, center_, up_);
+}
+
+glm::mat4 PerspectiveCamera::get_proj_matrix() const {
+    return glm::perspectiveFovLH_ZO(fov_,
+                                    static_cast<float>(width_),
+                                    static_cast<float>(height_),
+                                    near_,
+                                    far_);
 }
 } // namespace ivx
