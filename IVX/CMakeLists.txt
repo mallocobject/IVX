@@ -34,6 +34,10 @@ target_compile_definitions(IVX PUBLIC
     $<$<CONFIG:Debug>:IVX_CONFIG_DEBUG>
     $<$<CONFIG:Release>:IVX_CONFIG_RELEASE>)
 
+target_compile_definitions(IVX PRIVATE
+    TEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/../Sandbox/assets/textures/"
+    SHADERS="${CMAKE_CURRENT_SOURCE_DIR}/../Sandbox/assets/shaders/")
+
 if(IVX_INTRUSIVE_REF)
     target_compile_definitions(IVX PUBLIC IVX_INTRUSIVE_REF)
 endif()

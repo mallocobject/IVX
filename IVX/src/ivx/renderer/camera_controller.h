@@ -36,8 +36,8 @@ class PerspectiveCameraController : public RefCounted {
                                 float fov,
                                 int width,
                                 int height,
-                                float near,
-                                float far);
+                                float n,
+                                float f);
 
     void on_update(float delta_time);
     void on_event(Event &event);

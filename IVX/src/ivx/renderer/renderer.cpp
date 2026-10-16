@@ -4,7 +4,7 @@
 #include "ivx/core/ref.hpp"
 #include "ivx/renderer/camera.h"
 #include "ivx/renderer/render_command.h"
-#include <memory>
+#include "renderer2D.h"
 
 namespace ivx {
 Renderer::SceneData *Renderer::scene_data_ = new Renderer::SceneData{
@@ -13,6 +13,7 @@ Renderer::SceneData *Renderer::scene_data_ = new Renderer::SceneData{
 
 void Renderer::init() {
     RenderCommand::init();
+    Renderer2D::init();
 }
 
 void Renderer::on_window_resize(WindowResizeEvent &event) {

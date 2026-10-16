@@ -1,7 +1,9 @@
 #pragma once
 
+#include "ivx/core/ref_counted.hpp"
+
 namespace ivx {
-class GraphicsContext {
+class GraphicsContext : public RefCounted {
   public:
     virtual ~GraphicsContext() = default;
     virtual void init() = 0;

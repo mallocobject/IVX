@@ -1,5 +1,7 @@
 #include "ivxpch.h"
 #include "camera_controller.h"
+#include "glm/ext/vector_float2.hpp"
+#include "glm/geometric.hpp"
 #include "ivx/core/input.h"
 #include "ivx/core/key_codes.h"
 #include "ivx/core/mouse_button_codes.h"
@@ -29,17 +31,23 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
 
     // IVX_INFO("delta time: {}", delta_time);
 
+    glm::vec2 movement{0.f};
     if (ivx::Input::is_key_pressed(IVX_KEY_W)) {
-        postion.y += speed * delta_time;
+        movement.y++;
     }
     if (ivx::Input::is_key_pressed(IVX_KEY_S)) {
-        postion.y -= speed * delta_time;
+        movement.y--;
     }
     if (ivx::Input::is_key_pressed(IVX_KEY_A)) {
-        postion.x -= speed * delta_time;
+        movement.x--;
     }
     if (ivx::Input::is_key_pressed(IVX_KEY_D)) {
-        postion.x += speed * delta_time;
+        movement.x++;
+    }
+
+    if (movement.x != 0 || movement.y != 0) {
+        postion.x += glm::normalize(movement).x * speed * delta_time;
+        postion.y += glm::normalize(movement).y * speed * delta_time;
     }
 
     if (enable_rotation_) {
@@ -58,19 +66,6 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
 void OrthoGraphicCameraController::on_event(Event &event) {
     EventDispatcher dispatcher(event);
     dispatcher.dispatch([this](WindowResizeEvent &e) {
-        // float aspect_ratio = static_cast<float>(e.get_width()) /
-        // e.get_height(); if (aspect_ratio < aspect_ratio_) {
-        //     camera_->set_view_field(-zoom_level_,
-        //                             zoom_level_,
-        //                             -zoom_level_ / aspect_ratio,
-        //                             zoom_level_ / aspect_ratio);
-        // } else {
-        //     camera_->set_view_field(-zoom_level_ * aspect_ratio,
-        //                             zoom_level_ * aspect_ratio,
-        //                             -zoom_level_,
-        //                             zoom_level_);
-        // }
-        // aspect_ratio_ = aspect_ratio;
         width_ = e.get_width();
         height_ = e.get_height();
         camera_->set_view_field(-zoom_level_ * width_ / 2,

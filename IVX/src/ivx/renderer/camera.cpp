@@ -9,6 +9,33 @@
 #include <minwindef.h>
 
 namespace ivx {
+namespace {
+inline glm::mat4 ortho_rh_reverse_z(
+    float left, float right, float bottom, float top, float n, float f) {
+    glm::mat4 proj(1.f);
+    proj[0][0] = 2.f / (right - left);
+    proj[1][1] = 2.f / (top - bottom);
+    proj[2][2] = -1.f / (f - n);
+    proj[3][0] = -(right + left) / (right - left);
+    proj[3][1] = -(top + bottom) / (top - bottom);
+    proj[3][2] = -n / (f - n);
+    return proj;
+}
+
+inline glm::mat4
+perspective_rh_reverse_z(float fovY, float aspect, float n, float f) {
+    float f_ = 1.f / std::tan(fovY * 0.5f);
+
+    glm::mat4 proj(0.f);
+    proj[0][0] = f_ / aspect;
+    proj[1][1] = f_;
+    proj[2][2] = n / (f - n);
+    proj[2][3] = -1.f;
+    proj[3][2] = n * f / (f - n);
+    return proj;
+}
+} // namespace
+
 OrthoGraphicCamera::OrthoGraphicCamera(float left,
                                        float right,
                                        float bottom,
@@ -28,7 +55,10 @@ glm::mat4 OrthoGraphicCamera::get_view_matrix() const {
 
 glm::mat4 OrthoGraphicCamera::get_proj_matrix() const {
     // in opengl, the z from -1 to 1
-    auto proj = glm::ortho(left_, right_, bottom_, top_, -1.f, 1.f);
+    // auto proj = glm::ortho(left_, right_, bottom_, top_, -1.f, 1.f);
+
+    // reverse-z
+    auto proj = ortho_rh_reverse_z(left_, right_, bottom_, top_, -1.f, 1.f);
 
     return proj;
 }
@@ -39,10 +69,10 @@ PerspectiveCamera::PerspectiveCamera(const glm::vec3 &eye,
                                      float fov,
                                      int width,
                                      int height,
-                                     float near,
-                                     float far)
+                                     float n,
+                                     float f)
     : eye_(eye), center_(center), up_(up), fov_(fov), width_(width),
-      height_(height), near_(near), far_(far) {
+      height_(height), near_(n), far_(f) {
 }
 
 glm::mat4 PerspectiveCamera::get_view_matrix() const {
@@ -50,10 +80,13 @@ glm::mat4 PerspectiveCamera::get_view_matrix() const {
 }
 
 glm::mat4 PerspectiveCamera::get_proj_matrix() const {
-    return glm::perspectiveFovLH_ZO(fov_,
-                                    static_cast<float>(width_),
-                                    static_cast<float>(height_),
-                                    near_,
-                                    far_);
+    // return glm::perspectiveFovLH_ZO(fov_,
+    //                                 static_cast<float>(width_),
+    //                                 static_cast<float>(height_),
+    //                                 near_,
+    //                                 far_);
+
+    return perspective_rh_reverse_z(
+        fov_, static_cast<float>(width_) / height_, near_, far_);
 }
 } // namespace ivx

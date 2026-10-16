@@ -41,6 +41,19 @@ static GLenum channels_to_format(int channels) {
 }
 } // namespace
 
+OpenGLTexture2D::OpenGLTexture2D(uint32_t width, uint32_t height)
+    : width_(width), height_(height), internal_format(GL_RGBA8),
+      data_format(GL_RGBA) {
+    glCreateTextures(GL_TEXTURE_2D, 1, &texture_);
+    glTextureStorage2D(texture_, 1, internal_format, width, height);
+
+    glTextureParameteri(texture_, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTextureParameteri(texture_, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTextureParameteri(
+        texture_, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTextureParameteri(texture_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+}
+
 OpenGLTexture2D::OpenGLTexture2D(const std::filesystem::path &filepath) {
     int width, height, channels;
     stbi_set_flip_vertically_on_load(1);
@@ -51,8 +64,8 @@ OpenGLTexture2D::OpenGLTexture2D(const std::filesystem::path &filepath) {
     width_ = static_cast<uint32_t>(width);
     height_ = static_cast<uint32_t>(height);
 
-    const GLenum internal_format = channels_to_internal_format(channels);
-    const GLenum format = channels_to_format(channels);
+    internal_format = channels_to_internal_format(channels);
+    data_format = channels_to_format(channels);
 
     glCreateTextures(GL_TEXTURE_2D, 1, &texture_);
     glTextureStorage2D(texture_, 1, internal_format, width, height);
@@ -64,7 +77,7 @@ OpenGLTexture2D::OpenGLTexture2D(const std::filesystem::path &filepath) {
     glTextureParameteri(texture_, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     glTextureSubImage2D(
-        texture_, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
+        texture_, 0, 0, 0, width, height, data_format, GL_UNSIGNED_BYTE, data);
 
     // generate mipmap(DSA)
     glGenerateTextureMipmap(texture_);
@@ -74,6 +87,21 @@ OpenGLTexture2D::OpenGLTexture2D(const std::filesystem::path &filepath) {
 
 OpenGLTexture2D::~OpenGLTexture2D() {
     glDeleteTextures(1, &texture_);
+}
+
+void OpenGLTexture2D::set_data(void *data, uint32_t size) {
+    uint32_t bpp = data_format == GL_RGBA ? 4 : 3;
+    IVX_CORE_ASSERT(size == width_ * height_ * bpp,
+                    "Data must be entire texture!");
+    glTextureSubImage2D(texture_,
+                        0,
+                        0,
+                        0,
+                        width_,
+                        height_,
+                        data_format,
+                        GL_UNSIGNED_BYTE,
+                        data);
 }
 
 void OpenGLTexture2D::bind(uint32_t slot) const {

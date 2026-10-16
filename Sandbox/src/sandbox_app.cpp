@@ -2,9 +2,11 @@
 #include "glm/ext/matrix_transform.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/gtc/type_ptr.hpp"
+#include "sandbox2d.h"
 #include <imgui.h>
 #include <iostream>
 #include <ivx.h>
+#include <ivx/core/entry_point.h>
 
 class ExampleLayer : public ivx::Layer {
   public:
@@ -108,7 +110,8 @@ class ExampleLayer : public ivx::Layer {
 class SandboxApp : public ivx::Application {
   public:
     SandboxApp() {
-        push_layer(new ExampleLayer);
+        // push_layer(new ExampleLayer);
+        push_layer(new Sandbox2D);
     }
 
     ~SandboxApp() {

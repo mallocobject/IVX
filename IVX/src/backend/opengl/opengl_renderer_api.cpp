@@ -9,6 +9,11 @@ namespace ivx {
 void OpenGLRendererAPI::init() {
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_GREATER); // reverse-z
+
+    glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 }
 
 void OpenGLRendererAPI::set_viewport(int x, int y, int width, int height) {
@@ -20,6 +25,7 @@ void OpenGLRendererAPI::set_clear_color(const glm::vec4 &color) {
 }
 
 void OpenGLRendererAPI::clear() {
+    glClearDepth(0.0); // reverse-z
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

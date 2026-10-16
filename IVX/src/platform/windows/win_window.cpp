@@ -1,16 +1,19 @@
 #include "ivxpch.h"
 #include "win_window.h"
+#include "GLFW/glfw3.h"
+#include "ivx/core/logger.h"
 #include "ivx/event/application_event.h"
 #include "ivx/event/key_event.h"
 #include "ivx/event/mouse_event.h"
 
 #include "backend/opengl/opengl_context.h"
+#include <cstdint>
 
 // #include <GL/GL.h>
 
 namespace ivx {
 
-static bool GLFW_Initialized = false;
+static uint8_t GLFW_Initialized = 0;
 
 static void GLFW_error_callback(int error_code, const char *description) {
     IVX_CORE_ERROR("GLFW Error ({}): {}", error_code, description);
@@ -34,14 +37,13 @@ void WinWindow::init(const WindowProps &props) {
     data_.width = props.width;
     data_.height = props.height;
 
-    if (!GLFW_Initialized) {
-        // TODO: glfwTerminate on system shutdown
+    if (GLFW_Initialized == 0) {
+        IVX_CORE_INFO("Initializing GLFW");
         int success = glfwInit();
         IVX_CORE_ASSERT(success, "Could not intialize GLFW!");
         glfwSetErrorCallback([](int error_code, const char *description) {
             GLFW_error_callback(error_code, description);
         });
-        GLFW_Initialized = true;
     }
 
     window_handle_ = glfwCreateWindow(static_cast<int>(props.width),
@@ -49,8 +51,9 @@ void WinWindow::init(const WindowProps &props) {
                                       data_.title.c_str(),
                                       nullptr,
                                       nullptr);
+    GLFW_Initialized++;
 
-    context_ = new OpenGLContext(window_handle_);
+    context_ = make_ref<OpenGLContext>(window_handle_);
     context_->init();
 
     glfwSetWindowUserPointer(window_handle_, &data_);
@@ -151,6 +154,11 @@ void WinWindow::init(const WindowProps &props) {
 
 void WinWindow::shutdown() {
     glfwDestroyWindow(window_handle_);
+
+    if (--GLFW_Initialized == 0) {
+        IVX_CORE_INFO("Terminating GLFW");
+        glfwTerminate();
+    }
 }
 
 void WinWindow::on_update() {

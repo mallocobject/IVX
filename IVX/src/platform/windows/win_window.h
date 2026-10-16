@@ -1,7 +1,7 @@
 #pragma once
 
-#include "ivx/renderer/graphics_context.h"
 #include "ivx/core/window.h"
+#include "ivx/renderer/graphics_context.h"
 
 #include <GLFW/glfw3.h>
 
@@ -49,7 +49,7 @@ class WinWindow : public Window {
     virtual void shutdown();
 
     GLFWwindow *window_handle_;
-    GraphicsContext *context_;
+    Ref<GraphicsContext> context_;
     WindowData data_;
 };
 

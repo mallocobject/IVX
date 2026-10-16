@@ -11,7 +11,6 @@ class ImGuiLayer : public Layer {
     void on_attach() override;
     void on_detach() override;
 
-    void on_render() override;
     void begin();
     void end();
 

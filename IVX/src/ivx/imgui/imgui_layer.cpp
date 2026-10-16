@@ -57,11 +57,6 @@ void ImGuiLayer::on_detach() {
     ImGui::DestroyContext();
 }
 
-void ImGuiLayer::on_render() {
-    static bool show = true;
-    ImGui::ShowDemoWindow(&show);
-}
-
 void ImGuiLayer::begin() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();

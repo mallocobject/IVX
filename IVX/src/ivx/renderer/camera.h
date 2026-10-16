@@ -67,8 +67,8 @@ class PerspectiveCamera : public Camera {
                       float fov,
                       int width,
                       int height,
-                      float near,
-                      float far);
+                      float n,
+                      float f);
     // ~PerspectiveCamera() = default;
 
     void set_eye(const glm::vec3 &eye) {
