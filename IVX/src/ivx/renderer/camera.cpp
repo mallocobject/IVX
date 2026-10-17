@@ -10,25 +10,25 @@
 
 namespace ivx {
 namespace {
-inline glm::mat4 ortho_rh_reverse_z(
+static glm::mat4 ortho_rh_reverse_z(
     float left, float right, float bottom, float top, float n, float f) {
     glm::mat4 proj(1.f);
     proj[0][0] = 2.f / (right - left);
     proj[1][1] = 2.f / (top - bottom);
-    proj[2][2] = -1.f / (f - n);
+    proj[2][2] = 1.f / (f - n);
     proj[3][0] = -(right + left) / (right - left);
     proj[3][1] = -(top + bottom) / (top - bottom);
-    proj[3][2] = -n / (f - n);
+    proj[3][2] = f / (f - n);
     return proj;
 }
 
-inline glm::mat4
+static glm::mat4
 perspective_rh_reverse_z(float fovY, float aspect, float n, float f) {
-    float f_ = 1.f / std::tan(fovY * 0.5f);
+    float focal = 1.f / std::tan(fovY * 0.5f);
 
     glm::mat4 proj(0.f);
-    proj[0][0] = f_ / aspect;
-    proj[1][1] = f_;
+    proj[0][0] = focal / aspect;
+    proj[1][1] = focal;
     proj[2][2] = n / (f - n);
     proj[2][3] = -1.f;
     proj[3][2] = n * f / (f - n);

@@ -1,20 +1,20 @@
 #include "ivxpch.h"
-#include "timer.h"
+#include "frame_timer.h"
 
 namespace ivx {
-float Timer::tick() {
+float FrameTimer::tick() {
     auto now = Clock::now();
     std::chrono::duration<float> dt = now - last_time_;
     last_time_ = now;
     return dt.count();
 }
 
-float Timer::peek() {
+float FrameTimer::peek() {
     auto now = Clock::now();
     return std::chrono::duration<float>(now - last_time_).count();
 }
 
-void Timer::reset() {
+void FrameTimer::reset() {
     last_time_ = Clock::now();
 }
 } // namespace ivx

@@ -1,13 +1,14 @@
 #pragma once
 
 #include "ivx/core/application.h"
+#include "ivx/core/frame_timer.h"
 #include "ivx/core/input.h"
 #include "ivx/core/key_codes.h"
 #include "ivx/core/layer.h"
 #include "ivx/core/logger.h"
 #include "ivx/core/mouse_button_codes.h"
 #include "ivx/core/ref.hpp"
-#include "ivx/core/timer.h"
+#include "ivx/core/scoped_timer.h"
 
 #include "ivx/renderer/buffer.h"
 #include "ivx/renderer/camera_controller.h"

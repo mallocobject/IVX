@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_executable(test
     # ref_test.cpp
     # catch_amalgamated.cpp
-    pre_process_test.cpp
+    scoped_timer_test.cpp
 )
 
 target_include_directories(test PUBLIC

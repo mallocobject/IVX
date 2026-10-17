@@ -1,10 +1,10 @@
 #include "ivxpch.h"
 #include "application.h"
-#include "ivx/imgui/imgui_layer.h"
 #include "ivx/core/base.h"
+#include "ivx/core/frame_timer.h"
 #include "ivx/core/ref.hpp"
-#include "ivx/core/timer.h"
 #include "ivx/event/application_event.h"
+#include "ivx/imgui/imgui_layer.h"
 #include "ivx/renderer/render_command.h"
 #include "ivx/renderer/renderer.h"
 #include <glm/glm.hpp>
@@ -30,7 +30,7 @@ void Application::run() {
 
         // update
         if (!minimized_) {
-            float delta_time = Timer::tick();
+            float delta_time = FrameTimer::tick();
             for (auto &&layer : layer_stack_) {
                 layer->on_update(delta_time);
             }

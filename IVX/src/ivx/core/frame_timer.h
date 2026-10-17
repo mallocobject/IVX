@@ -3,7 +3,7 @@
 #include <chrono>
 
 namespace ivx {
-class Timer {
+class FrameTimer {
   public:
     // return delta time and update last time
     static float tick();
