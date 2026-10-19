@@ -1,8 +1,7 @@
 #pragma once
 
 #include "ivx/renderer/graphics_context.h"
-
-struct GLFWwindow;
+#include <GLFW/glfw3.h>
 
 namespace ivx {
 class OpenGLContext : public GraphicsContext {

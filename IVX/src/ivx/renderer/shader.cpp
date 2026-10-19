@@ -15,7 +15,7 @@ Ref<Shader> Shader::create(const std::string &vs_src,
         return make_ref<OpenGLShader>(vs_src, fs_src, label);
     case kNone:
     default: {
-        IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");
+        IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;
     }
     }
@@ -28,7 +28,7 @@ Ref<Shader> Shader::create(const std::filesystem::path &filepath,
         return make_ref<OpenGLShader>(filepath, label);
     case kNone:
     default: {
-        IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");
+        IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;
     }
     }

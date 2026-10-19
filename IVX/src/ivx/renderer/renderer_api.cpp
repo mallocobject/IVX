@@ -15,7 +15,7 @@ Ref<RendererAPI> RendererAPI::create() {
         return make_ref<OpenGLRendererAPI>();
     case kNone:
     default: {
-        IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");
+        IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;
     }
     }

@@ -71,7 +71,7 @@ class InstrumentationTimer {
 };
 } // namespace ivx
 
-#define IVX_PROFILE 1
+#define IVX_PROFILE 0
 
 #if IVX_PROFILE
 #define IVX_PROFILE_BEGIN_SESSION(name, filepath)                              \

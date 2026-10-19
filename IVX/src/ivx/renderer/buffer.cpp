@@ -1,10 +1,9 @@
 #include "ivxpch.h"
 #include "buffer.h"
-
-#include "backend/opengl/opengl_buffer.h"
-#include "buffer.h"
 #include "ivx/core/base.h"
 #include "ivx/renderer/renderer_api.h"
+
+#include "backend/opengl/opengl_buffer.h"
 
 namespace ivx {
 BufferElement::BufferElement(const std::string &name,
@@ -35,7 +34,7 @@ Ref<VertexBuffer> VertexBuffer::create(float *vertices, uint32_t count) {
         return make_ref<OpenGLVertexBuffer>(vertices, count);
     case kNone:
     default: {
-        IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");
+        IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;
     }
     }
@@ -48,7 +47,7 @@ Ref<IndexBuffer> IndexBuffer::create(uint32_t *indices, uint32_t count) {
         return make_ref<OpenGLIndexBuffer>(indices, count);
     case kNone:
     default: {
-        IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");
+        IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;
     }
     }

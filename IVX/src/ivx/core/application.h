@@ -7,9 +7,13 @@
 #include "ivx/imgui/imgui_layer.h"
 #include <memory>
 
+int main(int argc, char *argv[]);
+
 namespace ivx {
 
 class Application {
+    friend int ::main(int argc, char *argv[]);
+
   public:
     virtual ~Application();
 
@@ -21,8 +25,6 @@ class Application {
         return *window_;
     }
 
-    void run();
-
     void push_layer(Layer *layer);
     void push_overlay(Layer *layer);
 
@@ -30,6 +32,7 @@ class Application {
     Application();
 
   private:
+    void run();
     void on_event(Event &e);
 
     Ref<Window> window_;

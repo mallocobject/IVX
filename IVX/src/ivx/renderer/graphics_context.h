@@ -8,6 +8,7 @@ class GraphicsContext : public RefCounted {
     virtual ~GraphicsContext() = default;
     virtual void init() = 0;
     virtual void swap_buffer() = 0;
-    // virtual void clear() = 0;
+
+    static Ref<GraphicsContext> create(void *window_handle);
 };
 } // namespace ivx

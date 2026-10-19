@@ -1,8 +1,7 @@
 #pragma once
 
+#include "ivx/core/input.h"
 #include "ivx/event/event.h"
-
-using MouseCode = int;
 
 namespace ivx {
 

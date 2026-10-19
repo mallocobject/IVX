@@ -8,7 +8,7 @@
 #include "ivx/core/key_codes.h"
 #include "ivx/core/layer.h"
 #include "ivx/core/logger.h"
-#include "ivx/core/mouse_button_codes.h"
+#include "ivx/core/mouse_codes.h"
 #include "ivx/core/ref.hpp"
 
 #include "ivx/renderer/buffer.h"

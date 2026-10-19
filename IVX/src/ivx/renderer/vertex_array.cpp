@@ -12,7 +12,7 @@ Ref<VertexArray> VertexArray::create() {
         return make_ref<OpenGLVertexArray>();
     case kNone:
     default: {
-        IVX_CORE_ASSERT(false, "IVX is currently supported this backend!");
+        IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;
     }
     }

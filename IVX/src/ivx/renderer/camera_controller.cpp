@@ -3,8 +3,6 @@
 #include "glm/ext/vector_float2.hpp"
 #include "glm/geometric.hpp"
 #include "ivx/core/input.h"
-#include "ivx/core/key_codes.h"
-#include "ivx/core/mouse_button_codes.h"
 #include "ivx/event/application_event.h"
 #include "ivx/event/mouse_event.h"
 #include "ivx/renderer/camera.h"
@@ -34,16 +32,16 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
     // IVX_INFO("delta time: {}", delta_time);
 
     glm::vec2 movement{0.f};
-    if (ivx::Input::is_key_pressed(IVX_KEY_W)) {
+    if (Input::is_key_pressed(IVX_KEY_W)) {
         movement.y++;
     }
-    if (ivx::Input::is_key_pressed(IVX_KEY_S)) {
+    if (Input::is_key_pressed(IVX_KEY_S)) {
         movement.y--;
     }
-    if (ivx::Input::is_key_pressed(IVX_KEY_A)) {
+    if (Input::is_key_pressed(IVX_KEY_A)) {
         movement.x--;
     }
-    if (ivx::Input::is_key_pressed(IVX_KEY_D)) {
+    if (Input::is_key_pressed(IVX_KEY_D)) {
         movement.x++;
     }
 
@@ -53,10 +51,10 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
     }
 
     if (enable_rotation_) {
-        if (ivx::Input::IsMouseButtonPressed(IVX_MOUSE_BUTTON_LEFT)) {
+        if (Input::IsMouseButtonPressed(IVX_MOUSE_BUTTON_LEFT)) {
             degrees += delta * delta_time;
         }
-        if (ivx::Input::IsMouseButtonPressed(IVX_MOUSE_BUTTON_RIGHT)) {
+        if (Input::IsMouseButtonPressed(IVX_MOUSE_BUTTON_RIGHT)) {
             degrees -= delta * delta_time;
         }
     }

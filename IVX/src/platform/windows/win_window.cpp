@@ -1,13 +1,14 @@
 #include "ivxpch.h"
 #include "win_window.h"
-#include "GLFW/glfw3.h"
 #include "ivx/core/logger.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/application_event.h"
 #include "ivx/event/key_event.h"
 #include "ivx/event/mouse_event.h"
+#include "ivx/renderer/graphics_context.h"
+#include "ivx/renderer/renderer.h"
+#include <GLFW/glfw3.h>
 
-#include "backend/opengl/opengl_context.h"
 #include <cstdint>
 
 // #include <GL/GL.h>
@@ -55,6 +56,11 @@ void WinWindow::init(const WindowProps &props) {
 
     {
         IVX_PROFILE_SCOPE("glfwCreateWindow");
+#if defined(IVX_CONFIG_DEBUG)
+        if (Renderer::get_api() == RendererAPI::API::kOpenGL) {
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+        }
+#endif
         window_handle_ = glfwCreateWindow(static_cast<int>(props.width),
                                           static_cast<int>(props.height),
                                           data_.title.c_str(),
@@ -63,7 +69,7 @@ void WinWindow::init(const WindowProps &props) {
         GLFW_Initialized++;
     }
 
-    context_ = make_ref<OpenGLContext>(window_handle_);
+    context_ = GraphicsContext::create(window_handle_);
     context_->init();
 
     glfwSetWindowUserPointer(window_handle_, &data_);
@@ -98,30 +104,30 @@ void WinWindow::init(const WindowProps &props) {
 
             switch (action) {
             case GLFW_PRESS: {
-                KeyPressedEvent event(key, false);
+                KeyPressedEvent event(static_cast<KeyCode>(key), false);
                 data->event_callback(event);
                 break;
             }
             case GLFW_RELEASE: {
-                KeyReleasedEvent event(key);
+                KeyReleasedEvent event(static_cast<KeyCode>(key));
                 data->event_callback(event);
                 break;
             }
             case GLFW_REPEAT: {
-                KeyPressedEvent event(key, true);
+                KeyPressedEvent event(static_cast<KeyCode>(key), true);
                 data->event_callback(event);
                 break;
             }
             }
         });
 
-    glfwSetCharCallback(window_handle_,
-                        [](GLFWwindow *window, unsigned int codepoint) {
-                            auto data = reinterpret_cast<WindowData *>(
-                                glfwGetWindowUserPointer(window));
-                            KeyTypedEvent event(codepoint);
-                            data->event_callback(event);
-                        });
+    glfwSetCharCallback(
+        window_handle_, [](GLFWwindow *window, unsigned int codepoint) {
+            auto data = reinterpret_cast<WindowData *>(
+                glfwGetWindowUserPointer(window));
+            KeyTypedEvent event(static_cast<KeyCode>(codepoint));
+            data->event_callback(event);
+        });
 
     glfwSetMouseButtonCallback(
         window_handle_,
@@ -131,12 +137,12 @@ void WinWindow::init(const WindowProps &props) {
 
             switch (action) {
             case GLFW_PRESS: {
-                MouseButtonPressedEvent event(button);
+                MouseButtonPressedEvent event(static_cast<MouseCode>(button));
                 data->event_callback(event);
                 break;
             }
             case GLFW_RELEASE: {
-                MouseButtonReleasedEvent event(button);
+                MouseButtonReleasedEvent event(static_cast<MouseCode>(button));
                 data->event_callback(event);
                 break;
             }

@@ -115,7 +115,7 @@ std::string InstrumentationTimer::clean_function_name(const char *raw) {
     }
 
     std::string result{sv};
-    std::ranges::replace(result, '"', '\'');
+    rg::replace(result, '"', '\'');
     return result;
 }
 
