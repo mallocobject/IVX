@@ -24,6 +24,8 @@ OrthoGraphicCameraController::OrthoGraphicCameraController(int width,
 }
 
 void OrthoGraphicCameraController::on_update(float delta_time) {
+    IVX_PROFILE_FUNCTION();
+
     static glm::vec3 postion{0.f};
     static float degrees = 0.f;
     static constexpr float speed = 500.f;
@@ -64,8 +66,12 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
 }
 
 void OrthoGraphicCameraController::on_event(Event &event) {
+    IVX_PROFILE_FUNCTION();
+
     EventDispatcher dispatcher(event);
     dispatcher.dispatch([this](WindowResizeEvent &e) {
+        IVX_PROFILE_FUNCTION();
+
         width_ = e.get_width();
         height_ = e.get_height();
         camera_->set_view_field(-zoom_level_ * width_ / 2,
@@ -77,6 +83,8 @@ void OrthoGraphicCameraController::on_event(Event &event) {
     });
 
     dispatcher.dispatch([this](MouseScrolledEvent &e) {
+        IVX_PROFILE_FUNCTION();
+
         zoom_level_ -= e.get_y_offset() * 0.5f;
         zoom_level_ = std::max(zoom_level_, 0.25f);
         camera_->set_view_field(-zoom_level_ * width_ / 2,

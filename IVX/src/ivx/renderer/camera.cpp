@@ -44,6 +44,8 @@ OrthoGraphicCamera::OrthoGraphicCamera(float left,
 }
 
 glm::mat4 OrthoGraphicCamera::get_view_matrix() const {
+    IVX_PROFILE_FUNCTION();
+
     auto transform = glm::translate(glm::mat4(1.f), position_) *
                      glm::rotate(glm::mat4(1.f),
                                  glm::radians(degrees_),
@@ -54,6 +56,8 @@ glm::mat4 OrthoGraphicCamera::get_view_matrix() const {
 }
 
 glm::mat4 OrthoGraphicCamera::get_proj_matrix() const {
+    IVX_PROFILE_FUNCTION();
+
     // in opengl, the z from -1 to 1
     // auto proj = glm::ortho(left_, right_, bottom_, top_, -1.f, 1.f);
 
@@ -76,10 +80,14 @@ PerspectiveCamera::PerspectiveCamera(const glm::vec3 &eye,
 }
 
 glm::mat4 PerspectiveCamera::get_view_matrix() const {
-    return glm::lookAtLH(eye_, center_, up_);
+    IVX_PROFILE_FUNCTION();
+
+    return glm::lookAtRH(eye_, center_, up_);
 }
 
 glm::mat4 PerspectiveCamera::get_proj_matrix() const {
+    IVX_PROFILE_FUNCTION();
+
     // return glm::perspectiveFovLH_ZO(fov_,
     //                                 static_cast<float>(width_),
     //                                 static_cast<float>(height_),

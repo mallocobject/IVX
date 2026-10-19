@@ -13,6 +13,8 @@ OpenGLContext::OpenGLContext(GLFWwindow *window_handle)
 }
 
 void OpenGLContext::init() {
+    IVX_PROFILE_FUNCTION();
+
     glfwMakeContextCurrent(window_handle_);
     int status =
         gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
@@ -28,6 +30,8 @@ void OpenGLContext::init() {
 }
 
 void OpenGLContext::swap_buffer() {
+    IVX_PROFILE_FUNCTION();
+
     glfwSwapBuffers(window_handle_);
 }
 

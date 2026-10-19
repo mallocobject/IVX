@@ -21,6 +21,8 @@ struct Renderer2DStorage {
 static Renderer2DStorage *data;
 
 void Renderer2D::init() {
+    IVX_PROFILE_FUNCTION();
+
     data = new Renderer2DStorage;
     data->quad_vertex_array = VertexArray::create();
 
@@ -63,14 +65,19 @@ void Renderer2D::init() {
 }
 
 void Renderer2D::shutdown() {
+    IVX_PROFILE_FUNCTION();
+
     delete data;
 }
 
 void Renderer2D::begin_scene(const Ref<OrthoGraphicCamera> &camera) {
+    IVX_PROFILE_FUNCTION();
+
     data->vp = camera->get_proj_matrix() * camera->get_view_matrix();
 }
 
 void Renderer2D::end_scene() {
+    IVX_PROFILE_FUNCTION();
 }
 
 void Renderer2D::draw_quad(const glm::vec2 &position,
@@ -82,6 +89,8 @@ void Renderer2D::draw_quad(const glm::vec2 &position,
 void Renderer2D::draw_quad(const glm::vec3 &position,
                            const glm::vec2 &size,
                            const glm::vec4 &color) {
+    IVX_PROFILE_FUNCTION();
+
     data->texture_shader->set("u_Color", color);
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
@@ -103,6 +112,8 @@ void Renderer2D::draw_quad(const glm::vec2 &position,
 void Renderer2D::draw_quad(const glm::vec3 &position,
                            const glm::vec2 &size,
                            const Ref<Texture2D> &texture) {
+    IVX_PROFILE_FUNCTION();
+
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
     texture->bind();

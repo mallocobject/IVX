@@ -15,6 +15,6 @@ class RenderCommand {
     static void draw(const Ref<VertexArray> &vertex_array);
 
   private:
-    static RendererAPI *renderer_api_;
+    static Ref<RendererAPI> renderer_api_;
 };
 } // namespace ivx

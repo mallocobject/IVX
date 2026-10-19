@@ -1,10 +1,10 @@
 #include "ivxpch.h"
 #include "render_command.h"
-#include "backend/opengl/opengl_renderer_api.h"
 #include "ivx/core/ref.hpp"
+#include "renderer_api.h"
 
 namespace ivx {
-RendererAPI *RenderCommand::renderer_api_ = new OpenGLRendererAPI;
+Ref<RendererAPI> RenderCommand::renderer_api_ = RendererAPI::create();
 
 void RenderCommand::init() {
     renderer_api_->init();

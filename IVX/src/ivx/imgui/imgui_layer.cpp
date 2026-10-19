@@ -3,6 +3,7 @@
 #include "imgui.h"
 #include "ivx/core/application.h"
 
+#include "ivx/debug/instrumentor.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -13,6 +14,8 @@ ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {
 }
 
 void ImGuiLayer::on_attach() {
+    IVX_PROFILE_FUNCTION();
+
     Application &app = Application::get();
     GLFWwindow *window =
         static_cast<GLFWwindow *>(app.get_window().get_native_window());
@@ -52,18 +55,24 @@ void ImGuiLayer::on_attach() {
 }
 
 void ImGuiLayer::on_detach() {
+    IVX_PROFILE_FUNCTION();
+
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
 }
 
 void ImGuiLayer::begin() {
+    IVX_PROFILE_FUNCTION();
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 }
 
 void ImGuiLayer::end() {
+    IVX_PROFILE_FUNCTION();
+
     ImGuiIO &io = ImGui::GetIO();
     Application &app = Application::get();
     io.DisplaySize = ImVec2(static_cast<float>(app.get_window().get_width()),

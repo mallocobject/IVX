@@ -11,7 +11,7 @@ namespace ivx {
 
 class Application {
   public:
-    virtual ~Application() = default;
+    virtual ~Application();
 
     static Application &get() {
         return *instance_;

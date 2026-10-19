@@ -1,13 +1,7 @@
 #pragma once
 
 #if defined(_WIN32) || defined(IVX_PLATFORM_WINDOWS)
-#if !defined(IVX_DYNAMIC)
-#define IVX_API
-#elif defined(IVX_BUILD_DLL)
-#define IVX_API __declspec(dllexport)
-#else
-#define IVX_API __declspec(dllimport)
-#endif
+
 #else
 #error "Invertix only supports Windows!"
 #endif

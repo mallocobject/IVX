@@ -8,12 +8,10 @@ namespace ivx {
 void LayerStack::push_layer(Layer *layer) {
     layers_.emplace(layers_.begin() + layer_insert_idx_, layer);
     layer_insert_idx_++;
-    layer->on_attach();
 }
 
 void LayerStack::push_overlay(Layer *overlay) {
     layers_.emplace(layers_.begin(), overlay);
-    overlay->on_attach();
 }
 
 void LayerStack::pop_layer(Layer *layer) {

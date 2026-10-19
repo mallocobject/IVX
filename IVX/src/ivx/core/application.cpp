@@ -1,5 +1,6 @@
 #include "ivxpch.h"
 #include "application.h"
+#include "ivx/core/application.h"
 #include "ivx/core/base.h"
 #include "ivx/core/frame_timer.h"
 #include "ivx/core/ref.hpp"
@@ -12,7 +13,15 @@
 #include <memory>
 
 namespace ivx {
+Application::~Application() {
+    IVX_PROFILE_FUNCTION();
+
+    Renderer::shutdown();
+}
+
 Application::Application() {
+    IVX_PROFILE_FUNCTION();
+
     IVX_CORE_ASSERT(!instance_, "Application already exists!");
     instance_ = this;
     window_ = Window::create();
@@ -25,43 +34,56 @@ Application::Application() {
 }
 
 void Application::run() {
-    IVX_PROFILE_BEGIN_SESSION("Sandbox::run", "profile.json");
+    IVX_PROFILE_FUNCTION();
 
     while (running_) {
-        // clear
-        RenderCommand::clear();
+        IVX_PROFILE_SCOPE("Run Loop");
 
         // update
         if (!minimized_) {
             float delta_time = FrameTimer::tick();
-            for (auto &&layer : layer_stack_) {
-                layer->on_update(delta_time);
+            {
+                IVX_PROFILE_SCOPE("LayerStack::on_update");
+
+                for (auto &&layer : layer_stack_) {
+                    layer->on_update(delta_time);
+                }
             }
         }
 
         // render
         imgui_layer_->begin();
-        for (auto &&layer : layer_stack_) {
-            layer->on_render();
+        {
+            IVX_PROFILE_SCOPE("LayerStack::on_render");
+
+            for (auto &&layer : layer_stack_) {
+                layer->on_render();
+            }
         }
         imgui_layer_->end();
 
         // roll and swap buffer
         window_->on_update();
     }
-
-    IVX_PROFILE_END_SESSION();
 }
 
 void Application::push_layer(Layer *layer) {
+    IVX_PROFILE_FUNCTION();
+
     layer_stack_.push_layer(layer);
+    layer->on_attach();
 }
 
 void Application::push_overlay(Layer *layer) {
+    IVX_PROFILE_FUNCTION();
+
     layer_stack_.push_overlay(layer);
+    layer->on_attach();
 }
 
 void Application::on_event(Event &e) {
+    IVX_PROFILE_FUNCTION();
+
     EventDispatcher dispatcher(e);
     dispatcher.dispatch([this](WindowCloseEvent &e) {
         running_ = false;
@@ -69,6 +91,8 @@ void Application::on_event(Event &e) {
     });
 
     dispatcher.dispatch([this](WindowResizeEvent &e) {
+        IVX_PROFILE_FUNCTION();
+
         if (e.get_width() == 0 || e.get_height() == 0) {
             minimized_ = true;
         }

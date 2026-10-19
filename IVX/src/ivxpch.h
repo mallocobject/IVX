@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "ivx/core/logger.h"
+#include "ivx/debug/instrumentor.h"
 
 #ifdef IVX_PLATFORM_WINDOWS
 #include <Windows.h>

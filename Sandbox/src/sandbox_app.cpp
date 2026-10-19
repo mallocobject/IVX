@@ -6,6 +6,7 @@
 #include <imgui.h>
 #include <iostream>
 #include <ivx.h>
+
 #include <ivx/core/entry_point.h>
 
 class ExampleLayer : public ivx::Layer {

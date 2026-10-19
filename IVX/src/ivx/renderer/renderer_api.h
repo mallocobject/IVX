@@ -1,13 +1,14 @@
 #pragma once
 
 #include "ivx/core/ref.hpp"
+#include "ivx/core/ref_counted.hpp"
 #include "ivx/renderer/vertex_array.h"
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <memory>
 
 namespace ivx {
-class RendererAPI {
+class RendererAPI : public RefCounted {
   public:
     enum class API : uint8_t {
         kNone = 0,
@@ -26,6 +27,8 @@ class RendererAPI {
     static API get_api() {
         return api_;
     }
+
+    static Ref<RendererAPI> create();
 
   private:
     static API api_;

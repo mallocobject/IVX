@@ -37,22 +37,32 @@ static GLenum shader_data_type_to_opengl_base_type(ShaderDataType type) {
 }
 
 OpenGLVertexArray::OpenGLVertexArray() {
+    IVX_PROFILE_FUNCTION();
+
     glCreateVertexArrays(1, &vao_);
 }
 
 OpenGLVertexArray::~OpenGLVertexArray() {
+    IVX_PROFILE_FUNCTION();
+
     glDeleteVertexArrays(1, &vao_);
 }
 
 void OpenGLVertexArray::bind() {
+    IVX_PROFILE_FUNCTION();
+
     glBindVertexArray(vao_);
 }
 
 void OpenGLVertexArray::unbind() {
+    IVX_PROFILE_FUNCTION();
+
     glBindVertexArray(0);
 }
 
 void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
+    IVX_PROFILE_FUNCTION();
+
     IVX_CORE_ASSERT(vertex_buf->get_buffer_layout()->get_elements().size(),
                     "Vertex Buffer has no layout!");
 
@@ -79,6 +89,8 @@ void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
 }
 
 void OpenGLVertexArray::set_index_buffer(const Ref<IndexBuffer> &index_buf) {
+    IVX_PROFILE_FUNCTION();
+
     glBindVertexArray(vao_);
     index_buf->bind();
 

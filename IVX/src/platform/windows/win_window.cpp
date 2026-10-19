@@ -2,6 +2,7 @@
 #include "win_window.h"
 #include "GLFW/glfw3.h"
 #include "ivx/core/logger.h"
+#include "ivx/debug/instrumentor.h"
 #include "ivx/event/application_event.h"
 #include "ivx/event/key_event.h"
 #include "ivx/event/mouse_event.h"
@@ -20,14 +21,20 @@ static void GLFW_error_callback(int error_code, const char *description) {
 }
 
 WinWindow::WinWindow(const WindowProps &props) {
+    IVX_PROFILE_FUNCTION();
+
     init(props);
 }
 
 WinWindow::~WinWindow() {
+    IVX_PROFILE_FUNCTION();
+
     shutdown();
 }
 
 void WinWindow::init(const WindowProps &props) {
+    IVX_PROFILE_FUNCTION();
+
     IVX_CORE_INFO("Creating window {0} ({1}, {2})",
                   props.title,
                   props.width,
@@ -38,7 +45,7 @@ void WinWindow::init(const WindowProps &props) {
     data_.height = props.height;
 
     if (GLFW_Initialized == 0) {
-        IVX_CORE_INFO("Initializing GLFW");
+        IVX_PROFILE_SCOPE("glfwInit");
         int success = glfwInit();
         IVX_CORE_ASSERT(success, "Could not intialize GLFW!");
         glfwSetErrorCallback([](int error_code, const char *description) {
@@ -46,12 +53,15 @@ void WinWindow::init(const WindowProps &props) {
         });
     }
 
-    window_handle_ = glfwCreateWindow(static_cast<int>(props.width),
-                                      static_cast<int>(props.height),
-                                      data_.title.c_str(),
-                                      nullptr,
-                                      nullptr);
-    GLFW_Initialized++;
+    {
+        IVX_PROFILE_SCOPE("glfwCreateWindow");
+        window_handle_ = glfwCreateWindow(static_cast<int>(props.width),
+                                          static_cast<int>(props.height),
+                                          data_.title.c_str(),
+                                          nullptr,
+                                          nullptr);
+        GLFW_Initialized++;
+    }
 
     context_ = make_ref<OpenGLContext>(window_handle_);
     context_->init();
@@ -153,6 +163,8 @@ void WinWindow::init(const WindowProps &props) {
 }
 
 void WinWindow::shutdown() {
+    IVX_PROFILE_FUNCTION();
+
     glfwDestroyWindow(window_handle_);
 
     if (--GLFW_Initialized == 0) {
@@ -162,6 +174,8 @@ void WinWindow::shutdown() {
 }
 
 void WinWindow::on_update() {
+    IVX_PROFILE_FUNCTION();
+
     glfwPollEvents();
 
     context_->swap_buffer();
@@ -172,6 +186,8 @@ void WinWindow::on_update() {
 // }
 
 void WinWindow::set_v_sync(bool enabled) {
+    IVX_PROFILE_FUNCTION();
+
     if (enabled) {
         glfwSwapInterval(1);
     } else {

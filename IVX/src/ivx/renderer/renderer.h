@@ -15,6 +15,7 @@ namespace ivx {
 class Renderer {
   public:
     static void init();
+    static void shutdown();
     static void on_window_resize(WindowResizeEvent &event);
 
     static void begin_scene(const Ref<Camera> &camera);

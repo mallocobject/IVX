@@ -12,6 +12,8 @@
 namespace ivx {
 namespace {
 static std::string read_file(const std::filesystem::path &filepath) {
+    IVX_PROFILE_FUNCTION();
+
     std::ifstream file(filepath.string(), std::ios::in | std::ios::binary);
     if (!file) {
         IVX_CORE_ERROR("Failed to open shader file: {}", filepath.string());
@@ -30,6 +32,8 @@ static std::string read_file(const std::filesystem::path &filepath) {
 static void
 compile_and_link_shader(GLuint program,
                         const std::unordered_map<GLenum, std::string> &mp) {
+    IVX_PROFILE_FUNCTION();
+
     std::vector<GLenum> shader_ids;
     shader_ids.reserve(mp.size());
 
@@ -104,6 +108,8 @@ static GLenum shader_type_from_string(const std::string &type) {
 
 static std::unordered_map<GLuint, std::string>
 pre_process(const std::string &code) {
+    IVX_PROFILE_FUNCTION();
+
     std::unordered_map<GLuint, std::string> mp;
     const std::string symbol{"#type"};
     std::remove_const_t<decltype(std::string::npos)> begin = 0;
@@ -133,6 +139,8 @@ pre_process(const std::string &code) {
 
 OpenGLShader::OpenGLShader(const std::filesystem::path &filepath,
                            const std::string &label) {
+    IVX_PROFILE_FUNCTION();
+
     label_ = label.empty() ? filepath.stem().string() : label;
     std::string src = read_file(filepath);
     std::unordered_map<GLuint, std::string> mp = pre_process(src);
@@ -151,6 +159,7 @@ OpenGLShader::OpenGLShader(const std::string &vs_src,
                            const std::string &fs_src,
                            const std::string &label)
     : label_(label) {
+    IVX_PROFILE_FUNCTION();
 
     GLuint program = glCreateProgram();
     program_ = program;
@@ -164,14 +173,20 @@ OpenGLShader::OpenGLShader(const std::string &vs_src,
 }
 
 OpenGLShader::~OpenGLShader() {
+    IVX_PROFILE_FUNCTION();
+
     glDeleteProgram(program_);
 }
 
 void OpenGLShader::bind() {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
 }
 
 void OpenGLShader::unbind() {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(0);
 }
 
@@ -182,6 +197,8 @@ int OpenGLShader::location(const std::string &name) {
 }
 
 void OpenGLShader::set(const std::string &name, bool val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform1i(location(name), static_cast<GLint>(val));
@@ -193,6 +210,8 @@ void OpenGLShader::set(const std::string &name, bool val) {
 }
 
 void OpenGLShader::set(const std::string &name, float val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform1f(location(name), val);
@@ -204,6 +223,8 @@ void OpenGLShader::set(const std::string &name, float val) {
 }
 
 void OpenGLShader::set(const std::string &name, int val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform1i(location(name), val);
@@ -215,6 +236,8 @@ void OpenGLShader::set(const std::string &name, int val) {
 }
 
 void OpenGLShader::set(const std::string &name, const glm::vec2 &val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform2fv(location(name), 1, glm::value_ptr(val));
@@ -226,6 +249,8 @@ void OpenGLShader::set(const std::string &name, const glm::vec2 &val) {
 }
 
 void OpenGLShader::set(const std::string &name, const glm::vec3 &val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform3fv(location(name), 1, glm::value_ptr(val));
@@ -237,6 +262,8 @@ void OpenGLShader::set(const std::string &name, const glm::vec3 &val) {
 }
 
 void OpenGLShader::set(const std::string &name, const glm::vec4 &val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform4fv(location(name), 1, glm::value_ptr(val));
@@ -248,6 +275,8 @@ void OpenGLShader::set(const std::string &name, const glm::vec4 &val) {
 }
 
 void OpenGLShader::set(const std::string &name, const glm::ivec2 &val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform2iv(location(name), 1, glm::value_ptr(val));
@@ -259,6 +288,8 @@ void OpenGLShader::set(const std::string &name, const glm::ivec2 &val) {
 }
 
 void OpenGLShader::set(const std::string &name, const glm::ivec3 &val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform3iv(location(name), 1, glm::value_ptr(val));
@@ -270,6 +301,8 @@ void OpenGLShader::set(const std::string &name, const glm::ivec3 &val) {
 }
 
 void OpenGLShader::set(const std::string &name, const glm::ivec4 &val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniform4iv(location(name), 1, glm::value_ptr(val));
@@ -281,6 +314,8 @@ void OpenGLShader::set(const std::string &name, const glm::ivec4 &val) {
 }
 
 void OpenGLShader::set(const std::string &name, const glm::mat3 &val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniformMatrix3fv(location(name), 1, GL_FALSE, glm::value_ptr(val));
@@ -292,6 +327,8 @@ void OpenGLShader::set(const std::string &name, const glm::mat3 &val) {
 }
 
 void OpenGLShader::set(const std::string &name, const glm::mat4 &val) {
+    IVX_PROFILE_FUNCTION();
+
     glUseProgram(program_);
     if (auto it = uniform_mp_.find(name); it == uniform_mp_.end()) {
         glUniformMatrix4fv(location(name), 1, GL_FALSE, glm::value_ptr(val));
