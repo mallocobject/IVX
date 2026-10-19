@@ -3,6 +3,7 @@
 #include "ivx/core/base.h"
 #include "ivx/core/frame_timer.h"
 #include "ivx/core/ref.hpp"
+#include "ivx/debug/instrumentor.h"
 #include "ivx/event/application_event.h"
 #include "ivx/imgui/imgui_layer.h"
 #include "ivx/renderer/render_command.h"
@@ -24,6 +25,8 @@ Application::Application() {
 }
 
 void Application::run() {
+    IVX_PROFILE_BEGIN_SESSION("Sandbox::run", "profile.json");
+
     while (running_) {
         // clear
         RenderCommand::clear();
@@ -46,6 +49,8 @@ void Application::run() {
         // roll and swap buffer
         window_->on_update();
     }
+
+    IVX_PROFILE_END_SESSION();
 }
 
 void Application::push_layer(Layer *layer) {

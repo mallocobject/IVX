@@ -8,7 +8,7 @@
 #include "ivx/core/logger.h"
 #include "ivx/core/mouse_button_codes.h"
 #include "ivx/core/ref.hpp"
-#include "ivx/core/scoped_timer.h"
+#include "ivx/debug/instrumentor.h"
 
 #include "ivx/renderer/buffer.h"
 #include "ivx/renderer/camera_controller.h"

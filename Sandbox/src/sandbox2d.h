@@ -15,5 +15,4 @@ class Sandbox2D : public ivx::Layer {
     ivx::Ref<ivx::OrthoGraphicCameraController> camera_controller_;
     glm::vec4 color_{1.f};
     ivx::Ref<ivx::Texture2D> texture_;
-    std::vector<ivx::ProfileResult> prs_;
 };

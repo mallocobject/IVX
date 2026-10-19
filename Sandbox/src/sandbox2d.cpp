@@ -1,4 +1,5 @@
 #include "sandbox2d.h"
+#include "ivx/debug/instrumentor.h"
 #include <cstdint>
 #include <imgui.h>
 
@@ -16,14 +17,13 @@ void Sandbox2D::on_detach() {
 }
 
 void Sandbox2D::on_update(float delta_time) {
-    PROFILE_SCOPE("Sandbox::on_update");
-
+    IVX_PROFILE_FUNCTION();
     {
-        PROFILE_SCOPE("CameraController::on_update");
+        IVX_PROFILE_SCOPE("CameraController update");
         camera_controller_->on_update(delta_time);
     }
     { // draw
-        PROFILE_SCOPE("Renderer draw");
+        IVX_PROFILE_SCOPE("Renderer draw");
 
         ivx::Renderer2D::begin_scene(camera_controller_->get_camera());
 
@@ -38,20 +38,13 @@ void Sandbox2D::on_update(float delta_time) {
 }
 
 void Sandbox2D::on_event(ivx::Event &event) {
+    IVX_PROFILE_FUNCTION();
     camera_controller_->on_event(event);
 }
 
 void Sandbox2D::on_render() {
     ImGui::Begin("Settings");
     ImGui::ColorEdit4("Color palette", glm::value_ptr(color_));
-
-    for (auto &pr : prs_) {
-        ImGui::Text("%.3fms %.*s",
-                    pr.duration,
-                    static_cast<uint32_t>(pr.label.size()),
-                    pr.label.data());
-    }
-    prs_.clear();
 
     ImGui::End();
 }
