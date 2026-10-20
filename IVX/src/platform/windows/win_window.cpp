@@ -48,7 +48,7 @@ void WinWindow::init(const WindowProps &props) {
     if (GLFW_Initialized == 0) {
         IVX_PROFILE_SCOPE("glfwInit");
         int success = glfwInit();
-        IVX_CORE_ASSERT(success, "Could not intialize GLFW!");
+        IVX_CORE_ASSERT(success, "Could not initialize GLFW!");
         glfwSetErrorCallback([](int error_code, const char *description) {
             GLFW_error_callback(error_code, description);
         });

@@ -3,6 +3,7 @@
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/renderer/camera.h"
 #include "texture.h"
+#include <cstdint>
 #include <glm/glm.hpp>
 
 namespace ivx {
@@ -52,5 +53,22 @@ class Renderer2D {
                                   const Ref<Texture2D> &texture,
                                   float tiling_factor = 1.f,
                                   const glm::vec4 &tint_color = glm::vec4{1.f});
+
+    // Stats
+    struct Statistics {
+        uint32_t num_draw_calls = 0;
+        uint32_t num_quads = 0;
+
+        uint32_t get_total_vertex_count() const {
+            return num_quads * 4;
+        }
+
+        uint32_t get_total_index_count() const {
+            return num_quads * 6;
+        }
+    };
+
+    static void reset_stats();
+    static Statistics get_stats();
 };
 } // namespace ivx

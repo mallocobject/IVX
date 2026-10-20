@@ -1,4 +1,6 @@
 #include "sandbox2d.h"
+#include "glm/ext/vector_float2.hpp"
+#include "glm/ext/vector_float4.hpp"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/renderer/render_command.h"
 #include <cstdint>
@@ -22,7 +24,11 @@ void Sandbox2D::on_detach() {
 void Sandbox2D::on_update(float delta_time) {
     IVX_PROFILE_FUNCTION();
 
+    // update
     camera_controller_->on_update(delta_time);
+
+    // render
+    ivx::Renderer2D::reset_stats();
 
     {
         // clear
@@ -31,16 +37,27 @@ void Sandbox2D::on_update(float delta_time) {
         ivx::RenderCommand::clear();
     }
 
-    { // draw
+    {
+        // draw
         IVX_PROFILE_SCOPE("Renderer draw");
 
         ivx::Renderer2D::begin_scene(camera_controller_->get_camera());
-        // ivx::Renderer2D::draw_rotated_quad(
-        //     {-100.f, 0.0f}, {0.8f, 0.8f}, 45.f, {0.8f, 0.2f, 0.3f, 1.0f});
+        ivx::Renderer2D::draw_rotated_quad(
+            {-100.f, 0.0f}, {400.f, 400.f}, 45.f, {0.8f, 0.2f, 0.3f, 1.0f});
         ivx::Renderer2D::draw_quad(
             {0.f, 0.f}, {300.f, 300.f}, {0.2f, 0.3f, 0.8f, 1.0f});
         ivx::Renderer2D::draw_quad(
             {0.0f, 0.0f, -0.1f}, {500.f, 500.f}, texture_, 10.f);
+        ivx::Renderer2D::end_scene();
+
+        ivx::Renderer2D::begin_scene(camera_controller_->get_camera());
+        for (float y = -500.f; y < 500.f; y += 50.f) {
+            for (float x = -500.f; x < 500.f; x += 50.f) {
+                glm::vec4 color{
+                    (x + 500.f) / 1000.f, 0.4f, (y + 500.f) / 1000.f, 0.7f};
+                ivx::Renderer2D::draw_quad({x, y}, {40.f, 40.f}, color);
+            }
+        }
         ivx::Renderer2D::end_scene();
     }
 }
@@ -54,6 +71,13 @@ void Sandbox2D::on_render() {
 
     ImGui::Begin("Settings");
     ImGui::ColorEdit4("Color palette", glm::value_ptr(color_));
+
+    auto stats = ivx::Renderer2D::get_stats();
+    ImGui::Text("Renderer2D Stats:");
+    ImGui::Text("Draw Calls: %d", stats.num_draw_calls);
+    ImGui::Text("Quads: %d", stats.num_quads);
+    ImGui::Text("Vertices: %d", stats.get_total_vertex_count());
+    ImGui::Text("Indices: %d", stats.get_total_index_count());
 
     ImGui::End();
 }
