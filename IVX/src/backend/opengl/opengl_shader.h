@@ -23,17 +23,21 @@ class OpenGLShader : public Shader {
         return label_;
     }
 
-    void set(const std::string &name, bool val) override;
-    void set(const std::string &name, float val) override;
-    void set(const std::string &name, int val) override;
-    void set(const std::string &name, const glm::vec2 &val) override;
-    void set(const std::string &name, const glm::vec3 &val) override;
-    void set(const std::string &name, const glm::vec4 &val) override;
-    void set(const std::string &name, const glm::ivec2 &val) override;
-    void set(const std::string &name, const glm::ivec3 &val) override;
-    void set(const std::string &name, const glm::ivec4 &val) override;
-    void set(const std::string &name, const glm::mat3 &val) override;
-    void set(const std::string &name, const glm::mat4 &val) override;
+    virtual void set(const std::string &name, bool val) override;
+    virtual void set(const std::string &name, float val) override;
+    virtual void set(const std::string &name, int val) override;
+    virtual void set(const std::string &name, const glm::vec2 &val) override;
+    virtual void set(const std::string &name, const glm::vec3 &val) override;
+    virtual void set(const std::string &name, const glm::vec4 &val) override;
+    virtual void set(const std::string &name, const glm::ivec2 &val) override;
+    virtual void set(const std::string &name, const glm::ivec3 &val) override;
+    virtual void set(const std::string &name, const glm::ivec4 &val) override;
+    virtual void set(const std::string &name, const glm::mat3 &val) override;
+    virtual void set(const std::string &name, const glm::mat4 &val) override;
+    virtual void
+    set(const std::string &name, const float *vals, uint32_t count) override;
+    virtual void
+    set(const std::string &name, const int *vals, uint32_t count) override;
 
   private:
     int location(const std::string &name);

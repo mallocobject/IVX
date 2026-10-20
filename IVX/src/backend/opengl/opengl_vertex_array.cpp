@@ -20,6 +20,8 @@ static GLenum shader_data_type_to_opengl_base_type(ShaderDataType type) {
         return GL_FLOAT;
     case vec4:
         return GL_FLOAT;
+    case ivec:
+        return GL_INT;
     case ivec2:
         return GL_INT;
     case ivec3:
@@ -63,27 +65,42 @@ void OpenGLVertexArray::unbind() {
 void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
     IVX_PROFILE_FUNCTION();
 
-    IVX_CORE_ASSERT(vertex_buf->get_buffer_layout()->get_elements().size(),
+    const auto &layout = vertex_buf->get_buffer_layout();
+    IVX_CORE_ASSERT(layout && layout->get_elements().size(),
                     "Vertex Buffer has no layout!");
 
-    glBindVertexArray(vao_);
-    vertex_buf->bind();
+    const auto binding_index = static_cast<uint32_t>(vertex_bufs_.size());
+    glVertexArrayVertexBuffer(vao_,
+                              binding_index,
+                              vertex_buf->get_renderer_id(),
+                              0,
+                              static_cast<GLsizei>(layout->get_stride()));
 
-    auto &buffer_layout_vec = vertex_buf->get_buffer_layout()->get_elements();
-    for (int i = 0; i < buffer_layout_vec.size(); i++) {
-        glEnableVertexAttribArray(i);
-        glVertexAttribPointer(
-            i,
-            count_of(buffer_layout_vec[i].type),
-            shader_data_type_to_opengl_base_type(buffer_layout_vec[i].type),
-            buffer_layout_vec[i].normalized ? GL_TRUE : GL_FALSE,
-            vertex_buf->get_buffer_layout()->get_stride(),
-            reinterpret_cast<const void *>(
-                static_cast<std::uintptr_t>(buffer_layout_vec[i].offset)));
+    const auto &elements = layout->get_elements();
+    for (int i = 0; i < elements.size(); i++) {
+        const auto &element = elements[i];
+        const auto location = static_cast<uint32_t>(i);
+
+        glEnableVertexArrayAttrib(vao_, location);
+
+        auto type = shader_data_type_to_opengl_base_type(element.type);
+        if (type == GL_FLOAT) {
+            glVertexArrayAttribFormat(vao_,
+                                      location,
+                                      count_of(element.type),
+                                      GL_FLOAT,
+                                      element.normalized ? GL_TRUE : GL_FALSE,
+                                      static_cast<GLuint>(element.offset));
+        } else if (type == GL_INT) {
+            glVertexArrayAttribIFormat(vao_,
+                                       location,
+                                       count_of(element.type),
+                                       GL_INT,
+                                       static_cast<GLuint>(element.offset));
+        }
+
+        glVertexArrayAttribBinding(vao_, location, binding_index);
     }
-
-    glBindVertexArray(0);
-    vertex_buf->unbind();
 
     vertex_bufs_.push_back(vertex_buf);
 }
@@ -91,12 +108,7 @@ void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
 void OpenGLVertexArray::set_index_buffer(const Ref<IndexBuffer> &index_buf) {
     IVX_PROFILE_FUNCTION();
 
-    glBindVertexArray(vao_);
-    index_buf->bind();
-
-    glBindVertexArray(0);
-    index_buf->unbind();
-
+    glVertexArrayElementBuffer(vao_, index_buf->get_renderer_id());
     index_buf_ = index_buf;
 }
 } // namespace ivx

@@ -20,7 +20,7 @@ class OpenGLTexture2D : public Texture2D {
         return height_;
     }
 
-    virtual void set_data(void *data, uint32_t size) override;
+    virtual void set_data(const void *data, uint32_t size) override;
 
     virtual void bind(uint32_t slot = 0) const override;
 

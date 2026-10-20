@@ -26,6 +26,14 @@ void OpenGLContext::init() {
                   reinterpret_cast<const char *>(glGetString(GL_RENDERER)));
     IVX_CORE_INFO("    Version: {}",
                   reinterpret_cast<const char *>(glGetString(GL_VERSION)));
+
+    if (GLVersion.major < 4 || (GLVersion.major == 4 && GLVersion.minor < 5)) {
+        IVX_CORE_FATAL("OpenGL 4.5+ is required, but the context is {}.{}. "
+                       "Update your graphics driver or lower the requirement.",
+                       GLVersion.major,
+                       GLVersion.minor);
+        IVX_CORE_ASSERT(false, "Unsupported OpenGL version!");
+    }
 }
 
 void OpenGLContext::swap_buffer() {

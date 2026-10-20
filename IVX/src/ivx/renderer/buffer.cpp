@@ -27,6 +27,19 @@ void BufferLayout::calc_stride() {
     }
 }
 
+Ref<VertexBuffer> VertexBuffer::create(uint32_t size) {
+    using enum RendererAPI::API;
+    switch (RendererAPI::get_api()) {
+    case kOpenGL:
+        return make_ref<OpenGLVertexBuffer>(size);
+    case kNone:
+    default: {
+        IVX_CORE_ASSERT(false, "Unknown backend!");
+        return nullptr;
+    }
+    }
+}
+
 Ref<VertexBuffer> VertexBuffer::create(float *vertices, uint32_t count) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {

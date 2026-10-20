@@ -1,9 +1,9 @@
 #pragma once
 
 #include "ivx/core/base.h"
+#include "ivx/core/logger.h"
 #include "ivx/core/ref.hpp"
 #include "ivx/core/ref_counted.hpp"
-#include "ivx/core/logger.h"
 #include <algorithm>
 #include <cstdint>
 #include <initializer_list>
@@ -17,6 +17,7 @@ enum class ShaderDataType : uint8_t {
     vec2,
     vec3,
     vec4,
+    ivec,
     ivec2,
     ivec3,
     ivec4,
@@ -37,6 +38,8 @@ inline constexpr uint32_t size_of(ShaderDataType type) {
         return 4 * 3;
     case vec4:
         return 4 * 4;
+    case ivec:
+        return 4;
     case ivec2:
         return 4 * 2;
     case ivec3:
@@ -66,6 +69,8 @@ inline constexpr uint32_t count_of(ShaderDataType type) {
         return 3;
     case vec4:
         return 4;
+    case ivec:
+        return 1;
     case ivec2:
         return 2;
     case ivec3:
@@ -130,8 +135,9 @@ class VertexBuffer : public RefCounted {
   public:
     virtual ~VertexBuffer() = default;
 
-    virtual void bind() = 0;
-    virtual void unbind() = 0;
+    virtual void set_data(const void *data, uint32_t size) = 0;
+
+    virtual uint32_t get_renderer_id() const = 0;
 
     void set_buffer_layout(const Ref<BufferLayout> &buf_layout) {
         buf_layout_ = buf_layout;
@@ -141,6 +147,7 @@ class VertexBuffer : public RefCounted {
         return buf_layout_;
     }
 
+    static Ref<VertexBuffer> create(uint32_t size);
     static Ref<VertexBuffer> create(float *vertices, uint32_t count);
 
   private:
@@ -151,10 +158,9 @@ class IndexBuffer : public RefCounted {
   public:
     virtual ~IndexBuffer() = default;
 
-    virtual void bind() = 0;
-    virtual void unbind() = 0;
-
     virtual uint32_t get_count() const = 0;
+
+    virtual uint32_t get_renderer_id() const = 0;
 
     static Ref<IndexBuffer> create(uint32_t *indices, uint32_t count);
 };

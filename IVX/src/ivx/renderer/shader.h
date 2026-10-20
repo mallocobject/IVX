@@ -39,6 +39,11 @@ class Shader : public RefCounted {
 
     virtual void set(const std::string &name, const glm::mat3 &val) = 0;
     virtual void set(const std::string &name, const glm::mat4 &val) = 0;
+
+    virtual void
+    set(const std::string &name, const float *vals, uint32_t count) = 0;
+    virtual void
+    set(const std::string &name, const int *vals, uint32_t count) = 0;
 };
 
 class ShaderLibrary {

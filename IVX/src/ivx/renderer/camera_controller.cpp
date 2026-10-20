@@ -51,10 +51,10 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
     }
 
     if (enable_rotation_) {
-        if (Input::IsMouseButtonPressed(IVX_MOUSE_BUTTON_LEFT)) {
+        if (Input::is_key_pressed(IVX_KEY_Q)) {
             degrees += delta * delta_time;
         }
-        if (Input::IsMouseButtonPressed(IVX_MOUSE_BUTTON_RIGHT)) {
+        if (Input::is_key_pressed(IVX_KEY_E)) {
             degrees -= delta * delta_time;
         }
     }

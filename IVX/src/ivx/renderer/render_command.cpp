@@ -26,4 +26,9 @@ void RenderCommand::draw(const Ref<VertexArray> &vertex_array) {
     renderer_api_->draw(vertex_array);
 }
 
+void RenderCommand::draw(const Ref<VertexArray> &vertex_array,
+                         uint32_t num_indices) {
+    renderer_api_->draw(vertex_array, num_indices);
+}
+
 } // namespace ivx

@@ -35,11 +35,12 @@ void Sandbox2D::on_update(float delta_time) {
         IVX_PROFILE_SCOPE("Renderer draw");
 
         ivx::Renderer2D::begin_scene(camera_controller_->get_camera());
+        // ivx::Renderer2D::draw_rotated_quad(
+        //     {-100.f, 0.0f}, {0.8f, 0.8f}, 45.f, {0.8f, 0.2f, 0.3f, 1.0f});
         ivx::Renderer2D::draw_quad(
-            {-100.f, 0.0f}, {0.8f, 0.8f}, {0.8f, 0.2f, 0.3f, 1.0f});
+            {0.f, 0.f}, {300.f, 300.f}, {0.2f, 0.3f, 0.8f, 1.0f});
         ivx::Renderer2D::draw_quad(
-            {50.f, -50.f}, {0.5f, 0.75f}, {0.2f, 0.3f, 0.8f, 1.0f});
-        ivx::Renderer2D::draw_quad({0.0f, 0.0f, -0.1f}, {10.f, 10.f}, texture_);
+            {0.0f, 0.0f, -0.1f}, {500.f, 500.f}, texture_, 10.f);
         ivx::Renderer2D::end_scene();
     }
 }

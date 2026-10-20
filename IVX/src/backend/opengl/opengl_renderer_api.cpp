@@ -1,7 +1,6 @@
 #include "ivxpch.h"
 #include "opengl_renderer_api.h"
 
-// #include <gl/gl.h>
 #include "ivx/core/logger.h"
 #include "ivx/core/ref.hpp"
 #include <glad/glad.h>
@@ -76,6 +75,11 @@ void OpenGLRendererAPI::draw(const Ref<VertexArray> &vertex_array) {
                    vertex_array->get_index_buffer()->get_count(),
                    GL_UNSIGNED_INT,
                    nullptr);
+}
+
+void OpenGLRendererAPI::draw(const Ref<VertexArray> &vertex_array,
+                             uint32_t num_indices) {
+    glDrawElements(GL_TRIANGLES, num_indices, GL_UNSIGNED_INT, nullptr);
 }
 
 } // namespace ivx

@@ -12,5 +12,7 @@ class OpenGLRendererAPI : public RendererAPI {
     virtual void set_clear_color(const glm::vec4 &color) override;
     virtual void clear() override;
     virtual void draw(const Ref<VertexArray> &vertex_array) override;
+    virtual void draw(const Ref<VertexArray> &vertex_array,
+                      uint32_t num_indices) override;
 };
 } // namespace ivx

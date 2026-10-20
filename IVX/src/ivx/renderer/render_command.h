@@ -3,6 +3,7 @@
 #include "ivx/core/ref.hpp"
 #include "ivx/renderer/renderer_api.h"
 #include "ivx/renderer/vertex_array.h"
+#include <cstdint>
 #include <glm/glm.hpp>
 
 namespace ivx {
@@ -13,6 +14,8 @@ class RenderCommand {
     static void set_clear_color(const glm::vec4 &color);
     static void clear();
     static void draw(const Ref<VertexArray> &vertex_array);
+    static void draw(const Ref<VertexArray> &vertex_array,
+                     uint32_t num_indices);
 
   private:
     static Ref<RendererAPI> renderer_api_;

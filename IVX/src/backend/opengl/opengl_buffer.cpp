@@ -5,15 +5,18 @@
 #include <glad/glad.h>
 
 namespace ivx {
+OpenGLVertexBuffer::OpenGLVertexBuffer(uint32_t size) {
+    IVX_PROFILE_FUNCTION();
+
+    glCreateBuffers(1, &vbo_);
+    glNamedBufferData(vbo_, size, nullptr, GL_DYNAMIC_DRAW);
+}
+
 OpenGLVertexBuffer::OpenGLVertexBuffer(float *vertices, uint32_t count) {
     IVX_PROFILE_FUNCTION();
 
     glCreateBuffers(1, &vbo_);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-    glBufferData(
-        GL_ARRAY_BUFFER, count * sizeof(float), vertices, GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glNamedBufferData(vbo_, count * sizeof(float), vertices, GL_STATIC_DRAW);
 }
 
 OpenGLVertexBuffer::~OpenGLVertexBuffer() {
@@ -22,14 +25,10 @@ OpenGLVertexBuffer::~OpenGLVertexBuffer() {
     glDeleteBuffers(1, &vbo_);
 }
 
-void OpenGLVertexBuffer::bind() {
-    glBindBuffer(GL_ARRAY_BUFFER, vbo_);
-}
-
-void OpenGLVertexBuffer::unbind() {
+void OpenGLVertexBuffer::set_data(const void *data, uint32_t size) {
     IVX_PROFILE_FUNCTION();
 
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glNamedBufferSubData(vbo_, 0, size, data);
 }
 
 OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t *indices, uint32_t count)
@@ -37,30 +36,12 @@ OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t *indices, uint32_t count)
     IVX_PROFILE_FUNCTION();
 
     glCreateBuffers(1, &ibo_);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER,
-                 count * sizeof(uint32_t),
-                 indices,
-                 GL_STATIC_DRAW);
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+    glNamedBufferData(ibo_, count * sizeof(uint32_t), indices, GL_STATIC_DRAW);
 }
 
 OpenGLIndexBuffer::~OpenGLIndexBuffer() {
     IVX_PROFILE_FUNCTION();
 
     glDeleteBuffers(1, &ibo_);
-}
-
-void OpenGLIndexBuffer::bind() {
-    IVX_PROFILE_FUNCTION();
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ibo_);
-}
-
-void OpenGLIndexBuffer::unbind() {
-    IVX_PROFILE_FUNCTION();
-
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 }; // namespace ivx

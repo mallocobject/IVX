@@ -2,14 +2,23 @@
 #version 330 core
 
 layout(location = 0) in vec3 a_Position;
-layout(location = 1) in vec2 a_Texcoord;
+layout(location = 1) in vec4 a_Color;
+layout(location = 2) in vec2 a_TexCoord;
+layout(location = 3) in int a_TexIndex;
+layout(location = 4) in float a_TilingFactor;
 
-out vec2 v_Texcoord;
+out vec4 v_Color;
+out vec2 v_TexCoord;
+flat out int v_TexIndex;
+out float v_TilingFactor;
 
 uniform mat4 mvp;
 
 void main() {
-    v_Texcoord = a_Texcoord;
+    v_Color = a_Color;
+    v_TexCoord = a_TexCoord;
+    v_TexIndex = a_TexIndex;
+    v_TilingFactor = a_TilingFactor;
     gl_Position = mvp * vec4(a_Position, 1.0);
 }
 
@@ -18,12 +27,13 @@ void main() {
 
 layout(location = 0) out vec4 color;
 
-in vec2 v_Texcoord;
+in vec4 v_Color;
+in vec2 v_TexCoord;
+flat in int v_TexIndex;
+in float v_TilingFactor;
 
-uniform vec4 u_Color;
-uniform sampler2D u_Texture;
+uniform sampler2D u_Textures[32];
 
 void main() {
-    // color = texture(u_Texture, v_Texcoord);
-    color = texture(u_Texture, v_Texcoord  * 10.0) * u_Color;
+	color = texture(u_Textures[v_TexIndex], v_TexCoord * v_TilingFactor) * v_Color;
 }

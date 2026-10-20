@@ -23,6 +23,8 @@ class RendererAPI : public RefCounted {
     virtual void set_clear_color(const glm::vec4 &color) = 0;
     virtual void clear() = 0;
     virtual void draw(const Ref<VertexArray> &vertex_array) = 0;
+    virtual void draw(const Ref<VertexArray> &vertex_array,
+                      uint32_t num_indices) = 0;
 
     static API get_api() {
         return api_;

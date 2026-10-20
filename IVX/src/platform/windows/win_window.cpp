@@ -56,11 +56,14 @@ void WinWindow::init(const WindowProps &props) {
 
     {
         IVX_PROFILE_SCOPE("glfwCreateWindow");
-#if defined(IVX_CONFIG_DEBUG)
         if (Renderer::get_api() == RendererAPI::API::kOpenGL) {
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+#if defined(IVX_CONFIG_DEBUG)
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
-        }
 #endif
+        }
         window_handle_ = glfwCreateWindow(static_cast<int>(props.width),
                                           static_cast<int>(props.height),
                                           data_.title.c_str(),

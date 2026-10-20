@@ -15,10 +15,9 @@ void LayerStack::push_overlay(Layer *overlay) {
 }
 
 void LayerStack::pop_layer(Layer *layer) {
-    if (auto it = rg::find(layers_ | vws::take(layer_insert_idx_),
-                           layer,
-                           [](auto &&e) { return e.get(); });
-        it != layers_.end()) {
+    auto view = layers_ | vws::take(layer_insert_idx_);
+    if (auto it = rg::find(view, layer, [](auto &&e) { return e.get(); });
+        it != rg::end(view)) {
         layer->on_detach();
         layers_.erase(it);
         layer_insert_idx_--;
@@ -26,10 +25,9 @@ void LayerStack::pop_layer(Layer *layer) {
 }
 
 void LayerStack::pop_overlay(Layer *overlay) {
-    if (auto it = rg::find(layers_ | vws::drop(layer_insert_idx_),
-                           overlay,
-                           [](auto &&e) { return e.get(); });
-        it != layers_.end()) {
+    auto view = layers_ | vws::drop(layer_insert_idx_);
+    if (auto it = rg::find(view, overlay, [](auto &&e) { return e.get(); });
+        it != rg::end(view)) {
         overlay->on_detach();
         layers_.erase(it);
     }
