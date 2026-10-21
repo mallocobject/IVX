@@ -9,6 +9,7 @@
 #include "glm/trigonometric.hpp"
 #include "ivx/renderer/renderer.h"
 #include "ivx/renderer/shader.h"
+#include "ivx/renderer/sub_texture2d.h"
 #include "ivx/renderer/texture.h"
 #include "ivx/renderer/vertex_array.h"
 #include <algorithm>
@@ -239,6 +240,76 @@ void Renderer2D::draw_quad(const glm::vec3 &position,
     constexpr glm::vec2 tex_coords[]{
         {0.f, 0.f}, {1.f, 0.f}, {1.f, 1.f}, {0.f, 1.f}};
 
+    // constexpr float x = 1.f;
+    // constexpr float y = 1.f;
+    // constexpr float sheet_width = 203.f;
+    // constexpr float sheet_height = 186.f;
+    // constexpr float sprite_width = 16.f;
+    // constexpr float sprite_height = 16.f;
+
+    // constexpr glm::vec2 tex_coords[]{
+    //     {x * sprite_width / sheet_width, y * sprite_height / sheet_height},
+    //     {(x + 1) * sprite_width / sheet_width,
+    //      y * sprite_height / sheet_height},
+    //     {(x + 1) * sprite_width / sheet_width,
+    //      (y + 1) * sprite_height / sheet_height},
+    //     {x * sprite_width / sheet_width,
+    //      (y + 1) * sprite_height / sheet_height},
+    // };
+
+    glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
+                          glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
+
+    for (int i = 0; i < 4; i++) {
+        data.quad_vertex_buffer_ptr->position =
+            transform * data.quad_vertex_position[i];
+        data.quad_vertex_buffer_ptr->color = tint_color;
+        data.quad_vertex_buffer_ptr->tex_coord = tex_coords[i];
+        data.quad_vertex_buffer_ptr->tex_index = tex_index;
+        data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+        data.quad_vertex_buffer_ptr++;
+    }
+
+    data.quad_index_count += 6;
+
+    data.stats.num_quads++;
+}
+
+void Renderer2D::draw_quad(const glm::vec2 &position,
+                           const glm::vec2 &size,
+                           const Ref<SubTexture2D> &sub_texture,
+                           float tiling_factor,
+                           const glm::vec4 &tint_color) {
+    draw_quad(
+        glm::vec3{position, 0.f}, size, sub_texture, tiling_factor, tint_color);
+}
+
+void Renderer2D::draw_quad(const glm::vec3 &position,
+                           const glm::vec2 &size,
+                           const Ref<SubTexture2D> &sub_texture,
+                           float tiling_factor,
+                           const glm::vec4 &tint_color) {
+    IVX_PROFILE_FUNCTION();
+
+    if (data.quad_index_count >= Renderer2DData::max_num_indices) {
+        flush();
+    }
+
+    int tex_index = 0;
+    auto view = data.tex_slots | vws::take(data.tex_slot_index);
+    if (auto it = rg::find(view,
+                           sub_texture->get_texture().get(),
+                           [](auto &&e) { return e.get(); });
+        it != rg::end(view)) {
+        tex_index = static_cast<int>(std::distance(data.tex_slots.begin(), it));
+    } else {
+        tex_index = data.tex_slot_index;
+        data.tex_slots[data.tex_slot_index] = sub_texture->get_texture();
+        data.tex_slot_index++;
+    }
+
+    const glm::vec2 *tex_coords = sub_texture->get_tex_coords();
+
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
 
@@ -340,6 +411,66 @@ void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
 
     constexpr glm::vec2 tex_coords[]{
         {0.f, 0.f}, {1.f, 0.f}, {1.f, 1.f}, {0.f, 1.f}};
+
+    glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
+                          glm::rotate(glm::mat4{1.f},
+                                      glm::radians(degrees),
+                                      glm::vec3{0.f, 0.f, 1.f}) *
+                          glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
+
+    for (int i = 0; i < 4; i++) {
+        data.quad_vertex_buffer_ptr->position =
+            transform * data.quad_vertex_position[i];
+        data.quad_vertex_buffer_ptr->color = tint_color;
+        data.quad_vertex_buffer_ptr->tex_coord = tex_coords[i];
+        data.quad_vertex_buffer_ptr->tex_index = tex_index;
+        data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+        data.quad_vertex_buffer_ptr++;
+    }
+
+    data.quad_index_count += 6;
+
+    data.stats.num_quads++;
+}
+void Renderer2D::draw_rotated_quad(const glm::vec2 &position,
+                                   const glm::vec2 &size,
+                                   float degrees,
+                                   const Ref<SubTexture2D> &sub_texture,
+                                   float tiling_factor,
+                                   const glm::vec4 &tint_color) {
+    draw_rotated_quad(glm::vec3{position, 0.f},
+                      size,
+                      degrees,
+                      sub_texture,
+                      tiling_factor,
+                      tint_color);
+}
+void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
+                                   const glm::vec2 &size,
+                                   float degrees,
+                                   const Ref<SubTexture2D> &sub_texture,
+                                   float tiling_factor,
+                                   const glm::vec4 &tint_color) {
+    IVX_PROFILE_FUNCTION();
+
+    if (data.quad_index_count >= Renderer2DData::max_num_indices) {
+        flush();
+    }
+
+    int tex_index = 0;
+    auto view = data.tex_slots | vws::take(data.tex_slot_index);
+    if (auto it = rg::find(view,
+                           sub_texture->get_texture().get(),
+                           [](auto &&e) { return e.get(); });
+        it != rg::end(view)) {
+        tex_index = static_cast<int>(std::distance(data.tex_slots.begin(), it));
+    } else {
+        tex_index = data.tex_slot_index;
+        data.tex_slots[data.tex_slot_index] = sub_texture->get_texture();
+        data.tex_slot_index++;
+    }
+
+    const glm::vec2 *tex_coords = sub_texture->get_tex_coords();
 
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
                           glm::rotate(glm::mat4{1.f},
