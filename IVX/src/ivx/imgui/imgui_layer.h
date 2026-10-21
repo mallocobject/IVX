@@ -8,8 +8,9 @@ class ImGuiLayer : public Layer {
     ImGuiLayer();
     ~ImGuiLayer() = default;
 
-    void on_attach() override;
-    void on_detach() override;
+    virtual void on_attach() override;
+    virtual void on_detach() override;
+    virtual void on_event(Event &event) override;
 
     void begin();
     void end();

@@ -72,35 +72,76 @@ void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
     const auto binding_index = static_cast<uint32_t>(vertex_bufs_.size());
     glVertexArrayVertexBuffer(vao_,
                               binding_index,
-                              vertex_buf->get_renderer_id(),
+                              vertex_buf->get_id(),
                               0,
                               static_cast<GLsizei>(layout->get_stride()));
 
     const auto &elements = layout->get_elements();
-    for (int i = 0; i < elements.size(); i++) {
-        const auto &element = elements[i];
-        const auto location = static_cast<uint32_t>(i);
+    GLuint location = 0;
+    bool has_instance_attr = false;
 
-        glEnableVertexArrayAttrib(vao_, location);
-
-        auto type = shader_data_type_to_opengl_base_type(element.type);
-        if (type == GL_FLOAT) {
+    for (const auto &element : elements) {
+        using enum ShaderDataType;
+        switch (element.type) {
+        case boolean:
+        case ivec:
+        case ivec2:
+        case ivec3:
+        case ivec4: {
+            glEnableVertexArrayAttrib(vao_, location);
+            glVertexArrayAttribIFormat(vao_,
+                                       location,
+                                       count_of(element.type),
+                                       GL_INT,
+                                       static_cast<GLuint>(element.offset));
+            glVertexArrayAttribBinding(vao_, location, binding_index);
+            location++;
+            break;
+        }
+        case vec:
+        case vec2:
+        case vec3:
+        case vec4: {
+            glEnableVertexArrayAttrib(vao_, location);
             glVertexArrayAttribFormat(vao_,
                                       location,
                                       count_of(element.type),
                                       GL_FLOAT,
                                       element.normalized ? GL_TRUE : GL_FALSE,
                                       static_cast<GLuint>(element.offset));
-        } else if (type == GL_INT) {
-            glVertexArrayAttribIFormat(vao_,
-                                       location,
-                                       count_of(element.type),
-                                       GL_INT,
-                                       static_cast<GLuint>(element.offset));
+            glVertexArrayAttribBinding(vao_, location, binding_index);
+            location++;
+            break;
         }
+        case mat3:
+        case mat4: {
+            const auto column_count = count_of(element.type); // 3 or 4
+            const auto column_bytes = sizeof(float) * column_count;
+            for (uint32_t col = 0; col < column_count; ++col) {
+                const auto column_offset =
+                    static_cast<GLuint>(element.offset + column_bytes * col);
 
-        glVertexArrayAttribBinding(vao_, location, binding_index);
+                glEnableVertexArrayAttrib(vao_, location);
+                glVertexArrayAttribFormat(vao_,
+                                          location,
+                                          column_count, // vec3 / vec4
+                                          GL_FLOAT,
+                                          element.normalized ? GL_TRUE
+                                                             : GL_FALSE,
+                                          column_offset);
+                glVertexArrayAttribBinding(vao_, location, binding_index);
+                ++location;
+            }
+            has_instance_attr = true;
+            break;
+        }
+        default:
+            IVX_CORE_ASSERT(false, "Unknown ShaderDataType!");
+            break;
+        }
     }
+
+    glVertexArrayBindingDivisor(vao_, binding_index, has_instance_attr ? 1 : 0);
 
     vertex_bufs_.push_back(vertex_buf);
 }
@@ -108,7 +149,7 @@ void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
 void OpenGLVertexArray::set_index_buffer(const Ref<IndexBuffer> &index_buf) {
     IVX_PROFILE_FUNCTION();
 
-    glVertexArrayElementBuffer(vao_, index_buf->get_renderer_id());
+    glVertexArrayElementBuffer(vao_, index_buf->get_id());
     index_buf_ = index_buf;
 }
 } // namespace ivx

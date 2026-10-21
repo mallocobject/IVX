@@ -78,9 +78,9 @@ inline constexpr uint32_t count_of(ShaderDataType type) {
     case ivec4:
         return 4;
     case mat3:
-        return 3 * 3;
+        return 3;
     case mat4:
-        return 4 * 4;
+        return 4;
     }
 
     IVX_CORE_ASSERT(false, "Unknown ShaderDataType!");
@@ -137,7 +137,7 @@ class VertexBuffer : public RefCounted {
 
     virtual void set_data(const void *data, uint32_t size) = 0;
 
-    virtual uint32_t get_renderer_id() const = 0;
+    virtual uint32_t get_id() const = 0;
 
     void set_buffer_layout(const Ref<BufferLayout> &buf_layout) {
         buf_layout_ = buf_layout;
@@ -160,7 +160,7 @@ class IndexBuffer : public RefCounted {
 
     virtual uint32_t get_count() const = 0;
 
-    virtual uint32_t get_renderer_id() const = 0;
+    virtual uint32_t get_id() const = 0;
 
     static Ref<IndexBuffer> create(uint32_t *indices, uint32_t count);
 };

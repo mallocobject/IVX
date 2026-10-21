@@ -4,6 +4,7 @@
 #include "ivx/core/application.h"
 
 #include "ivx/debug/instrumentor.h"
+#include "ivx/event/event.h"
 #include <backends/imgui_impl_glfw.h>
 #include <backends/imgui_impl_opengl3.h>
 
@@ -62,6 +63,17 @@ void ImGuiLayer::on_detach() {
     ImGui::DestroyContext();
 }
 
+void ImGuiLayer::on_event(Event &event) {
+    IVX_PROFILE_FUNCTION();
+
+    ImGuiIO &io = ImGui::GetIO();
+    event.handled |= event.is_in_category(EventCategory::kEventCategoryMouse) &
+                     io.WantCaptureMouse;
+    event.handled |=
+        event.is_in_category(EventCategory::kEventCategoryKeyboard) &
+        io.WantCaptureKeyboard;
+}
+
 void ImGuiLayer::begin() {
     IVX_PROFILE_FUNCTION();
 
@@ -93,4 +105,5 @@ void ImGuiLayer::end() {
         glfwMakeContextCurrent(backup_current_context);
     }
 }
+
 } // namespace ivx

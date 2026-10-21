@@ -12,7 +12,7 @@ class OpenGLVertexBuffer : public VertexBuffer {
 
     virtual void set_data(const void *data, uint32_t size) override;
 
-    virtual uint32_t get_renderer_id() const override {
+    virtual uint32_t get_id() const override {
         return vbo_;
     }
 
@@ -29,7 +29,7 @@ class OpenGLIndexBuffer : public IndexBuffer {
         return count_;
     }
 
-    virtual uint32_t get_renderer_id() const override {
+    virtual uint32_t get_id() const override {
         return ibo_;
     }
 

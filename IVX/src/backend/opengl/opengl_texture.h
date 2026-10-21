@@ -20,6 +20,10 @@ class OpenGLTexture2D : public Texture2D {
         return height_;
     }
 
+    virtual uint32_t get_id() const override {
+        return texture_;
+    }
+
     virtual void set_data(const void *data, uint32_t size) override;
 
     virtual void bind(uint32_t slot = 0) const override;

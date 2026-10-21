@@ -67,6 +67,10 @@ void Application::run() {
     }
 }
 
+void Application::close() {
+    running_ = false;
+}
+
 void Application::push_layer(Layer *layer) {
     IVX_PROFILE_FUNCTION();
 
@@ -93,12 +97,10 @@ void Application::on_event(Event &e) {
     dispatcher.dispatch([this](WindowResizeEvent &e) {
         IVX_PROFILE_FUNCTION();
 
-        if (e.get_width() == 0 || e.get_height() == 0) {
-            minimized_ = true;
+        minimized_ = (e.get_width() == 0 || e.get_height() == 0);
+        if (!minimized_) {
+            Renderer::on_window_resize(e);
         }
-
-        minimized_ = false;
-        Renderer::on_window_resize(e);
 
         return false;
     });

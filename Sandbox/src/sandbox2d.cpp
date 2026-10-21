@@ -1,7 +1,9 @@
 #include "sandbox2d.h"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
+#include "ivx/core/logger.h"
 #include "ivx/debug/instrumentor.h"
+#include "ivx/event/event.h"
 #include "ivx/renderer/render_command.h"
 #include <cstdint>
 #include <imgui.h>
@@ -43,7 +45,7 @@ void Sandbox2D::on_update(float delta_time) {
 
         ivx::Renderer2D::begin_scene(camera_controller_->get_camera());
         ivx::Renderer2D::draw_rotated_quad(
-            {-100.f, 0.0f}, {400.f, 400.f}, 45.f, {0.8f, 0.2f, 0.3f, 1.0f});
+            {-100.f, 0.0f}, {400.f, 400.f}, 45.f, color_);
         ivx::Renderer2D::draw_quad(
             {0.f, 0.f}, {300.f, 300.f}, {0.2f, 0.3f, 0.8f, 1.0f});
         ivx::Renderer2D::draw_quad(
@@ -63,14 +65,40 @@ void Sandbox2D::on_update(float delta_time) {
 }
 
 void Sandbox2D::on_event(ivx::Event &event) {
+    if (event.is_in_category(ivx::EventCategory::kEventCategoryMouse |
+                             ivx::EventCategory::kEventCategoryKeyboard)) {
+        // IVX_VERBOSE("{}", event.to_string());
+    }
+
     camera_controller_->on_event(event);
 }
 
 void Sandbox2D::on_render() {
     IVX_PROFILE_FUNCTION();
 
+    static bool docking_enabled = true;
+    if (docking_enabled) {
+        // replace fullscreen host window + DockSpace
+        ImGui::DockSpaceOverViewport(0,
+                                     ImGui::GetMainViewport(),
+                                     ImGuiDockNodeFlags_PassthruCentralNode);
+
+        if (ImGui::BeginMainMenuBar()) {
+            if (ImGui::BeginMenu("File")) {
+                if (ImGui::MenuItem("Exit")) {
+                    ivx::Application::get().close();
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMainMenuBar();
+        }
+    }
+
+    draw_settings_panel();
+}
+
+void Sandbox2D::draw_settings_panel() {
     ImGui::Begin("Settings");
-    ImGui::ColorEdit4("Color palette", glm::value_ptr(color_));
 
     auto stats = ivx::Renderer2D::get_stats();
     ImGui::Text("Renderer2D Stats:");
@@ -78,6 +106,11 @@ void Sandbox2D::on_render() {
     ImGui::Text("Quads: %d", stats.num_quads);
     ImGui::Text("Vertices: %d", stats.get_total_vertex_count());
     ImGui::Text("Indices: %d", stats.get_total_index_count());
+
+    ImGui::ColorEdit4("Square Color", glm::value_ptr(color_));
+
+    ImGui::Image(static_cast<ImTextureID>(texture_->get_id()),
+                 ImVec2{256.0f, 256.0f});
 
     ImGui::End();
 }

@@ -12,6 +12,8 @@ class Sandbox2D : public ivx::Layer {
     virtual void on_render() override;
 
   private:
+    void draw_settings_panel();
+
     ivx::Ref<ivx::OrthoGraphicCameraController> camera_controller_;
     glm::vec4 color_{1.f};
     ivx::Ref<ivx::Texture2D> texture_;

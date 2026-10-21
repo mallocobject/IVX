@@ -25,6 +25,8 @@ class Application {
         return *window_;
     }
 
+    void close();
+
     void push_layer(Layer *layer);
     void push_overlay(Layer *layer);
 
