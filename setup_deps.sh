@@ -43,18 +43,23 @@ clone_if_missing() {
 
 # 1. GLFW
 echo
-echo "[1/3] Cloning GLFW..."
+echo "[1/4] Cloning GLFW..."
 clone_if_missing glfw "https://github.com/mallocobject/glfw.git" master || exit 1
 
 # 2. GLM
 echo
-echo "[2/3] Cloning GLM..."
+echo "[2/4] Cloning GLM..."
 clone_if_missing glm "https://github.com/icaven/glm.git" master || exit 1
 
 # 3. ImGui (docking branch)
 echo
-echo "[3/3] Cloning ImGui (docking branch)..."
+echo "[3/4] Cloning ImGui (docking branch)..."
 clone_if_missing imgui "https://github.com/mallocobject/imgui.git" docking || exit 1
+
+# 4. BqLog
+echo
+echo "[4/4] Cloning BqLog..."
+clone_if_missing BqLog "https://github.com/mallocobject/BqLog.git" || exit 1
 
 echo
 echo "========================================"

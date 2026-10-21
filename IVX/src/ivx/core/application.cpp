@@ -103,7 +103,7 @@ void Application::on_event(Event &e) {
         return false;
     });
 
-    // IVX_CORE_TRACE("{}", e);
+    // IVX_CORE_VERBOSE("{}", e);
 
     for (auto &&layer : layer_stack_ | vws::reverse) {
         if (e.handled) {

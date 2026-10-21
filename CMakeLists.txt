@@ -8,7 +8,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (MSVC)
-    add_compile_options(/utf-8 /W3)
+    add_compile_options(/utf-8 /W3 /Zc:__cplusplus)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX)
 endif()
 
@@ -47,13 +47,15 @@ target_include_directories(imgui PUBLIC
 
 set(VENDOR_DIR "${CMAKE_SOURCE_DIR}/IVX/vendor")
 
+# ---- BqLog ----
+set(BUILD_LIB_TYPE static_lib CACHE STRING "" FORCE)
+set(BQ_WERROR OFF CACHE BOOL "" FORCE)
+set(BQ_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+add_subdirectory("${DEPS_DIR}/BqLog" "${CMAKE_BINARY_DIR}/_deps/bqlog-build")
+
 # ---- Glad ----
 add_library(glad STATIC "${VENDOR_DIR}/Glad/src/glad.c")
 target_include_directories(glad PUBLIC "${VENDOR_DIR}/Glad/include")
-
-# ---- Elog ----
-add_library(elog INTERFACE)
-target_include_directories(elog INTERFACE "${VENDOR_DIR}/Elog")
 
 # ---- stb_image ----
 add_library(stb_image STATIC "${VENDOR_DIR}/stb_image/stb_image.cpp")

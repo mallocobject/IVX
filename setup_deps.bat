@@ -17,7 +17,7 @@ if not exist "%DEPS%" (
 cd /d "%DEPS%"
 
 echo.
-echo [1/3] Cloning GLFW...
+echo [1/4] Cloning GLFW...
 if not exist "glfw" (
     git clone https://github.com/mallocobject/glfw.git glfw
     if errorlevel 1 (
@@ -29,7 +29,7 @@ if not exist "glfw" (
 )
 
 echo.
-echo [2/3] Cloning GLM...
+echo [2/4] Cloning GLM...
 if not exist "glm" (
     git clone https://github.com/icaven/glm.git glm
     if errorlevel 1 (
@@ -41,11 +41,23 @@ if not exist "glm" (
 )
 
 echo.
-echo [3/3] Cloning ImGui (docking branch)...
+echo [3/4] Cloning ImGui (docking branch)...
 if not exist "imgui" (
     git clone -b docking https://github.com/mallocobject/imgui.git imgui
     if errorlevel 1 (
         echo [ERROR] Failed to clone ImGui
+        goto :error
+    )
+) else (
+    echo [SKIP] imgui already exists
+)
+
+echo.
+echo [4/4] Cloning BqLog...
+if not exist "BqLog" (
+    git clone https://github.com/mallocobject/BqLog.git BqLog
+    if errorlevel 1 (
+        echo [ERROR] Failed to clone BqLog
         goto :error
     )
 ) else (

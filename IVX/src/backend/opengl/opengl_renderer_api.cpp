@@ -25,7 +25,7 @@ void opengl_message_callback(GLenum source,
         IVX_CORE_WARN("{}", message);
         return;
     case GL_DEBUG_SEVERITY_NOTIFICATION:
-        IVX_CORE_TRACE("{}", message);
+        IVX_CORE_VERBOSE("{}", message);
         return;
     }
 

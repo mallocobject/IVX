@@ -36,10 +36,8 @@ WinWindow::~WinWindow() {
 void WinWindow::init(const WindowProps &props) {
     IVX_PROFILE_FUNCTION();
 
-    IVX_CORE_INFO("Creating window {0} ({1}, {2})",
-                  props.title,
-                  props.width,
-                  props.height);
+    IVX_CORE_INFO(
+        "Creating window {} ({}, {})", props.title, props.width, props.height);
 
     data_.title = props.title;
     data_.width = props.width;

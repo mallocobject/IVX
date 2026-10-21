@@ -7,7 +7,7 @@
 extern ivx::Application *ivx::create_application();
 
 int main(int argc, char *argv[]) {
-    ivx::set_log_threshold(ivx::LogLevel::TRACE);
+    ivx::set_log_threshold(ivx::LogLevel::VERBOSE);
     IVX_PROFILE_BEGIN_SESSION("startup", "ivx_profile-startup.json");
     auto app = ivx::create_application();
     IVX_PROFILE_END_SESSION();

@@ -20,13 +20,12 @@ target_precompile_headers(IVX PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/ivxpch.h"
 
 target_include_directories(IVX PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    "${imgui_SOURCE_DIR}"             # <imgui.h>
-    "${imgui_SOURCE_DIR}/backends"    # <backends/imgui_impl_glfw.h>
-    "${CMAKE_SOURCE_DIR}/IVX/vendor") # Glad/Elog
+    "${CMAKE_SOURCE_DIR}/deps/imgui"             # <imgui.h>
+    "${CMAKE_SOURCE_DIR}/deps/imgui/backends"    # <backends/imgui_impl_glfw.h>
+    "${CMAKE_SOURCE_DIR}/deps/BqLog/include")     # <bq_log/bq_log.h>
 
 target_link_libraries(IVX PUBLIC
-    elog glfw glad imgui glm stb_image
-    opengl32)
+    glfw glad imgui glm stb_image BqLog opengl32)
 
 target_compile_definitions(IVX PUBLIC
     IVX_PLATFORM_WINDOWS

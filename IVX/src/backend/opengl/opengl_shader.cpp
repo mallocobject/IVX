@@ -150,7 +150,7 @@ OpenGLShader::OpenGLShader(const std::filesystem::path &filepath,
 
     compile_and_link_shader(program, mp);
 
-    // IVX_CORE_TRACE("{}", filepath.stem().string());
+    // IVX_CORE_VERBOSE("{}", filepath.stem().string());
 }
 
 OpenGLShader::OpenGLShader(const std::string &vs_src,
