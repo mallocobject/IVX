@@ -240,23 +240,6 @@ void Renderer2D::draw_quad(const glm::vec3 &position,
     constexpr glm::vec2 tex_coords[]{
         {0.f, 0.f}, {1.f, 0.f}, {1.f, 1.f}, {0.f, 1.f}};
 
-    // constexpr float x = 1.f;
-    // constexpr float y = 1.f;
-    // constexpr float sheet_width = 203.f;
-    // constexpr float sheet_height = 186.f;
-    // constexpr float sprite_width = 16.f;
-    // constexpr float sprite_height = 16.f;
-
-    // constexpr glm::vec2 tex_coords[]{
-    //     {x * sprite_width / sheet_width, y * sprite_height / sheet_height},
-    //     {(x + 1) * sprite_width / sheet_width,
-    //      y * sprite_height / sheet_height},
-    //     {(x + 1) * sprite_width / sheet_width,
-    //      (y + 1) * sprite_height / sheet_height},
-    //     {x * sprite_width / sheet_width,
-    //      (y + 1) * sprite_height / sheet_height},
-    // };
-
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
 

@@ -67,7 +67,7 @@ void OpenGLRendererAPI::set_clear_color(const glm::vec4 &color) {
 
 void OpenGLRendererAPI::clear() {
     glClearDepth(0.0); // reverse-z
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 }
 
 void OpenGLRendererAPI::draw(const Ref<VertexArray> &vertex_array) {

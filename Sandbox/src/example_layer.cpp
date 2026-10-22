@@ -1,4 +1,5 @@
 #include "example_layer.h"
+#include "ivx/core/application.h"
 #include <glm/glm.hpp>
 #include <imgui.h>
 #include <iostream>
@@ -40,8 +41,11 @@ ExampleLayer::ExampleLayer() : Layer("Example") {
 
     ivx::RenderCommand::set_clear_color(glm::vec4(0.f));
 
-    camera_controller_ =
-        ivx::make_ref<ivx::OrthoGraphicCameraController>(1080, 720, 1.f, true);
+    camera_controller_ = ivx::make_ref<ivx::OrthoGraphicCameraController>(
+        ivx::Application::get().get_window().get_width(),
+        ivx::Application::get().get_window().get_height(),
+        1.f,
+        true);
 
     texture_ = ivx::Texture2D::create(TEXTURES "Checkerboard.png");
     texture2_ = ivx::Texture2D::create(TEXTURES "ChernoLogo.png");

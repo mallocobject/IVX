@@ -1,6 +1,5 @@
 #include "ivxpch.h"
 #include "imgui_layer.h"
-#include "imgui.h"
 #include "ivx/core/application.h"
 
 #include "ivx/debug/instrumentor.h"
@@ -9,6 +8,7 @@
 #include <backends/imgui_impl_opengl3.h>
 
 #include <GLFW/glfw3.h>
+#include <imgui.h>
 
 namespace ivx {
 ImGuiLayer::ImGuiLayer() : Layer("ImGuiLayer") {

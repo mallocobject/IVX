@@ -51,6 +51,10 @@ void Application::run() {
             }
         }
 
+        // clear
+        ivx::RenderCommand::set_clear_color(glm::vec4{0.1f, 0.1f, 0.1f, 1});
+        ivx::RenderCommand::clear();
+
         // render
         imgui_layer_->begin();
         {
