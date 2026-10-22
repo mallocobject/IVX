@@ -20,12 +20,6 @@ void Sandbox2D::on_attach() {
     texture_ = ivx::Texture2D::create(TEXTURES "tilemap.png");
     sub_texture_ = ivx::SubTexture2D::create(
         texture_, {2.f, 1.f}, {16.f, 16.f}, {2.f, 1.f});
-
-    ivx::FrameBufferSpecification spec;
-    spec.width = ivx::Application::get().get_window().get_width();
-    spec.height = ivx::Application::get().get_window().get_height();
-
-    frame_buffer_ = ivx::FrameBuffer::create(spec);
 }
 
 void Sandbox2D::on_detach() {
@@ -40,8 +34,6 @@ void Sandbox2D::on_update(float delta_time) {
 
     // render
     ivx::Renderer2D::reset_stats();
-
-    frame_buffer_->bind();
 
     {
         // clear
@@ -72,8 +64,6 @@ void Sandbox2D::on_update(float delta_time) {
         // }
         // ivx::Renderer2D::end_scene();
     }
-
-    frame_buffer_->unbind();
 }
 
 void Sandbox2D::on_event(ivx::Event &event) {
@@ -87,24 +77,6 @@ void Sandbox2D::on_event(ivx::Event &event) {
 
 void Sandbox2D::on_render() {
     IVX_PROFILE_FUNCTION();
-
-    static bool docking_enabled = true;
-    if (docking_enabled) {
-        // replace fullscreen host window + DockSpace
-        ImGui::DockSpaceOverViewport(0,
-                                     ImGui::GetMainViewport(),
-                                     ImGuiDockNodeFlags_PassthruCentralNode);
-
-        if (ImGui::BeginMainMenuBar()) {
-            if (ImGui::BeginMenu("File")) {
-                if (ImGui::MenuItem("Exit")) {
-                    ivx::Application::get().close();
-                }
-                ImGui::EndMenu();
-            }
-            ImGui::EndMainMenuBar();
-        }
-    }
 
     draw_settings_panel();
 }
@@ -120,12 +92,6 @@ void Sandbox2D::draw_settings_panel() {
     ImGui::Text("Indices: %d", stats.get_total_index_count());
 
     ImGui::ColorEdit4("Square Color", glm::value_ptr(color_));
-
-    ImGui::Image(
-        static_cast<ImTextureID>(frame_buffer_->get_color_attachment()),
-        ImVec2{128.0f, 72.0f},
-        ImVec2{0.0f, 1.0f},
-        ImVec2{1.0f, 0.0f});
 
     ImGui::End();
 }

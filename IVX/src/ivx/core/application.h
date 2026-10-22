@@ -31,7 +31,7 @@ class Application {
     void push_overlay(Layer *layer);
 
   protected:
-    Application();
+    Application(const std::string &title = "IVX Engine");
 
   private:
     void run();

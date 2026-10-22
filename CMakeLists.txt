@@ -62,6 +62,7 @@ add_library(stb_image STATIC "${VENDOR_DIR}/stb_image/stb_image.cpp")
 target_include_directories(stb_image PUBLIC "${VENDOR_DIR}/stb_image")
 
 add_subdirectory(IVX)
-add_subdirectory(Sandbox)
+add_subdirectory(IVXEditor)
+# add_subdirectory(Sandbox)
 
-set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT Sandbox)
+set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT IVXEditor)

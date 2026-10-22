@@ -4,6 +4,7 @@
 #include "ivx/core/base.h"
 #include "ivx/core/frame_timer.h"
 #include "ivx/core/ref.hpp"
+#include "ivx/core/window.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/application_event.h"
 #include "ivx/imgui/imgui_layer.h"
@@ -19,12 +20,12 @@ Application::~Application() {
     Renderer::shutdown();
 }
 
-Application::Application() {
+Application::Application(const std::string &title) {
     IVX_PROFILE_FUNCTION();
 
     IVX_CORE_ASSERT(!instance_, "Application already exists!");
     instance_ = this;
-    window_ = Window::create();
+    window_ = Window::create(WindowProps{title});
     window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
 
     Renderer::init();
