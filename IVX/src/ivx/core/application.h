@@ -30,6 +30,10 @@ class Application {
     void push_layer(Layer *layer);
     void push_overlay(Layer *layer);
 
+    Ref<ImGuiLayer> imgui_layer() const {
+        return imgui_layer_;
+    }
+
   protected:
     Application(const std::string &title = "IVX Engine");
 

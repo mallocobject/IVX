@@ -1,11 +1,12 @@
 #pragma once
+#include "imgui.h"
 #include <ivx.h>
 #include <vector>
 
 namespace ivx {
-class EditorLayer : public Layer {
+class EditLayer : public Layer {
   public:
-    EditorLayer();
+    EditLayer();
     virtual void on_attach() override;
     virtual void on_detach() override;
     virtual void on_update(float delta_time) override;
@@ -20,5 +21,9 @@ class EditorLayer : public Layer {
     Ref<Texture2D> texture_;
     Ref<SubTexture2D> sub_texture_;
     Ref<FrameBuffer> frame_buffer_;
+
+    bool viewport_focused_{false};
+    bool viewport_hovered_{false};
+    ImVec2 prev_viewport_size_{0.f, 0.f};
 };
 } // namespace ivx

@@ -70,12 +70,7 @@ void OrthoGraphicCameraController::on_event(Event &event) {
     dispatcher.dispatch([this](WindowResizeEvent &e) {
         IVX_PROFILE_FUNCTION();
 
-        width_ = e.get_width();
-        height_ = e.get_height();
-        camera_->set_view_field(-zoom_level_ * width_ / 2,
-                                zoom_level_ * width_ / 2,
-                                -zoom_level_ * height_ / 2,
-                                zoom_level_ * height_ / 2);
+        resize(e.get_width(), e.get_height());
 
         return false;
     });
@@ -91,5 +86,14 @@ void OrthoGraphicCameraController::on_event(Event &event) {
                                 zoom_level_ * height_ / 2);
         return false;
     });
+}
+
+void OrthoGraphicCameraController::resize(uint32_t width, uint32_t height) {
+    width_ = width;
+    height_ = height;
+    camera_->set_view_field(-zoom_level_ * width_ / 2,
+                            zoom_level_ * width_ / 2,
+                            -zoom_level_ * height_ / 2,
+                            zoom_level_ * height_ / 2);
 }
 } // namespace ivx

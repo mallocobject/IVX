@@ -6,14 +6,14 @@ namespace ivx {
 
 class WindowResizeEvent : public Event {
   public:
-    WindowResizeEvent(unsigned int width, unsigned int height)
+    WindowResizeEvent(uint32_t width, uint32_t height)
         : width_(width), height_(height) {
     }
 
-    unsigned int get_width() const {
+    uint32_t get_width() const {
         return width_;
     }
-    unsigned int get_height() const {
+    uint32_t get_height() const {
         return height_;
     }
 
@@ -24,8 +24,8 @@ class WindowResizeEvent : public Event {
     EVENT_CLASS_TYPE(kWindowResize)
     EVENT_CLASS_CATEGORY(kEventCategoryApplication)
   private:
-    unsigned int width_;
-    unsigned int height_;
+    uint32_t width_;
+    uint32_t height_;
 };
 
 class WindowCloseEvent : public Event {

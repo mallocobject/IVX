@@ -66,12 +66,15 @@ void ImGuiLayer::on_detach() {
 void ImGuiLayer::on_event(Event &event) {
     IVX_PROFILE_FUNCTION();
 
-    ImGuiIO &io = ImGui::GetIO();
-    event.handled |= event.is_in_category(EventCategory::kEventCategoryMouse) &
-                     io.WantCaptureMouse;
-    event.handled |=
-        event.is_in_category(EventCategory::kEventCategoryKeyboard) &
-        io.WantCaptureKeyboard;
+    if (event_blocked_) {
+        ImGuiIO &io = ImGui::GetIO();
+        event.handled |=
+            event.is_in_category(EventCategory::kEventCategoryMouse) &
+            io.WantCaptureMouse;
+        event.handled |=
+            event.is_in_category(EventCategory::kEventCategoryKeyboard) &
+            io.WantCaptureKeyboard;
+    }
 }
 
 void ImGuiLayer::begin() {

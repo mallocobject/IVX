@@ -175,7 +175,7 @@ void WinWindow::shutdown() {
     glfwDestroyWindow(window_handle_);
 
     if (--GLFW_Initialized == 0) {
-        IVX_CORE_INFO("Terminating GLFW");
+        // IVX_CORE_INFO("Terminating GLFW");
         glfwTerminate();
     }
 }

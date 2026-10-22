@@ -3,6 +3,7 @@
 #include "ivx/core/ref.hpp"
 #include "ivx/event/event.h"
 #include "ivx/renderer/camera.h"
+#include <cstdint>
 
 namespace ivx {
 class OrthoGraphicCameraController : public RefCounted {
@@ -14,6 +15,8 @@ class OrthoGraphicCameraController : public RefCounted {
 
     void on_update(float delta_time);
     void on_event(Event &event);
+
+    void resize(uint32_t width, uint32_t height);
 
     Ref<OrthoGraphicCamera> get_camera() const {
         return camera_;

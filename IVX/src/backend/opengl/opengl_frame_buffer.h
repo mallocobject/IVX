@@ -8,8 +8,6 @@ class OpenGLFrameBuffer : public FrameBuffer {
     OpenGLFrameBuffer(const FrameBufferSpecification &spec);
     virtual ~OpenGLFrameBuffer();
 
-    void invalidate();
-
     virtual uint32_t get_color_attachment() const override {
         return color_tex_;
     }
@@ -21,10 +19,18 @@ class OpenGLFrameBuffer : public FrameBuffer {
     virtual void bind() override;
     virtual void unbind() override;
 
+    virtual void resize(uint32_t width, uint32_t height) override;
+
   private:
-    uint32_t fbo_;
-    uint32_t color_tex_;
-    uint32_t depth_tex_;
+    void invalidate();
+    void clear();
+
+    uint32_t fbo_{0};
+    uint32_t color_tex_{0};
+    uint32_t depth_tex_{0};
     FrameBufferSpecification spec_;
+
+    int previous_fbo_{0};
+    int previous_viewport_[4]{0};
 };
 } // namespace ivx

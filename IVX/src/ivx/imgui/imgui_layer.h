@@ -15,7 +15,13 @@ class ImGuiLayer : public Layer {
     void begin();
     void end();
 
+    void block_event(bool enabled = true) {
+        event_blocked_ = enabled;
+    }
+
   private:
     float time_{0.f};
+
+    bool event_blocked_{true};
 };
 } // namespace ivx
