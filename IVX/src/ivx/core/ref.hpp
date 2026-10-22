@@ -141,7 +141,6 @@ class Ref {
         }
     }
 
-  private:
     T *ptr_{nullptr};
 };
 

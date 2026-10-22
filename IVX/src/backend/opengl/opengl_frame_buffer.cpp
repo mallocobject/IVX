@@ -1,6 +1,7 @@
 #include "ivxpch.h"
 #include "opengl_frame_buffer.h"
 
+#include "ivx/core/logger.h"
 #include <cstdint>
 #include <glad/glad.h>
 
@@ -15,10 +16,6 @@ OpenGLFrameBuffer::~OpenGLFrameBuffer() {
 }
 
 void OpenGLFrameBuffer::invalidate() {
-    if (spec_.width == 0 || spec_.height == 0) {
-        return;
-    }
-
     if (fbo_ != 0) {
         clear();
     }
@@ -74,6 +71,11 @@ void OpenGLFrameBuffer::unbind() {
 void OpenGLFrameBuffer::resize(uint32_t width, uint32_t height) {
     spec_.width = width;
     spec_.height = height;
+
+    // IVX_CORE_DEBUG(
+    //     "IVX frame buffer try resize to ({}, {})", spec_.width,
+    //     spec_.height);
+
     invalidate();
 }
 } // namespace ivx

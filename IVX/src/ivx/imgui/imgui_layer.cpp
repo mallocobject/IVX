@@ -80,6 +80,11 @@ void ImGuiLayer::on_event(Event &event) {
 void ImGuiLayer::begin() {
     IVX_PROFILE_FUNCTION();
 
+    ImGuiIO &io = ImGui::GetIO();
+    Application &app = Application::get();
+    io.DisplaySize = ImVec2(static_cast<float>(app.get_window().get_width()),
+                            static_cast<float>(app.get_window().get_height()));
+
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -89,9 +94,6 @@ void ImGuiLayer::end() {
     IVX_PROFILE_FUNCTION();
 
     ImGuiIO &io = ImGui::GetIO();
-    Application &app = Application::get();
-    io.DisplaySize = ImVec2(static_cast<float>(app.get_window().get_width()),
-                            static_cast<float>(app.get_window().get_height()));
 
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

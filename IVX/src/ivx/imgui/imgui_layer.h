@@ -20,8 +20,6 @@ class ImGuiLayer : public Layer {
     }
 
   private:
-    float time_{0.f};
-
     bool event_blocked_{true};
 };
 } // namespace ivx

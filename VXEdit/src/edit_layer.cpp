@@ -70,22 +70,8 @@ void EditLayer::on_update(float delta_time) {
         IVX_PROFILE_SCOPE("Renderer draw");
 
         Renderer2D::begin_scene(camera_controller_->get_camera());
-        // Renderer2D::draw_rotated_quad(
-        //     {-100.f, 0.0f}, {400.f, 400.f}, 45.f, color_);
         Renderer2D::draw_quad({0.f, 0.f}, {600.f, 300.f}, sub_texture_);
-        // Renderer2D::draw_quad(
-        //     {0.0f, 0.0f, -0.1f}, {500.f, 500.f}, texture_, 10.f);
         Renderer2D::end_scene();
-
-        // Renderer2D::begin_scene(camera_controller_->get_camera());
-        // for (float y = -500.f; y < 500.f; y += 50.f) {
-        //     for (float x = -500.f; x < 500.f; x += 50.f) {
-        //         glm::vec4 color{
-        //             (x + 500.f) / 1000.f, 0.4f, (y + 500.f) / 1000.f, 0.7f};
-        //         Renderer2D::draw_quad({x, y}, {40.f, 40.f}, color);
-        //     }
-        // }
-        // Renderer2D::end_scene();
     }
 
     frame_buffer_->unbind();
