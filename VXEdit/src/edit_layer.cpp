@@ -2,6 +2,7 @@
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/application.h"
+#include "ivx/core/logger.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/event.h"
 #include "ivx/renderer/render_command.h"

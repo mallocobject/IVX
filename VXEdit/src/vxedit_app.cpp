@@ -1,6 +1,6 @@
 
 #include <ivx.h>
-#include <ivx/core/entry_point.h>
+#include <ivx/core/ivx_main.h>
 
 #include "edit_layer.h"
 

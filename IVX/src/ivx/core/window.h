@@ -35,6 +35,19 @@ class Window : public RefCounted {
 
     virtual void *get_native_window() = 0;
 
+    // Graphics context handle (SDL_GLContext for the SDL3 backend); nullptr
+    // when the backend does not expose one.
+    virtual void *get_native_gl_context() {
+        return nullptr;
+    }
+
+    // Raw platform event hook: backends with an event queue (SDL3) forward every
+    // native event here so ImGui can consume it, while callback based backends
+    // (GLFW) leave it unused.
+    using NativeEventCallbackFn = std::function<void(const void *)>;
+    virtual void set_native_event_callback(NativeEventCallbackFn) {
+    }
+
     static Ref<Window> create(const WindowProps &props = WindowProps{});
 };
 } // namespace ivx

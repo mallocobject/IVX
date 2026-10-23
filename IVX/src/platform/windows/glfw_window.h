@@ -7,10 +7,10 @@
 
 namespace ivx {
 
-class WinWindow : public Window {
+class GLFWWindow : public Window {
   public:
-    WinWindow(const WindowProps &props);
-    virtual ~WinWindow();
+    GLFWWindow(const WindowProps &props);
+    virtual ~GLFWWindow();
 
     void on_update() override;
 
@@ -36,21 +36,20 @@ class WinWindow : public Window {
     }
 
   private:
-    struct WindowData {
-        std::string title;
-        uint32_t width;
-        uint32_t height;
-        bool v_sync;
-
-        EventCallbackFn event_callback;
-    };
-
     virtual void init(const WindowProps &props);
     virtual void shutdown();
 
-    GLFWwindow *window_handle_;
+    GLFWwindow *window_handle_{nullptr};
     Ref<GraphicsContext> context_;
-    WindowData data_;
+
+    struct WindowData {
+        std::string title;
+        uint32_t width{0};
+        uint32_t height{0};
+        bool v_sync{true};
+
+        EventCallbackFn event_callback;
+    } data_;
 };
 
 } // namespace ivx

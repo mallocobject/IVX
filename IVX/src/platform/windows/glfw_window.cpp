@@ -1,5 +1,5 @@
 #include "ivxpch.h"
-#include "win_window.h"
+#include "glfw_window.h"
 #include "ivx/core/logger.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/application_event.h"
@@ -21,19 +21,19 @@ static void GLFW_error_callback(int error_code, const char *description) {
     IVX_CORE_ERROR("GLFW Error ({}): {}", error_code, description);
 }
 
-WinWindow::WinWindow(const WindowProps &props) {
+GLFWWindow::GLFWWindow(const WindowProps &props) {
     IVX_PROFILE_FUNCTION();
 
     init(props);
 }
 
-WinWindow::~WinWindow() {
+GLFWWindow::~GLFWWindow() {
     IVX_PROFILE_FUNCTION();
 
     shutdown();
 }
 
-void WinWindow::init(const WindowProps &props) {
+void GLFWWindow::init(const WindowProps &props) {
     IVX_PROFILE_FUNCTION();
 
     IVX_CORE_INFO(
@@ -167,9 +167,17 @@ void WinWindow::init(const WindowProps &props) {
                                   static_cast<float>(ypos));
             data->event_callback(event);
         });
+
+    glfwSetWindowFocusCallback(window_handle_,
+                               [](GLFWwindow *window, int focused) {
+                                   auto data = reinterpret_cast<WindowData *>(
+                                       glfwGetWindowUserPointer(window));
+                                   WindowFocusEvent event(focused);
+                                   data->event_callback(event);
+                               });
 }
 
-void WinWindow::shutdown() {
+void GLFWWindow::shutdown() {
     IVX_PROFILE_FUNCTION();
 
     glfwDestroyWindow(window_handle_);
@@ -180,7 +188,7 @@ void WinWindow::shutdown() {
     }
 }
 
-void WinWindow::on_update() {
+void GLFWWindow::on_update() {
     IVX_PROFILE_FUNCTION();
 
     glfwPollEvents();
@@ -188,11 +196,11 @@ void WinWindow::on_update() {
     context_->swap_buffer();
 }
 
-// void WinWindow::clear() {
+// void GLFWWindow::clear() {
 //     context_->clear();
 // }
 
-void WinWindow::set_v_sync(bool enabled) {
+void GLFWWindow::set_v_sync(bool enabled) {
     IVX_PROFILE_FUNCTION();
 
     if (enabled) {

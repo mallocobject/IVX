@@ -16,7 +16,8 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
 if (NOT EXISTS "${DEPS_DIR}/glfw" OR
     NOT EXISTS "${DEPS_DIR}/glm"  OR
-    NOT EXISTS "${DEPS_DIR}/imgui")
+    NOT EXISTS "${DEPS_DIR}/imgui" OR
+    NOT EXISTS "${DEPS_DIR}/SDL")
     message(FATAL_ERROR
         "Missing dependencies in ${DEPS_DIR}.\n"
         "Please run setup_deps.bat(Windows) or ./setup_deps.sh(Linux/macOS)")
@@ -52,6 +53,17 @@ set(BUILD_LIB_TYPE static_lib CACHE STRING "" FORCE)
 set(BQ_WERROR OFF CACHE BOOL "" FORCE)
 set(BQ_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
 add_subdirectory("${DEPS_DIR}/BqLog" "${CMAKE_BINARY_DIR}/_deps/bqlog-build")
+
+# ---- SDL3 ----
+# Only the static library is needed; tests, examples and the test library are
+# off so the solution stays small. SDL3::SDL3 resolves to SDL3-static here.
+set(SDL_SHARED       OFF CACHE BOOL "" FORCE)
+set(SDL_STATIC       ON  CACHE BOOL "" FORCE)
+set(SDL_TEST_LIBRARY OFF CACHE BOOL "" FORCE)
+set(SDL_TESTS        OFF CACHE BOOL "" FORCE)
+set(SDL_EXAMPLES     OFF CACHE BOOL "" FORCE)
+set(SDL_INSTALL      OFF CACHE BOOL "" FORCE)
+add_subdirectory("${DEPS_DIR}/SDL" "${CMAKE_BINARY_DIR}/_deps/sdl3-build")
 
 # ---- Glad ----
 add_library(glad STATIC "${VENDOR_DIR}/Glad/src/glad.c")

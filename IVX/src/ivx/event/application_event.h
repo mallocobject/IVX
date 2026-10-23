@@ -44,6 +44,27 @@ class AppTickEvent : public Event {
     EVENT_CLASS_CATEGORY(kEventCategoryApplication)
 };
 
+// Emitted when the OS window gains or loses focus (SDL_EVENT_WINDOW_FOCUS_*).
+// The GLFW back end does not emit it yet.
+class WindowFocusEvent : public Event {
+  public:
+    explicit WindowFocusEvent(bool focused) : focused_(focused) {
+    }
+
+    bool is_focused() const {
+        return focused_;
+    }
+
+    std::string to_string() const override {
+        return std::format("WindowFocusEvent: focused={}", focused_);
+    }
+
+    EVENT_CLASS_TYPE(kWindowFocus)
+    EVENT_CLASS_CATEGORY(kEventCategoryApplication)
+  private:
+    bool focused_;
+};
+
 class AppUpdateEvent : public Event {
   public:
     AppUpdateEvent() = default;
