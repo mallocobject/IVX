@@ -6,6 +6,7 @@
 #include "ivx/renderer/camera.h"
 #include "ivx/renderer/sub_texture2d.h"
 #include "ivx/renderer/texture.h"
+#include "ivx/scene/scene_camera.h"
 #include <entt.hpp>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
@@ -49,16 +50,6 @@ struct TransformComponent {
 
 struct ProjectionComponent {
     glm::mat4 projection{1.f};
-    bool primary{false};
-    bool fixed_aspect_ratio{false};
-
-    ProjectionComponent() = default;
-    ProjectionComponent(const glm::mat4 &projection,
-                        bool primary = false,
-                        bool fix_aspect_ratio = false)
-        : projection(projection), primary(primary),
-          fixed_aspect_ratio(fix_aspect_ratio) {
-    }
 
     operator glm::mat4 &() {
         return projection;
@@ -89,19 +80,24 @@ struct SpriteRendererComponent {
 };
 
 // HACK
-// struct CameraComponent {
-//     glm::mat4 projection{1.f};
-//     bool primary{false};
-//     bool fixed_aspect_ratio{false};
+struct CameraComponent {
+    SceneCamera camera;
+    bool primary{true};
+    bool fixed_aspect_ratio{false};
 
-//     CameraComponent() = default;
-//     CameraComponent(const glm::mat4 &projection,
-//                     bool primary = false,
-//                     bool fix_aspect_ratio = false)
-//         : projection(projection), primary(primary),
-//           fixed_aspect_ratio(fix_aspect_ratio) {
-//     }
-// };
+    CameraComponent(float left,
+                    float right,
+                    float bottom,
+                    float top,
+                    float n,
+                    float f,
+                    float zoom_level,
+                    bool primary = true,
+                    bool fix_aspect_ratio = false)
+        : camera(left, right, bottom, top, n, f, zoom_level), primary(primary),
+          fixed_aspect_ratio(fix_aspect_ratio) {
+    }
+};
 
 struct NativeScriptComponent;
 

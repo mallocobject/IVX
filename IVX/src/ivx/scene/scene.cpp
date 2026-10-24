@@ -50,10 +50,10 @@ void Scene::on_render() {
     glm::mat4 camera_transform{1.f};
     bool has_main_camera = false;
 
-    for (auto [handle, projection, transform] :
-         registry_.view<ProjectionComponent, TransformComponent>().each()) {
-        if (projection.primary) {
-            camera_projection = projection;
+    for (auto [handle, camera, transform] :
+         registry_.view<CameraComponent, TransformComponent>().each()) {
+        if (camera.primary) {
+            camera_projection = camera.camera.get_proj_matrix();
             camera_transform = transform;
             has_main_camera = true;
             break;
@@ -80,6 +80,15 @@ void Scene::on_render() {
             }
         }
         Renderer2D::end_scene();
+    }
+}
+
+void Scene::on_viewport_resize(
+    float left, float right, float bottom, float top, float n, float f) {
+    for (auto [handle, camera] : registry_.view<CameraComponent>().each()) {
+        if (!camera.fixed_aspect_ratio) {
+            camera.camera.set_view_field(left, right, bottom, top, n, f);
+        }
     }
 }
 

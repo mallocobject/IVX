@@ -15,38 +15,28 @@
 #include <imgui.h>
 
 namespace ivx {
-namespace {
-static glm::mat4 ortho_rh_reverse_z(
-    float left, float right, float bottom, float top, float n, float f) {
-    glm::mat4 proj(1.f);
-    proj[0][0] = 2.f / (right - left);
-    proj[1][1] = 2.f / (top - bottom);
-    proj[2][2] = 1.f / (f - n);
-    proj[3][0] = -(right + left) / (right - left);
-    proj[3][1] = -(top + bottom) / (top - bottom);
-    proj[3][2] = f / (f - n);
-    return proj;
-}
-} // namespace
+
+static constexpr uint32_t WIDTH = 1280;
+static constexpr uint32_t HEIGHT = 720;
 
 EditLayer::EditLayer() : Layer("EditLayer") {
-    camera_controller_ = make_ref<OrthoGraphicCameraController>(
-        Application::get().get_window().get_width(),
-        Application::get().get_window().get_height(),
-        1.f,
-        true);
+    camera_controller_ =
+        make_ref<OrthoGraphicCameraController>(WIDTH, HEIGHT, 1.f, true);
 }
 
 void EditLayer::on_attach() {
     IVX_PROFILE_FUNCTION();
+
+    // static uint32_t WIDTH = Application::get().get_window().get_width();
+    // static uint32_t HEIGHT = Application::get().get_window().get_height();
 
     texture_ = Texture2D::create(TEXTURES "tilemap.png");
     sub_texture_ =
         SubTexture2D::create(texture_, {2.f, 1.f}, {16.f, 16.f}, {2.f, 1.f});
 
     FrameBufferSpecification spec;
-    spec.width = Application::get().get_window().get_width();
-    spec.height = Application::get().get_window().get_height();
+    spec.width = WIDTH;
+    spec.height = HEIGHT;
 
     frame_buffer_ = FrameBuffer::create(spec);
 
@@ -70,14 +60,14 @@ void EditLayer::on_attach() {
         sub_texture_, 1.f, glm::vec4{1.f, 1.f, 1.f, 1.f});
 
     camera_entity_ = scene_->create_entity("Camera Entity");
-    float w = Application::get().get_window().get_width() / 2.f;
-    float h = Application::get().get_window().get_height() / 2.f;
-    camera_entity_.add_component<ProjectionComponent>(
-        ortho_rh_reverse_z(-w, w, -h, h, -1.f, 1.f), true);
+    float w = WIDTH / 2.f;
+    float h = HEIGHT / 2.f;
+    camera_entity_.add_component<CameraComponent>(
+        -w, w, -h, h, -1.f, 1.f, 1.f, true, false);
 
     second_camera_entity_ = scene_->create_entity("Clip-Space Entity");
-    second_camera_entity_.add_component<ProjectionComponent>(ortho_rh_reverse_z(
-        -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f));
+    second_camera_entity_.add_component<CameraComponent>(
+        -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f, 1.f, false, true);
 
     ImGuiIO &io = ImGui::GetIO();
     ImFontConfig cfg;
@@ -101,12 +91,8 @@ void EditLayer::on_update(float delta_time) {
             uint32_t w = static_cast<uint32_t>(viewport_size_.x);
             uint32_t h = static_cast<uint32_t>(viewport_size_.y);
             camera_controller_->resize(w, h);
-            camera_entity_.get_component<ProjectionComponent>().projection =
-                ortho_rh_reverse_z(
-                    -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f);
-            second_camera_entity_.get_component<ProjectionComponent>()
-                .projection = ortho_rh_reverse_z(
-                -(w / 4.f), w / 4.f, -(h / 4.f), h / 4.f, -1.f, 1.f);
+            scene_->on_viewport_resize(
+                -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f);
             frame_buffer_->resize(w, h);
         }
     }
@@ -191,15 +177,33 @@ void EditLayer::draw_settings_panel() {
         ImGui::Separator();
     }
 
-    ImGui::DragFloat2(
-        "Camera Translation",
-        glm::value_ptr(
-            camera_entity_.get_component<TransformComponent>().transform[3]));
+    static float zoom_level = 1.f;
+    ImGui::DragFloat("Zoom", &zoom_level, 0.1f, 0.5f, 3.0f);
+
+    if (primary_camera_) {
+        ImGui::DragFloat2(
+            "Camera Translation",
+            glm::value_ptr(camera_entity_.get_component<TransformComponent>()
+                               .transform[3]));
+
+        camera_entity_.get_component<CameraComponent>().camera.set_zoom_level(
+            zoom_level);
+
+    } else {
+        ImGui::DragFloat2(
+            "Camera Translation",
+            glm::value_ptr(
+                second_camera_entity_.get_component<TransformComponent>()
+                    .transform[3]));
+
+        second_camera_entity_.get_component<CameraComponent>()
+            .camera.set_zoom_level(zoom_level);
+    }
 
     if (ImGui::Checkbox("Camera A", &primary_camera_)) {
-        camera_entity_.get_component<ProjectionComponent>().primary =
+        camera_entity_.get_component<CameraComponent>().primary =
             primary_camera_;
-        second_camera_entity_.get_component<ProjectionComponent>().primary =
+        second_camera_entity_.get_component<CameraComponent>().primary =
             !primary_camera_;
     }
 
