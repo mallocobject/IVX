@@ -1,6 +1,8 @@
 #include "ivxpch.h"
 #include "scene.h"
 #include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/quaternion_common.hpp"
+#include "ivx/core/logger.h"
 #include "ivx/renderer/camera.h"
 #include "ivx/renderer/renderer2d.h"
 #include "ivx/scene/components.h"
@@ -44,22 +46,22 @@ void Scene::on_update(float delta_time) {
 }
 
 void Scene::on_render() {
-    glm::mat4 main_camera{1.f};
+    glm::mat4 camera_projection{1.f};
     glm::mat4 camera_transform{1.f};
     bool has_main_camera = false;
 
-    for (auto [handle, camera, transform] :
-         registry_.view<CameraComponent, TransformComponent>().each()) {
-        if (camera.primary) {
-            main_camera = camera.projection;
-            camera_transform = transform.transform;
+    for (auto [handle, projection, transform] :
+         registry_.view<ProjectionComponent, TransformComponent>().each()) {
+        if (projection.primary) {
+            camera_projection = projection;
+            camera_transform = transform;
             has_main_camera = true;
             break;
         }
     }
 
     if (has_main_camera) {
-        Renderer2D::begin_scene(main_camera, camera_transform);
+        Renderer2D::begin_scene(camera_projection, camera_transform);
         for (auto [handle, transform, sprite] :
              registry_.view<TransformComponent, SpriteRendererComponent>()
                  .each()) {

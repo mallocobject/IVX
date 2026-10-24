@@ -36,19 +36,6 @@ struct TagComponent {
 };
 
 struct TransformComponent {
-    // glm::vec3 translation{0.f};
-    // float rotation{0.f};
-    // glm::vec2 scale{1.f};
-
-    // // SRT
-    // glm::mat4 get_transform() const {
-    //     return glm::translate(glm::mat4{1.f}, translation) *
-    //            glm::rotate(glm::mat4{1.f},
-    //                        glm::radians(rotation),
-    //                        glm::vec3{0.f, 0.f, 1.f}) *
-    //            glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
-    // }
-
     glm::mat4 transform{1.f};
 
     operator glm::mat4 &() {
@@ -57,6 +44,28 @@ struct TransformComponent {
 
     operator const glm::mat4 &() const {
         return transform;
+    }
+};
+
+struct ProjectionComponent {
+    glm::mat4 projection{1.f};
+    bool primary{false};
+    bool fixed_aspect_ratio{false};
+
+    ProjectionComponent() = default;
+    ProjectionComponent(const glm::mat4 &projection,
+                        bool primary = false,
+                        bool fix_aspect_ratio = false)
+        : projection(projection), primary(primary),
+          fixed_aspect_ratio(fix_aspect_ratio) {
+    }
+
+    operator glm::mat4 &() {
+        return projection;
+    }
+
+    operator const glm::mat4 &() const {
+        return projection;
     }
 };
 
@@ -80,19 +89,19 @@ struct SpriteRendererComponent {
 };
 
 // HACK
-struct CameraComponent {
-    glm::mat4 projection{1.f};
-    bool primary{false};
-    bool fixed_aspect_ratio{false};
+// struct CameraComponent {
+//     glm::mat4 projection{1.f};
+//     bool primary{false};
+//     bool fixed_aspect_ratio{false};
 
-    CameraComponent() = default;
-    CameraComponent(const glm::mat4 &projection,
-                    bool primary = false,
-                    bool fix_aspect_ratio = false)
-        : projection(projection), primary(primary),
-          fixed_aspect_ratio(fix_aspect_ratio) {
-    }
-};
+//     CameraComponent() = default;
+//     CameraComponent(const glm::mat4 &projection,
+//                     bool primary = false,
+//                     bool fix_aspect_ratio = false)
+//         : projection(projection), primary(primary),
+//           fixed_aspect_ratio(fix_aspect_ratio) {
+//     }
+// };
 
 struct NativeScriptComponent;
 

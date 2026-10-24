@@ -6,6 +6,7 @@
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
+#include "glm/matrix.hpp"
 #include "glm/trigonometric.hpp"
 #include "ivx/renderer/renderer.h"
 #include "ivx/renderer/shader.h"
@@ -60,11 +61,6 @@ void Renderer2D::init() {
     data.quad_vertex_array = VertexArray::create();
     data.quad_vertex_buffer = VertexBuffer::create(
         Renderer2DData::max_num_vertices * sizeof(QuadVertex));
-
-    // float vertices[5 * 4] = {
-    //     -300.f, -300.f, 0.f, 0.f, 0.f, 300.f,  -300.f, 0.f, 1.f, 0.f,
-    //     300.f,  300.f,  0.f, 1.f, 1.f, -300.f, 300.f,  0.f, 0.f, 1.f,
-    // };
 
     Ref<ivx::BufferLayout> bl{
         new BufferLayout{{"a_Position", ShaderDataType::vec3, false},
@@ -122,10 +118,10 @@ void Renderer2D::shutdown() {
     IVX_PROFILE_FUNCTION();
 }
 void Renderer2D::begin_scene(const glm::mat4 &projection,
-                             const glm::mat4 &transform) {
+                             const glm::mat4 &camera_transform) {
     IVX_PROFILE_FUNCTION();
 
-    auto vp = projection * transform;
+    auto vp = projection * glm::inverse(camera_transform);
     data.texture_shader->set("u_VP", vp);
 
     data.quad_index_count = 0;

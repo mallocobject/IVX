@@ -72,11 +72,11 @@ void EditLayer::on_attach() {
     camera_entity_ = scene_->create_entity("Camera Entity");
     float w = Application::get().get_window().get_width() / 2.f;
     float h = Application::get().get_window().get_height() / 2.f;
-    camera_entity_.add_component<CameraComponent>(
+    camera_entity_.add_component<ProjectionComponent>(
         ortho_rh_reverse_z(-w, w, -h, h, -1.f, 1.f), true);
 
     second_camera_entity_ = scene_->create_entity("Clip-Space Entity");
-    second_camera_entity_.add_component<CameraComponent>(ortho_rh_reverse_z(
+    second_camera_entity_.add_component<ProjectionComponent>(ortho_rh_reverse_z(
         -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f));
 
     ImGuiIO &io = ImGui::GetIO();
@@ -101,12 +101,12 @@ void EditLayer::on_update(float delta_time) {
             uint32_t w = static_cast<uint32_t>(viewport_size_.x);
             uint32_t h = static_cast<uint32_t>(viewport_size_.y);
             camera_controller_->resize(w, h);
-            camera_entity_.get_component<CameraComponent>().projection =
+            camera_entity_.get_component<ProjectionComponent>().projection =
                 ortho_rh_reverse_z(
                     -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f);
-            second_camera_entity_.get_component<CameraComponent>().projection =
-                ortho_rh_reverse_z(
-                    -(w / 4.f), w / 4.f, -(h / 4.f), h / 4.f, -1.f, 1.f);
+            second_camera_entity_.get_component<ProjectionComponent>()
+                .projection = ortho_rh_reverse_z(
+                -(w / 4.f), w / 4.f, -(h / 4.f), h / 4.f, -1.f, 1.f);
             frame_buffer_->resize(w, h);
         }
     }
@@ -191,15 +191,15 @@ void EditLayer::draw_settings_panel() {
         ImGui::Separator();
     }
 
-    ImGui::DragFloat3(
-        "Camera Transform",
+    ImGui::DragFloat2(
+        "Camera Translation",
         glm::value_ptr(
             camera_entity_.get_component<TransformComponent>().transform[3]));
 
     if (ImGui::Checkbox("Camera A", &primary_camera_)) {
-        camera_entity_.get_component<CameraComponent>().primary =
+        camera_entity_.get_component<ProjectionComponent>().primary =
             primary_camera_;
-        second_camera_entity_.get_component<CameraComponent>().primary =
+        second_camera_entity_.get_component<ProjectionComponent>().primary =
             !primary_camera_;
     }
 
