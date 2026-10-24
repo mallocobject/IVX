@@ -24,4 +24,7 @@
 #include "ivx/renderer/texture.h"
 #include "ivx/renderer/vertex_array.h"
 
+#include "ivx/scene/components.h"
+#include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
+#include "ivx/scene/scriptable_entity.h"

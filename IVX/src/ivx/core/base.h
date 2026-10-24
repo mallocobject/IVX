@@ -1,5 +1,7 @@
 #pragma once
 
+#include <memory>
+
 #if defined(_WIN32) || defined(IVX_PLATFORM_WINDOWS)
 
 #else
@@ -34,4 +36,7 @@
 
 #define BIT(x) (1 << x)
 
-#define IVX_BIND_EVENT_FN(Arg, Fn) [this](Arg &e) { return Fn(e); }
+#define IVX_BIND_FN(fn)                                                        \
+    [this](auto &&...args) -> decltype(auto) {                                 \
+        return this->fn(std::forward<decltype(args)>(args)...);                \
+    }

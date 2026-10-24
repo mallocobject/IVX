@@ -46,7 +46,7 @@ class Entity {
     }
 
     const std::string &get_name() const { // TagComponent assistant
-        return get_component<TagComponent>().tag;
+        return get_component<TagComponent>().value;
     }
 
     entt::entity handle() const {

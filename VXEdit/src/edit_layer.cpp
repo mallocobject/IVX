@@ -1,6 +1,7 @@
 #include "edit_layer.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float2.hpp"
+#include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/application.h"
 #include "ivx/core/logger.h"
@@ -37,8 +38,20 @@ void EditLayer::on_attach() {
 
     scene_ = make_ref<Scene>();
     entity_ = scene_->create_entity("Green Square");
-    entity_.add_component<TransformComponent>(
-        glm::vec3{0.f}, 0.f, glm::vec2{400.f, 200.f});
+
+    auto transform = [](const glm::vec3 &translation = glm::vec3{0.f},
+                        float rotation = 0.f,
+                        const glm::vec2 &scale = glm::vec2{1.f}) -> glm::mat4 {
+        return glm::translate(glm::mat4{1.f}, translation) *
+               glm::rotate(glm::mat4{1.f},
+                           glm::radians(rotation),
+                           glm::vec3{0.f, 0.f, 1.f}) *
+               glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
+    };
+
+    entity_.get_component<TransformComponent>().transform =
+        transform(glm::vec3{0.f}, 0.f, glm::vec2{400.f, 200.f});
+
     entity_.add_component<SpriteRendererComponent>(
         glm::vec4{1.f, 1.f, 1.f, 1.f}, nullptr, sub_texture_);
 
@@ -74,6 +87,7 @@ void EditLayer::on_update(float delta_time) {
     }
 
     scene_->on_update(delta_time);
+    entity_.get_component<SpriteRendererComponent>().color = color_;
 
     // render
     Renderer2D::reset_stats();
@@ -140,7 +154,7 @@ void EditLayer::draw_settings_panel() {
 
     if (entity_) {
         ImGui::Separator();
-        auto &tag = entity_.get_component<TagComponent>().tag;
+        auto &tag = entity_.get_component<TagComponent>().value;
         ImGui::Text("%s", tag.c_str());
 
         auto &squareColor =

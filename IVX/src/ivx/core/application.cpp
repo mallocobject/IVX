@@ -26,7 +26,7 @@ Application::Application(const std::string &title) {
     IVX_CORE_ASSERT(!instance_, "Application already exists!");
     instance_ = this;
     window_ = Window::create(WindowProps{title});
-    window_->set_event_callback(IVX_BIND_EVENT_FN(Event, on_event));
+    window_->set_event_callback(IVX_BIND_FN(on_event));
 
     Renderer::init();
 

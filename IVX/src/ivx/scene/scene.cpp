@@ -13,6 +13,7 @@ Scene::~Scene() {
 
 Entity Scene::create_entity(const std::string &name) {
     Entity entity{registry_.create(), this};
+    entity.add_component<TransformComponent>();
     entity.add_component<TagComponent>(name);
     return entity;
 }
@@ -47,17 +48,15 @@ void Scene::on_render() {
     for (auto [handle, transform, sprite] :
          registry_.view<TransformComponent, SpriteRendererComponent>().each()) {
         if (sprite.sub_texture) {
-            Renderer2D::draw_quad(transform.get_transform(),
+            Renderer2D::draw_quad(transform,
                                   sprite.sub_texture,
                                   sprite.tiling_factor,
                                   sprite.color);
         } else if (sprite.texture) {
-            Renderer2D::draw_quad(transform.get_transform(),
-                                  sprite.texture,
-                                  sprite.tiling_factor,
-                                  sprite.color);
+            Renderer2D::draw_quad(
+                transform, sprite.texture, sprite.tiling_factor, sprite.color);
         } else {
-            Renderer2D::draw_quad(transform.get_transform(), sprite.color);
+            Renderer2D::draw_quad(transform, sprite.color);
         }
     }
 }

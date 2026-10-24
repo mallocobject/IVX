@@ -19,8 +19,9 @@ class Scene : public RefCounted {
     void destroy_entity(Entity entity);
 
     void on_update(float delta_time);
-    // Draws every entity that has a TransformComponent + SpriteRendererComponent.
-    // The caller owns the camera: wrap it in Renderer2D::begin_scene()/end_scene().
+    // Draws every entity that has a TransformComponent +
+    // SpriteRendererComponent. The caller owns the camera: wrap it in
+    // Renderer2D::begin_scene()/end_scene().
     void on_render();
 
     entt::registry &registry() {
