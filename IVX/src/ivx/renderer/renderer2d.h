@@ -13,7 +13,10 @@ class Renderer2D {
   public:
     static void init();
     static void shutdown();
-    static void begin_scene(const Ref<OrthoGraphicCamera> &camera);
+    static void begin_scene(const glm::mat4 &projection,
+                            const glm::mat4 &transform);
+    static void
+    begin_scene(const Ref<OrthoGraphicCamera> &camera); // TODO: remove
     static void end_scene();
     static void flush();
 

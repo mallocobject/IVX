@@ -15,6 +15,20 @@
 #include <imgui.h>
 
 namespace ivx {
+namespace {
+static glm::mat4 ortho_rh_reverse_z(
+    float left, float right, float bottom, float top, float n, float f) {
+    glm::mat4 proj(1.f);
+    proj[0][0] = 2.f / (right - left);
+    proj[1][1] = 2.f / (top - bottom);
+    proj[2][2] = 1.f / (f - n);
+    proj[3][0] = -(right + left) / (right - left);
+    proj[3][1] = -(top + bottom) / (top - bottom);
+    proj[3][2] = f / (f - n);
+    return proj;
+}
+} // namespace
+
 EditLayer::EditLayer() : Layer("EditLayer") {
     camera_controller_ = make_ref<OrthoGraphicCameraController>(
         Application::get().get_window().get_width(),
@@ -37,7 +51,7 @@ void EditLayer::on_attach() {
     frame_buffer_ = FrameBuffer::create(spec);
 
     scene_ = make_ref<Scene>();
-    entity_ = scene_->create_entity("Green Square");
+    square_entity_ = scene_->create_entity("Colorful Square");
 
     auto transform = [](const glm::vec3 &translation = glm::vec3{0.f},
                         float rotation = 0.f,
@@ -49,11 +63,21 @@ void EditLayer::on_attach() {
                glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
     };
 
-    entity_.get_component<TransformComponent>().transform =
+    square_entity_.get_component<TransformComponent>().transform =
         transform(glm::vec3{0.f}, 0.f, glm::vec2{400.f, 200.f});
 
-    entity_.add_component<SpriteRendererComponent>(
-        glm::vec4{1.f, 1.f, 1.f, 1.f}, nullptr, sub_texture_);
+    square_entity_.add_component<SpriteRendererComponent>(
+        sub_texture_, 1.f, glm::vec4{1.f, 1.f, 1.f, 1.f});
+
+    camera_entity_ = scene_->create_entity("Camera Entity");
+    float w = Application::get().get_window().get_width() / 2.f;
+    float h = Application::get().get_window().get_height() / 2.f;
+    camera_entity_.add_component<CameraComponent>(
+        ortho_rh_reverse_z(-w, w, -h, h, -1.f, 1.f), true);
+
+    second_camera_entity_ = scene_->create_entity("Clip-Space Entity");
+    second_camera_entity_.add_component<CameraComponent>(ortho_rh_reverse_z(
+        -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f));
 
     ImGuiIO &io = ImGui::GetIO();
     ImFontConfig cfg;
@@ -74,10 +98,16 @@ void EditLayer::on_update(float delta_time) {
     if (visible_) {
         const auto &spec = frame_buffer_->get_specification();
         if (spec.width != viewport_size_.x || spec.height != viewport_size_.y) {
-            camera_controller_->resize(static_cast<uint32_t>(viewport_size_.x),
-                                       static_cast<uint32_t>(viewport_size_.y));
-            frame_buffer_->resize(static_cast<uint32_t>(viewport_size_.x),
-                                  static_cast<uint32_t>(viewport_size_.y));
+            uint32_t w = static_cast<uint32_t>(viewport_size_.x);
+            uint32_t h = static_cast<uint32_t>(viewport_size_.y);
+            camera_controller_->resize(w, h);
+            camera_entity_.get_component<CameraComponent>().projection =
+                ortho_rh_reverse_z(
+                    -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f);
+            second_camera_entity_.get_component<CameraComponent>().projection =
+                ortho_rh_reverse_z(
+                    -(w / 4.f), w / 4.f, -(h / 4.f), h / 4.f, -1.f, 1.f);
+            frame_buffer_->resize(w, h);
         }
     }
 
@@ -87,7 +117,7 @@ void EditLayer::on_update(float delta_time) {
     }
 
     scene_->on_update(delta_time);
-    entity_.get_component<SpriteRendererComponent>().color = color_;
+    square_entity_.get_component<SpriteRendererComponent>().color = color_;
 
     // render
     Renderer2D::reset_stats();
@@ -97,7 +127,7 @@ void EditLayer::on_update(float delta_time) {
     {
         // clear
         IVX_PROFILE_SCOPE("Renderer prep");
-        RenderCommand::set_clear_color(glm::vec4{0.1f, 0.1f, 0.1f, 1});
+        RenderCommand::set_clear_color(glm::vec4{0.1f, 0.1f, 0.1f, 1.f});
         RenderCommand::clear();
     }
 
@@ -105,9 +135,7 @@ void EditLayer::on_update(float delta_time) {
         // draw
         IVX_PROFILE_SCOPE("Renderer draw");
 
-        Renderer2D::begin_scene(camera_controller_->get_camera());
         scene_->on_render();
-        Renderer2D::end_scene();
     }
 
     frame_buffer_->unbind();
@@ -152,15 +180,27 @@ void EditLayer::draw_settings_panel() {
     ImGui::Text("Vertices: %d", stats.get_total_vertex_count());
     ImGui::Text("Indices: %d", stats.get_total_index_count());
 
-    if (entity_) {
+    if (square_entity_) {
         ImGui::Separator();
-        auto &tag = entity_.get_component<TagComponent>().value;
+        auto &tag = square_entity_.get_component<TagComponent>().value;
         ImGui::Text("%s", tag.c_str());
 
         auto &squareColor =
-            entity_.get_component<SpriteRendererComponent>().color;
+            square_entity_.get_component<SpriteRendererComponent>().color;
         ImGui::ColorEdit4("Square Color", glm::value_ptr(color_));
         ImGui::Separator();
+    }
+
+    ImGui::DragFloat3(
+        "Camera Transform",
+        glm::value_ptr(
+            camera_entity_.get_component<TransformComponent>().transform[3]));
+
+    if (ImGui::Checkbox("Camera A", &primary_camera_)) {
+        camera_entity_.get_component<CameraComponent>().primary =
+            primary_camera_;
+        second_camera_entity_.get_component<CameraComponent>().primary =
+            !primary_camera_;
     }
 
     ImGui::End();

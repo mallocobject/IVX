@@ -4,13 +4,13 @@
 layout(location = 0) in vec3 a_Position;
 
 uniform vec4 u_Color;
-uniform mat4 mvp;
+uniform mat4 u_VP;
 
 out vec4 o_Color;
 
 void main() {
     o_Color = u_Color;
-    gl_Position = mvp * vec4(a_Position, 1.0);
+    gl_Position = u_VP * vec4(a_Position, 1.0);
 }
 
 #type fragment

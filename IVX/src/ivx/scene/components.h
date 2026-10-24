@@ -1,6 +1,7 @@
 #pragma once
 
 #include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/vector_float4.hpp"
 #include "ivx/core/ref.hpp"
 #include "ivx/renderer/camera.h"
 #include "ivx/renderer/sub_texture2d.h"
@@ -60,16 +61,37 @@ struct TransformComponent {
 };
 
 struct SpriteRendererComponent {
-    glm::vec4 color{1.f};
     Ref<Texture2D> texture;
     Ref<SubTexture2D> sub_texture;
     float tiling_factor{1.f};
+    glm::vec4 color{1.f};
+
+    SpriteRendererComponent() = default;
+    SpriteRendererComponent(const Ref<Texture2D> &texture,
+                            float tiling_factor = 1.f,
+                            const glm::vec4 &color = glm::vec4{1.f})
+        : texture(texture), tiling_factor(tiling_factor), color(color) {
+    }
+    SpriteRendererComponent(const Ref<SubTexture2D> &sub_texture,
+                            float tiling_factor = 1.f,
+                            const glm::vec4 &color = glm::vec4{1.f})
+        : sub_texture(sub_texture), tiling_factor(tiling_factor), color(color) {
+    }
 };
 
+// HACK
 struct CameraComponent {
-    Ref<OrthoGraphicCamera> camera;
-    bool primary{true};
+    glm::mat4 projection{1.f};
+    bool primary{false};
     bool fixed_aspect_ratio{false};
+
+    CameraComponent() = default;
+    CameraComponent(const glm::mat4 &projection,
+                    bool primary = false,
+                    bool fix_aspect_ratio = false)
+        : projection(projection), primary(primary),
+          fixed_aspect_ratio(fix_aspect_ratio) {
+    }
 };
 
 struct NativeScriptComponent;

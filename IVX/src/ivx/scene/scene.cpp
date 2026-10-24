@@ -1,5 +1,6 @@
 #include "ivxpch.h"
 #include "scene.h"
+#include "glm/ext/matrix_float4x4.hpp"
 #include "ivx/renderer/camera.h"
 #include "ivx/renderer/renderer2d.h"
 #include "ivx/scene/components.h"
@@ -43,21 +44,40 @@ void Scene::on_update(float delta_time) {
 }
 
 void Scene::on_render() {
-    // The caller owns the camera: wrap this call in
-    // Renderer2D::begin_scene(camera) / end_scene().
-    for (auto [handle, transform, sprite] :
-         registry_.view<TransformComponent, SpriteRendererComponent>().each()) {
-        if (sprite.sub_texture) {
-            Renderer2D::draw_quad(transform,
-                                  sprite.sub_texture,
-                                  sprite.tiling_factor,
-                                  sprite.color);
-        } else if (sprite.texture) {
-            Renderer2D::draw_quad(
-                transform, sprite.texture, sprite.tiling_factor, sprite.color);
-        } else {
-            Renderer2D::draw_quad(transform, sprite.color);
+    glm::mat4 main_camera{1.f};
+    glm::mat4 camera_transform{1.f};
+    bool has_main_camera = false;
+
+    for (auto [handle, camera, transform] :
+         registry_.view<CameraComponent, TransformComponent>().each()) {
+        if (camera.primary) {
+            main_camera = camera.projection;
+            camera_transform = transform.transform;
+            has_main_camera = true;
+            break;
         }
+    }
+
+    if (has_main_camera) {
+        Renderer2D::begin_scene(main_camera, camera_transform);
+        for (auto [handle, transform, sprite] :
+             registry_.view<TransformComponent, SpriteRendererComponent>()
+                 .each()) {
+            if (sprite.sub_texture) {
+                Renderer2D::draw_quad(transform,
+                                      sprite.sub_texture,
+                                      sprite.tiling_factor,
+                                      sprite.color);
+            } else if (sprite.texture) {
+                Renderer2D::draw_quad(transform,
+                                      sprite.texture,
+                                      sprite.tiling_factor,
+                                      sprite.color);
+            } else {
+                Renderer2D::draw_quad(transform, sprite.color);
+            }
+        }
+        Renderer2D::end_scene();
     }
 }
 

@@ -121,12 +121,24 @@ void Renderer2D::init() {
 void Renderer2D::shutdown() {
     IVX_PROFILE_FUNCTION();
 }
+void Renderer2D::begin_scene(const glm::mat4 &projection,
+                             const glm::mat4 &transform) {
+    IVX_PROFILE_FUNCTION();
+
+    auto vp = projection * transform;
+    data.texture_shader->set("u_VP", vp);
+
+    data.quad_index_count = 0;
+    data.quad_vertex_buffer_ptr = data.quad_vertex_buffer_base;
+
+    data.tex_slot_index = 1;
+}
 
 void Renderer2D::begin_scene(const Ref<OrthoGraphicCamera> &camera) {
     IVX_PROFILE_FUNCTION();
 
     auto vp = camera->get_proj_matrix() * camera->get_view_matrix();
-    data.texture_shader->set("mvp", vp);
+    data.texture_shader->set("u_VP", vp);
 
     data.quad_index_count = 0;
     data.quad_vertex_buffer_ptr = data.quad_vertex_buffer_base;

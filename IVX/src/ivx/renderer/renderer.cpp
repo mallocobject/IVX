@@ -38,8 +38,8 @@ void Renderer::end_scene() {
 void Renderer::submit(const Ref<Shader> &shader,
                       const Ref<VertexArray> &vertex_array,
                       const glm::mat4 &transform) {
-    auto mvp = scene_data_->view_proj_matrix * transform;
-    shader->set("mvp", mvp);
+    auto vp = scene_data_->view_proj_matrix * transform;
+    shader->set("u_VP", vp);
     shader->bind();
     vertex_array->bind();
     RenderCommand::draw(vertex_array);
