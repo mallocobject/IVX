@@ -1,5 +1,7 @@
 #pragma once
-#include "imgui.h"
+#include "ivx/scene/entity.h"
+#include "ivx/scene/scene.h"
+#include <imgui.h>
 #include <ivx.h>
 #include <vector>
 
@@ -22,8 +24,12 @@ class EditLayer : public Layer {
     Ref<SubTexture2D> sub_texture_;
     Ref<FrameBuffer> frame_buffer_;
 
+    Ref<Scene> scene_;
+    Entity entity_;
+
     bool viewport_focused_{false};
     bool viewport_hovered_{false};
-    ImVec2 prev_viewport_size_{0.f, 0.f};
+    bool visible_{false};
+    ImVec2 viewport_size_{0.f, 0.f};
 };
 } // namespace ivx

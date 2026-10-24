@@ -1,4 +1,5 @@
 #include "edit_layer.h"
+#include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/application.h"
@@ -6,6 +7,7 @@
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/event.h"
 #include "ivx/renderer/render_command.h"
+#include "ivx/scene/scene.h"
 #include <algorithm>
 #include <cfloat>
 #include <cstdint>
@@ -33,6 +35,13 @@ void EditLayer::on_attach() {
 
     frame_buffer_ = FrameBuffer::create(spec);
 
+    scene_ = make_ref<Scene>();
+    entity_ = scene_->create_entity("Green Square");
+    entity_.add_component<TransformComponent>(
+        glm::vec3{0.f}, 0.f, glm::vec2{400.f, 200.f});
+    entity_.add_component<SpriteRendererComponent>(
+        glm::vec4{1.f, 1.f, 1.f, 1.f}, nullptr, sub_texture_);
+
     ImGuiIO &io = ImGui::GetIO();
     ImFontConfig cfg;
     // cfg.PixelSnapH = true;
@@ -49,10 +58,22 @@ void EditLayer::on_detach() {
 void EditLayer::on_update(float delta_time) {
     IVX_PROFILE_FUNCTION();
 
+    if (visible_) {
+        const auto &spec = frame_buffer_->get_specification();
+        if (spec.width != viewport_size_.x || spec.height != viewport_size_.y) {
+            camera_controller_->resize(static_cast<uint32_t>(viewport_size_.x),
+                                       static_cast<uint32_t>(viewport_size_.y));
+            frame_buffer_->resize(static_cast<uint32_t>(viewport_size_.x),
+                                  static_cast<uint32_t>(viewport_size_.y));
+        }
+    }
+
     // update
     if (viewport_focused_) {
         camera_controller_->on_update(delta_time);
     }
+
+    scene_->on_update(delta_time);
 
     // render
     Renderer2D::reset_stats();
@@ -71,7 +92,7 @@ void EditLayer::on_update(float delta_time) {
         IVX_PROFILE_SCOPE("Renderer draw");
 
         Renderer2D::begin_scene(camera_controller_->get_camera());
-        Renderer2D::draw_quad({0.f, 0.f}, {600.f, 300.f}, sub_texture_);
+        scene_->on_render();
         Renderer2D::end_scene();
     }
 
@@ -117,7 +138,16 @@ void EditLayer::draw_settings_panel() {
     ImGui::Text("Vertices: %d", stats.get_total_vertex_count());
     ImGui::Text("Indices: %d", stats.get_total_index_count());
 
-    ImGui::ColorEdit4("Square Color", glm::value_ptr(color_));
+    if (entity_) {
+        ImGui::Separator();
+        auto &tag = entity_.get_component<TagComponent>().tag;
+        ImGui::Text("%s", tag.c_str());
+
+        auto &squareColor =
+            entity_.get_component<SpriteRendererComponent>().color;
+        ImGui::ColorEdit4("Square Color", glm::value_ptr(color_));
+        ImGui::Separator();
+    }
 
     ImGui::End();
 
@@ -127,24 +157,22 @@ void EditLayer::draw_settings_panel() {
     viewport_hovered_ = ImGui::IsWindowHovered();
     Application::get().imgui_layer()->block_event(!viewport_focused_ ||
                                                   !viewport_hovered_);
-    bool visible = ImGui::IsWindowCollapsed() == false;
-    if (visible) {
+
+    visible_ = ImGui::IsWindowCollapsed() == false;
+    if (visible_) {
         ImVec2 viewport_size = ImGui::GetContentRegionAvail();
         float w = std::max(viewport_size.x, 1.f);
         float h = std::max(viewport_size.y, 1.f);
-        if (w != prev_viewport_size_.x || h != prev_viewport_size_.y) {
-            camera_controller_->resize(static_cast<uint32_t>(w),
-                                       static_cast<uint32_t>(h));
-            frame_buffer_->resize(static_cast<uint32_t>(w),
-                                  static_cast<uint32_t>(h));
-            prev_viewport_size_ = {w, h};
-        }
+
+        viewport_size_ = {w, h};
+
         ImGui::Image(
             static_cast<ImTextureID>(frame_buffer_->get_color_attachment()),
-            prev_viewport_size_,
+            viewport_size_,
             ImVec2{0.0f, 1.0f},
             ImVec2{1.0f, 0.0f});
     }
+
     ImGui::End();
     ImGui::PopStyleVar();
 }

@@ -30,11 +30,11 @@ class OrthoGraphicCamera : public Camera {
     }
 
     // radians
-    void set_rotation(float degrees) {
-        degrees_ = degrees;
+    void set_rotation(float rotation) {
+        rotation_ = rotation;
     }
-    float get_degrees() const {
-        return degrees_;
+    float get_rotation() const {
+        return rotation_;
     }
 
     void set_view_field(float left, float right, float bottom, float top) {
@@ -56,7 +56,7 @@ class OrthoGraphicCamera : public Camera {
     float top_;
 
     glm::vec3 position_{0.f};
-    float degrees_{0.f};
+    float rotation_{0.f};
 };
 
 class PerspectiveCamera : public Camera {

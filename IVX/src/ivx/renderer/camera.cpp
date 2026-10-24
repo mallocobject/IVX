@@ -48,7 +48,7 @@ glm::mat4 OrthoGraphicCamera::get_view_matrix() const {
 
     auto transform = glm::translate(glm::mat4(1.f), position_) *
                      glm::rotate(glm::mat4(1.f),
-                                 glm::radians(degrees_),
+                                 glm::radians(rotation_),
                                  glm::vec3(0.f, 0.f, 1.f));
 
     // view matrix

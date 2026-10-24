@@ -23,3 +23,5 @@
 #include "ivx/renderer/sub_texture2d.h"
 #include "ivx/renderer/texture.h"
 #include "ivx/renderer/vertex_array.h"
+
+#include "ivx/scene/scene.h"

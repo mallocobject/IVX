@@ -26,7 +26,7 @@ target_include_directories(IVX PUBLIC
     "${CMAKE_SOURCE_DIR}/deps/SDL/include")      # <SDL3/SDL.h>
 
 target_link_libraries(IVX PUBLIC
-    glfw glad imgui glm stb_image BqLog opengl32)
+    glfw glad imgui glm stb_image BqLog opengl32 entt)
 
 target_compile_definitions(IVX PUBLIC
     IVX_PLATFORM_WINDOWS
@@ -46,7 +46,7 @@ endif()
 # OFF (default): GLFW, the current implementation.
 # ON: SDL3 (SDL_Window + SDL_GLContext + event queue). SDL3 is always compiled
 # as a dependency; this switch only decides which platform layer IVX uses.
-option(IVX_WINDOW_SDL3 "Use SDL3 instead of GLFW for windowing/input" OFF)
+option(IVX_WINDOW_SDL3 "Use SDL3 instead of GLFW for windowing/input" ON)
 
 if(IVX_WINDOW_SDL3)
     target_compile_definitions(IVX PUBLIC IVX_WINDOW_SDL3)

@@ -25,7 +25,7 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
     IVX_PROFILE_FUNCTION();
 
     static glm::vec3 postion{0.f};
-    static float degrees = 0.f;
+    static float rotation = 0.f;
     static constexpr float speed = 500.f;
     static constexpr float delta = 180.f;
 
@@ -52,15 +52,15 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
 
     if (enable_rotation_) {
         if (Input::is_key_pressed(IVX_KEY_Q)) {
-            degrees += delta * delta_time;
+            rotation += delta * delta_time;
         }
         if (Input::is_key_pressed(IVX_KEY_E)) {
-            degrees -= delta * delta_time;
+            rotation -= delta * delta_time;
         }
     }
 
     camera_->set_position(postion);
-    camera_->set_rotation(degrees);
+    camera_->set_rotation(rotation);
 }
 
 void OrthoGraphicCameraController::on_event(Event &event) {

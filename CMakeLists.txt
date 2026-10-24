@@ -73,6 +73,10 @@ target_include_directories(glad PUBLIC "${VENDOR_DIR}/Glad/include")
 add_library(stb_image STATIC "${VENDOR_DIR}/stb_image/stb_image.cpp")
 target_include_directories(stb_image PUBLIC "${VENDOR_DIR}/stb_image")
 
+# ---- entt ----
+add_library(entt INTERFACE)
+target_include_directories(entt INTERFACE "${VENDOR_DIR}/entt/include")
+
 add_subdirectory(IVX)
 add_subdirectory(VXEdit)
 # add_subdirectory(Sandbox)

@@ -32,38 +32,7 @@ void Sandbox2D::on_update(float delta_time) {
     // update
     camera_controller_->on_update(delta_time);
 
-    // render
     ivx::Renderer2D::reset_stats();
-
-    {
-        // clear
-        IVX_PROFILE_SCOPE("Renderer prep");
-        ivx::RenderCommand::set_clear_color(glm::vec4{0.1f, 0.1f, 0.1f, 1});
-        ivx::RenderCommand::clear();
-    }
-
-    {
-        // draw
-        IVX_PROFILE_SCOPE("Renderer draw");
-
-        ivx::Renderer2D::begin_scene(camera_controller_->get_camera());
-        // ivx::Renderer2D::draw_rotated_quad(
-        //     {-100.f, 0.0f}, {400.f, 400.f}, 45.f, color_);
-        ivx::Renderer2D::draw_quad({0.f, 0.f}, {600.f, 300.f}, sub_texture_);
-        // ivx::Renderer2D::draw_quad(
-        //     {0.0f, 0.0f, -0.1f}, {500.f, 500.f}, texture_, 10.f);
-        ivx::Renderer2D::end_scene();
-
-        // ivx::Renderer2D::begin_scene(camera_controller_->get_camera());
-        // for (float y = -500.f; y < 500.f; y += 50.f) {
-        //     for (float x = -500.f; x < 500.f; x += 50.f) {
-        //         glm::vec4 color{
-        //             (x + 500.f) / 1000.f, 0.4f, (y + 500.f) / 1000.f, 0.7f};
-        //         ivx::Renderer2D::draw_quad({x, y}, {40.f, 40.f}, color);
-        //     }
-        // }
-        // ivx::Renderer2D::end_scene();
-    }
 }
 
 void Sandbox2D::on_event(ivx::Event &event) {
@@ -77,6 +46,17 @@ void Sandbox2D::on_event(ivx::Event &event) {
 
 void Sandbox2D::on_render() {
     IVX_PROFILE_FUNCTION();
+
+    // Application::run() clears the default framebuffer right after on_update(),
+    // so drawing has to happen here: anything issued in on_update() is wiped
+    // before the buffer is presented.
+    {
+        IVX_PROFILE_SCOPE("Renderer draw");
+
+        ivx::Renderer2D::begin_scene(camera_controller_->get_camera());
+        ivx::Renderer2D::draw_quad({0.f, 0.f}, {600.f, 300.f}, sub_texture_);
+        ivx::Renderer2D::end_scene();
+    }
 
     draw_settings_panel();
 }

@@ -2,7 +2,7 @@
 
 #include "glm/ext/vector_float2.hpp"
 #include "ivx/core/ref_counted.hpp"
-#include "texture.h"
+#include "ivx/renderer/texture.h"
 
 namespace ivx {
 class SubTexture2D : public RefCounted {
