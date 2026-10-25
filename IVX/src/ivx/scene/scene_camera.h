@@ -38,32 +38,46 @@ class SceneCamera {
     }
 
     // ---- orthographic ----
+    // Trivial setters are inline on purpose: script modules never link the
+    // engine, so anything they are expected to call has to be header-only.
     float get_orthographic_size() const {
         return orthographic_size_;
     }
-    void set_orthographic_size(float size);
+    void set_orthographic_size(float size) {
+        orthographic_size_ = size;
+    }
     float get_orthographic_near() const { // positive distance
         return orthographic_near_;
     }
-    void set_orthographic_near(float near_clip);
+    void set_orthographic_near(float near_clip) {
+        orthographic_near_ = near_clip;
+    }
     float get_orthographic_far() const { // positive distance
         return orthographic_far_;
     }
-    void set_orthographic_far(float far_clip);
+    void set_orthographic_far(float far_clip) {
+        orthographic_far_ = far_clip;
+    }
 
     // ---- perspective ----
     float get_perspective_vertical_fov() const { // radians
         return perspective_vertical_fov_;
     }
-    void set_perspective_vertical_fov(float vertical_fov);
+    void set_perspective_vertical_fov(float vertical_fov) {
+        perspective_vertical_fov_ = vertical_fov;
+    }
     float get_perspective_near() const { // positive distance
         return perspective_near_;
     }
-    void set_perspective_near(float near_clip);
+    void set_perspective_near(float near_clip) {
+        perspective_near_ = near_clip;
+    }
     float get_perspective_far() const { // positive distance
         return perspective_far_;
     }
-    void set_perspective_far(float far_clip);
+    void set_perspective_far(float far_clip) {
+        perspective_far_ = far_clip;
+    }
 
     // Size of the visible area in world units (orthographic only).
     float get_orthographic_width() const;

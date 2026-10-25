@@ -52,3 +52,19 @@ if(IVX_WINDOW_SDL3)
     target_compile_definitions(IVX PUBLIC IVX_WINDOW_SDL3)
     target_link_libraries(IVX PUBLIC SDL3::SDL3)
 endif()
+# ---- script modules ----
+# Everything a script module needs from the engine is header-only (Entity,
+# components, ScriptableEntity, EnTT). This interface target carries only include
+# dirs and the ABI-relevant compile definitions, so a module never links the
+# static engine library (that would duplicate engine state inside the DLL).
+add_library(IVXHeaders INTERFACE)
+target_include_directories(IVXHeaders INTERFACE
+    "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(IVXHeaders INTERFACE glm entt)
+target_compile_definitions(IVXHeaders INTERFACE
+    IVX_PLATFORM_WINDOWS
+    $<$<CONFIG:Debug>:IVX_CONFIG_DEBUG>
+    $<$<CONFIG:Release>:IVX_CONFIG_RELEASE>)
+if(IVX_INTRUSIVE_REF)
+    target_compile_definitions(IVXHeaders INTERFACE IVX_INTRUSIVE_REF)
+endif()

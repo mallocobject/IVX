@@ -80,30 +80,6 @@ void SceneCamera::set_viewport_size(uint32_t width, uint32_t height) {
     aspect_ratio_ = static_cast<float>(width) / static_cast<float>(height);
 }
 
-void SceneCamera::set_orthographic_size(float size) {
-    orthographic_size_ = size;
-}
-
-void SceneCamera::set_orthographic_near(float near_clip) {
-    orthographic_near_ = near_clip;
-}
-
-void SceneCamera::set_orthographic_far(float far_clip) {
-    orthographic_far_ = far_clip;
-}
-
-void SceneCamera::set_perspective_vertical_fov(float vertical_fov) {
-    perspective_vertical_fov_ = vertical_fov;
-}
-
-void SceneCamera::set_perspective_near(float near_clip) {
-    perspective_near_ = near_clip;
-}
-
-void SceneCamera::set_perspective_far(float far_clip) {
-    perspective_far_ = far_clip;
-}
-
 float SceneCamera::get_orthographic_width() const {
     return orthographic_size_ * aspect_ratio_;
 }

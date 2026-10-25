@@ -3,6 +3,8 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/quaternion_common.hpp"
 #include "ivx/core/logger.h"
+#include "ivx/event/key_event.h"
+#include "ivx/event/mouse_event.h"
 #include "ivx/renderer/camera.h"
 #include "ivx/renderer/renderer2d.h"
 #include "ivx/scene/components.h"
@@ -12,7 +14,19 @@
 #include <cstdint>
 #include <vector>
 
+
 namespace ivx {
+namespace {
+// Scripts only see events while they are enabled and instantiated.
+template <typename Fn>
+void for_each_enabled_script(entt::registry &registry, Fn &&fn) {
+    for (auto [handle, nsc] : registry.view<NativeScriptComponent>().each()) {
+        if (nsc.enabled && nsc.instance != nullptr) {
+            fn(*nsc.instance);
+        }
+    }
+}
+} // namespace
 namespace {
 // Calls on_destroy() and releases the script instance, if there is one.
 void release_script(entt::registry &registry, entt::entity handle) {
@@ -175,6 +189,54 @@ void Scene::on_update(float dt) {
             nsc.instance->on_update(dt);
         }
     }
+}
+
+void Scene::on_event(Event &event) {
+    EventDispatcher dispatcher{event};
+
+    // Handlers return false on purpose: scripts observe events, they do not
+    // consume them.
+    dispatcher.dispatch([this](KeyPressedEvent &e) {
+        for_each_enabled_script(registry_, [&e](ScriptableEntity &script) {
+            script.on_key_pressed(e.get_key_code(), e.is_repeat());
+        });
+        return false;
+    });
+
+    dispatcher.dispatch([this](KeyReleasedEvent &e) {
+        for_each_enabled_script(registry_, [&e](ScriptableEntity &script) {
+            script.on_key_released(e.get_key_code());
+        });
+        return false;
+    });
+
+    dispatcher.dispatch([this](MouseButtonPressedEvent &e) {
+        for_each_enabled_script(registry_, [&e](ScriptableEntity &script) {
+            script.on_mouse_button_pressed(e.get_mouse_button());
+        });
+        return false;
+    });
+
+    dispatcher.dispatch([this](MouseButtonReleasedEvent &e) {
+        for_each_enabled_script(registry_, [&e](ScriptableEntity &script) {
+            script.on_mouse_button_released(e.get_mouse_button());
+        });
+        return false;
+    });
+
+    dispatcher.dispatch([this](MouseScrolledEvent &e) {
+        for_each_enabled_script(registry_, [&e](ScriptableEntity &script) {
+            script.on_mouse_scrolled(e.get_x_offset(), e.get_y_offset());
+        });
+        return false;
+    });
+
+    dispatcher.dispatch([this](MouseMovedEvent &e) {
+        for_each_enabled_script(registry_, [&e](ScriptableEntity &script) {
+            script.on_mouse_moved(e.get_x(), e.get_y());
+        });
+        return false;
+    });
 }
 
 void Scene::update_world_transforms() {

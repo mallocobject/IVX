@@ -9,6 +9,7 @@
 namespace ivx {
 
 class Entity;
+class Event;
 
 class Scene : public RefCounted {
   public:
@@ -31,6 +32,10 @@ class Scene : public RefCounted {
     bool is_descendant_of(Entity entity, Entity ancestor);
 
     void on_update(float dt);
+    // Forwards an engine event to every enabled script's on_key_* / on_mouse_*
+    // hooks. Call it from the layer's on_event(), so scripts see the same events
+    // the rest of the app sees (and nothing while ImGui has the keyboard).
+    void on_event(Event &event);
     // Draws every entity that has a TransformComponent +
     // SpriteRendererComponent. The caller owns the camera: wrap it in
     // Renderer2D::begin_scene()/end_scene().

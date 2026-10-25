@@ -10,6 +10,8 @@ namespace ivx {
 // Development-only timing panel: whole-frame cost plus the phase breakdown the
 // layer reports every frame (update / render), a frame-time graph and the
 // Renderer2D counters. Not meant to survive into a shipped editor.
+//
+// Layout: numbers on the left, frame-time graph on the right.
 class StatsPanel : public Panel {
   public:
     StatsPanel();
@@ -30,7 +32,12 @@ class StatsPanel : public Panel {
         float ms{0.f};
     };
 
+    void draw_info_column();
+    void draw_graph_column();
+
     static constexpr int kHistorySize = 240;
+    // 60 Hz budget; the graph and the headline are coloured against it.
+    static constexpr float kBudgetMs = 16.7f;
 
     std::vector<Phase> current_;
     std::vector<Phase> reported_;
@@ -43,6 +50,7 @@ class StatsPanel : public Panel {
     float smoothed_ms_{0.f};
     float min_ms_{0.f};
     float max_ms_{0.f};
+    float avg_ms_{0.f};
 };
 
 } // namespace ivx

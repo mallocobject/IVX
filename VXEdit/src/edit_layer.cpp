@@ -30,6 +30,15 @@ EditLayer::EditLayer() : Layer("EditLayer") {
 void EditLayer::on_attach() {
     IVX_PROFILE_FUNCTION();
 
+    // Script module first: its registry has to exist before anything can bind a
+    // script. A missing DLL is not fatal, the editor just has no script types.
+    {
+        std::string error;
+        if (!scripts_library_.load(SCRIPTS_DLL, error)) {
+            IVX_ERROR("Script module not loaded: {}", error);
+        }
+    }
+
     // The editor layout is stored next to the assets instead of the process
     // working directory, so it survives being launched from anywhere.
     Application::get().imgui_layer()->set_ini_filename(LAYOUT);
@@ -190,10 +199,49 @@ void EditLayer::on_update(float dt) {
     }
 }
 
+void EditLayer::reload_scripts() {
+    IVX_PROFILE_FUNCTION();
+
+    // Instances live in the module that is about to be unloaded, so they have to
+    // go first. Remember the names to re-bind afterwards.
+    std::vector<std::pair<Entity, std::string>> bindings;
+    for (auto [handle, script] :
+         scene_->registry().view<NativeScriptComponent>().each()) {
+        if (!script.script_name.empty()) {
+            bindings.emplace_back(Entity{handle, scene_.get()}, script.script_name);
+        }
+        script.unbind(); // also clears script_name
+    }
+
+    std::string log;
+    // Unload first: the linker cannot overwrite a DLL that is still mapped in.
+    scripts_library_.unload();
+    const bool ok = rebuild_scripts(scripts_library_, log);
+    if (!log.empty()) {
+        IVX_INFO("Script build output:\n{}", log);
+    }
+    if (!ok) {
+        IVX_ERROR("Script rebuild failed, bindings were dropped");
+        return;
+    }
+
+    std::size_t restored = 0;
+    for (auto &[entity, name] : bindings) {
+        if (ScriptRegistry::get().bind_by_name(name, entity)) {
+            restored++;
+        }
+    }
+    IVX_INFO("Scripts reloaded: {} type(s), {} binding(s) restored",
+             ScriptRegistry::get().entries().size(),
+             restored);
+}
+
 void EditLayer::on_event(Event &event) {
-    if (event.is_in_category(EventCategory::kEventCategoryMouse |
-                             EventCategory::kEventCategoryKeyboard)) {
-        // IVX_VERBOSE("{}", event.to_string());
+    // Scripts see the same events the rest of the app sees, but only while the
+    // viewport owns the input (same rule as polling: typing in an inspector field
+    // must not drive a script).
+    if (viewport_focused_ && scene_) {
+        scene_->on_event(event);
     }
 }
 
@@ -201,7 +249,6 @@ void EditLayer::setup_panels() {
     IVX_PROFILE_FUNCTION();
 
     register_all_components();
-    register_all_scripts();
 
     // Deterministic draw order: Hierarchy -> Viewport -> Inspector -> Camera.
     scene_hierarchy_panel_ = panels_.add<SceneHierarchyPanel>(context_);
@@ -247,6 +294,12 @@ void EditLayer::on_render() {
             ImGui::EndMenu();
         }
         panels_.draw_view_menu();
+        if (ImGui::BeginMenu("Scripts")) {
+            if (ImGui::MenuItem("Rebuild & Reload")) {
+                reload_scripts();
+            }
+            ImGui::EndMenu();
+        }
         if (ImGui::BeginMenu("Layout")) {
             if (ImGui::MenuItem("Reset Layout")) {
                 reset_layout_requested_ = true;

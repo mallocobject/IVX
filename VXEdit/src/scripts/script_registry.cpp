@@ -1,13 +1,23 @@
 #include "script_registry.h"
 
-#include "camera_controller.h"
 #include "ivx/core/logger.h"
+#include "ivx/scene/components.h"
 
 namespace ivx {
 
 ScriptRegistry &ScriptRegistry::get() {
     static ScriptRegistry instance;
     return instance;
+}
+
+void ScriptRegistry::add_raw(std::string name,
+                             ScriptableEntity *(*instantiate)(),
+                             void (*destroy)(NativeScriptComponent *)) {
+    ScriptEntry entry;
+    entry.name = std::move(name);
+    entry.instantiate = instantiate;
+    entry.destroy = destroy;
+    entries_.push_back(std::move(entry));
 }
 
 const char *ScriptRegistry::name_of(ScriptableEntity *(*instantiate)()) const {
@@ -53,23 +63,14 @@ bool ScriptRegistry::bind_by_name(const std::string &name, Entity entity) const 
     component->instantiate = found->instantiate;
     component->destroy = found->destroy;
     component->enabled = true;
+    // Remembered so the editor can re-bind after a module reload.
+    component->script_name = found->name;
 
     const auto *tag = entity.try_get_component<TagComponent>();
     IVX_INFO("Bound script '{}' to '{}'",
              found->name,
              tag != nullptr ? tag->tag : "<unnamed>");
     return true;
-}
-
-void register_all_scripts() {
-    auto &registry = ScriptRegistry::get();
-    if (!registry.entries().empty()) {
-        return; // already registered
-    }
-
-    registry.add<CameraController>("CameraController");
-
-    IVX_CORE_DEBUG("Registered {} script type(s)", registry.entries().size());
 }
 
 } // namespace ivx

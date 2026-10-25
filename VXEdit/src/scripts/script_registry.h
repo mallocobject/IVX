@@ -10,9 +10,10 @@ namespace ivx {
 
 // Name <-> script type table.
 //
-// Scripts are still compiled into the application, but the *binding* is now a
-// runtime choice: the editor lists these names in the inspector, so a new script
-// only needs one registration instead of a hand-written bind< T >() call.
+// Scripts usually come from a module DLL (VXScripts), so this is filled at load
+// time and cleared before the module is unloaded -- the function pointers would
+// dangle afterwards. Scripts compiled into the editor can still register through
+// the add<T>() helper.
 //
 // The function pointers identify the type: bind<T>() produces the same
 // instantiate/destroy addresses for every call, so they work as a type key.
@@ -30,12 +31,16 @@ class ScriptRegistry {
     void add(std::string name) {
         NativeScriptComponent probe; // stateless: only harvests the pointers
         probe.bind<T>();
+        add_raw(std::move(name), probe.instantiate, probe.destroy);
+    }
 
-        ScriptEntry entry;
-        entry.name = std::move(name);
-        entry.instantiate = probe.instantiate;
-        entry.destroy = probe.destroy;
-        entries_.push_back(std::move(entry));
+    // Raw registration, used by the module loader.
+    void add_raw(std::string name,
+                 ScriptableEntity *(*instantiate)(),
+                 void (*destroy)(NativeScriptComponent *));
+
+    void clear() {
+        entries_.clear();
     }
 
     const std::vector<ScriptEntry> &entries() const {
@@ -45,15 +50,12 @@ class ScriptRegistry {
     // Name of the type behind `instantiate`, or nullptr when unknown.
     const char *name_of(ScriptableEntity *(*instantiate)()) const;
 
-    // Replaces the entity's script with `name`. The old instance is destroyed
-    // first. Returns false when the name is unknown.
+    // Replaces the entity's script with `name`, remembering the name so the
+    // binding survives a module reload. Returns false when the name is unknown.
     bool bind_by_name(const std::string &name, Entity entity) const;
 
   private:
     std::vector<ScriptEntry> entries_;
 };
-
-// Registers every script type the editor can bind (idempotent).
-void register_all_scripts();
 
 } // namespace ivx

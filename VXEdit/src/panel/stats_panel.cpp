@@ -8,9 +8,35 @@
 #include <imgui.h>
 
 namespace ivx {
+namespace {
+
+constexpr ImU32 kGood = IM_COL32(110, 210, 130, 255);   // comfortably inside budget
+constexpr ImU32 kWarn = IM_COL32(235, 200, 90, 255);    // near the 60 Hz budget
+constexpr ImU32 kBad = IM_COL32(235, 110, 110, 255);    // over budget
+
+ImU32 budget_color(float ms) {
+    if (ms > StatsPanel::kBudgetMs) {
+        return kBad;
+    }
+    if (ms > StatsPanel::kBudgetMs * 0.6f) {
+        return kWarn;
+    }
+    return kGood;
+}
+
+// "1.23k" style, keeps the renderer rows narrow.
+void format_count(char *buffer, std::size_t size, float value) {
+    if (value >= 1000.f) {
+        std::snprintf(buffer, size, "%.1fk", value / 1000.f);
+    } else {
+        std::snprintf(buffer, size, "%.0f", value);
+    }
+}
+
+} // namespace
 
 StatsPanel::StatsPanel() : Panel("Stats") {
-    set_default_size(ImVec2{360.f, 300.f});
+    set_default_size(ImVec2{560.f, 300.f});
 }
 
 void StatsPanel::begin_frame(float delta_time) {
@@ -27,12 +53,16 @@ void StatsPanel::begin_frame(float delta_time) {
     history_offset_ = (history_offset_ + 1) % kHistorySize;
     history_count_ = std::min(history_count_ + 1, kHistorySize);
 
-    min_ms_ = frame_ms_;
-    max_ms_ = frame_ms_;
+    min_ms_ = history_[0];
+    max_ms_ = history_[0];
+    float sum = 0.f;
     for (int i = 0; i < history_count_; i++) {
         min_ms_ = std::min(min_ms_, history_[i]);
         max_ms_ = std::max(max_ms_, history_[i]);
+        sum += history_[i];
     }
+    avg_ms_ = history_count_ > 0 ? sum / static_cast<float>(history_count_)
+                                 : frame_ms_;
 }
 
 void StatsPanel::submit(const char *phase, float milliseconds) {
@@ -40,16 +70,36 @@ void StatsPanel::submit(const char *phase, float milliseconds) {
 }
 
 void StatsPanel::on_imgui() {
+    // Numbers left, graph right. The info column keeps a readable width, the
+    // graph absorbs the rest.
+    const float total_width = ImGui::GetContentRegionAvail().x;
+    const float info_width =
+        std::clamp(total_width * 0.5f, 220.f, 420.f);
+
+    ImGui::BeginChild("##stats_info", ImVec2{info_width, 0.f});
+    draw_info_column();
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+
+    ImGui::BeginChild("##stats_graph", ImVec2{0.f, 0.f});
+    draw_graph_column();
+    ImGui::EndChild();
+}
+
+void StatsPanel::draw_info_column() {
+    const ImU32 color = budget_color(smoothed_ms_);
     const float fps = smoothed_ms_ > 0.f ? 1000.f / smoothed_ms_ : 0.f;
 
-    ImGui::Text("%.2f ms  (%.0f FPS)", smoothed_ms_, fps);
-    ImGui::SameLine();
-    ImGui::TextDisabled("| last %.2f  min %.2f  max %.2f", frame_ms_, min_ms_, max_ms_);
+    // ---- headline ----
+    ImGui::PushStyleColor(ImGuiCol_Text, color);
+    ImGui::Text("%.2f ms", smoothed_ms_);
+    ImGui::PopStyleColor();
 
-    // Measuring the real cost needs VSync off, otherwise the frame is capped and
-    // most of the time is spent waiting for the display.
-    bool vsync = Application::get().get_window().is_v_sync();
     ImGui::SameLine();
+    ImGui::TextDisabled("(%.0f FPS)", fps);
+    ImGui::SameLine(ImGui::GetContentRegionMax().x - 62.f);
+    bool vsync = Application::get().get_window().is_v_sync();
     if (ImGui::Checkbox("VSync", &vsync)) {
         Application::get().get_window().set_v_sync(vsync);
     }
@@ -58,9 +108,91 @@ void StatsPanel::on_imgui() {
                           "(with VSync on the frame is capped to the refresh rate).");
     }
 
-    // Frame time graph. The scale keeps 16.7 ms (60 Hz) visible even when the
-    // frame is much faster, so a healthy frame is not a flat line.
-    const float scale_max = std::max({16.7f, max_ms_ * 1.1f, 1.f});
+    ImGui::TextDisabled("budget %.1f ms  |  %.0f%% used", kBudgetMs,
+                        smoothed_ms_ > 0.f ? smoothed_ms_ / kBudgetMs * 100.f
+                                           : 0.f);
+    ImGui::TextDisabled("last %.2f  avg %.2f  min %.2f  max %.2f", frame_ms_,
+                        avg_ms_, min_ms_, max_ms_);
+
+    // ---- phases ----
+    ImGui::SeparatorText("Phases");
+
+    float measured = 0.f;
+    if (ImGui::BeginTable("##phases", 3,
+                          ImGuiTableFlags_SizingStretchProp |
+                              ImGuiTableFlags_NoSavedSettings)) {
+        ImGui::TableSetupColumn("phase", ImGuiTableColumnFlags_WidthFixed, 58.f);
+        ImGui::TableSetupColumn("ms", ImGuiTableColumnFlags_WidthFixed, 54.f);
+        ImGui::TableSetupColumn("%", ImGuiTableColumnFlags_WidthStretch);
+
+        auto row = [this](const char *name, float ms, ImU32 color) {
+            const float share = frame_ms_ > 0.f ? ms / frame_ms_ * 100.f : 0.f;
+            ImGui::TableNextRow();
+
+            ImGui::TableSetColumnIndex(0);
+            ImGui::TextUnformatted(name);
+
+            ImGui::TableSetColumnIndex(1);
+            ImGui::TextDisabled("%.2f", ms);
+
+            ImGui::TableSetColumnIndex(2);
+            ImGui::PushStyleColor(ImGuiCol_PlotHistogram, color);
+            ImGui::ProgressBar(std::clamp(share / 100.f, 0.f, 1.f),
+                               ImVec2{-FLT_MIN, 0.f},
+                               "");
+            ImGui::PopStyleColor();
+            ImGui::SameLine(ImGui::GetContentRegionMax().x - 44.f);
+            ImGui::TextDisabled("%.1f%%", share);
+        };
+
+        for (const Phase &phase : reported_) {
+            measured += phase.ms;
+            row(phase.name.c_str(), phase.ms, IM_COL32(120, 160, 230, 255));
+        }
+
+        // Whatever is left is VSync wait / present / driver time, which no CPU
+        // timer inside the layer can see.
+        const float rest = std::max(0.f, frame_ms_ - measured);
+        row("rest", rest, IM_COL32(130, 130, 145, 255));
+
+        ImGui::EndTable();
+    }
+
+    // ---- renderer + imgui ----
+    ImGui::SeparatorText("Renderer2D");
+    const auto stats = Renderer2D::get_stats();
+    char verts[16] = {};
+    char indices[16] = {};
+    format_count(verts, sizeof(verts),
+                 static_cast<float>(stats.get_total_vertex_count()));
+    format_count(indices, sizeof(indices),
+                 static_cast<float>(stats.get_total_index_count()));
+    ImGui::TextDisabled("draw calls %d   quads %d   verts %s   idx %s",
+                        stats.num_draw_calls, stats.num_quads, verts, indices);
+
+    ImGui::SeparatorText("ImGui");
+    if (const ImDrawData *draw_data = ImGui::GetDrawData()) {
+        char lists[16] = {};
+        char vtx[16] = {};
+        format_count(lists, sizeof(lists),
+                     static_cast<float>(draw_data->CmdListsCount));
+        format_count(vtx, sizeof(vtx),
+                     static_cast<float>(draw_data->TotalVtxCount));
+        ImGui::TextDisabled("lists %s   verts %s   windows %d", lists, vtx,
+                            ImGui::GetIO().MetricsRenderWindows);
+    }
+}
+
+void StatsPanel::draw_graph_column() {
+    // Scale: always keep the 60 Hz budget visible, otherwise fit the window.
+    const float scale_max = std::max({kBudgetMs * 1.1f, max_ms_ * 1.1f, 1.f});
+
+    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::Text("frame time (ms)  last %d", history_count_);
+    ImGui::PopStyleColor();
+
+    ImGui::PushStyleColor(ImGuiCol_PlotLines, budget_color(smoothed_ms_));
+    ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(22, 22, 26, 255));
     ImGui::PlotLines("##frame_time",
                      history_,
                      history_count_,
@@ -68,50 +200,25 @@ void StatsPanel::on_imgui() {
                      nullptr,
                      0.f,
                      scale_max,
-                     ImVec2{-FLT_MIN, 60.f});
+                     ImVec2{-FLT_MIN, -FLT_MIN});
+    ImGui::PopStyleColor(2);
 
-    if (ImGui::TreeNodeEx("Phases", ImGuiTreeNodeFlags_DefaultOpen)) {
-        float measured = 0.f;
-        for (const Phase &phase : reported_) {
-            measured += phase.ms;
-            const float share = frame_ms_ > 0.f ? phase.ms / frame_ms_ * 100.f : 0.f;
-            ImGui::Text("%-8s %6.2f ms  (%4.1f%%)", phase.name.c_str(), phase.ms, share);
-            ImGui::SameLine();
-            ImGui::ProgressBar(std::min(share / 100.f, 1.f),
-                               ImVec2{-FLT_MIN, 0.f},
-                               "");
-        }
-
-        // Whatever is left is VSync wait / present / driver time, which no CPU
-        // timer inside the layer can see.
-        const float rest = std::max(0.f, frame_ms_ - measured);
-        ImGui::TextDisabled("rest     %6.2f ms  (vsync wait, present, driver)",
-                            rest);
-        ImGui::SameLine();
-        ImGui::ProgressBar(frame_ms_ > 0.f ? rest / frame_ms_ : 0.f,
-                           ImVec2{-FLT_MIN, 0.f},
-                           "");
-        ImGui::TreePop();
-    }
-
-    if (ImGui::TreeNodeEx("Renderer2D", ImGuiTreeNodeFlags_DefaultOpen)) {
-        const auto stats = Renderer2D::get_stats();
-        ImGui::Text("draw calls %d   quads %d", stats.num_draw_calls, stats.num_quads);
-        ImGui::Text("vertices %d   indices %d",
-                    stats.get_total_vertex_count(),
-                    stats.get_total_index_count());
-        ImGui::TreePop();
-    }
-
-    if (ImGui::TreeNodeEx("ImGui", ImGuiTreeNodeFlags_DefaultOpen)) {
-        const ImDrawData *draw_data = ImGui::GetDrawData();
-        if (draw_data != nullptr) {
-            ImGui::Text("draw lists %d   vertices %d",
-                        draw_data->CmdListsCount,
-                        draw_data->TotalVtxCount);
-            ImGui::Text("windows %d", ImGui::GetIO().MetricsRenderWindows);
-        }
-        ImGui::TreePop();
+    // Budget reference line, drawn over the graph.
+    const ImVec2 plot_min = ImGui::GetItemRectMin();
+    const ImVec2 plot_max = ImGui::GetItemRectMax();
+    const float height = plot_max.y - plot_min.y;
+    if (height > 1.f) {
+        const float y = plot_max.y - (kBudgetMs / scale_max) * height;
+        ImDrawList *draw_list = ImGui::GetWindowDrawList();
+        draw_list->AddLine(ImVec2{plot_min.x, y},
+                           ImVec2{plot_max.x, y},
+                           IM_COL32(235, 200, 90, 110),
+                           1.f);
+        char label[32] = {};
+        std::snprintf(label, sizeof(label), "%.1f ms", kBudgetMs);
+        draw_list->AddText(ImVec2{plot_min.x + 4.f, y - ImGui::GetTextLineHeight()},
+                           IM_COL32(235, 200, 90, 180),
+                           label);
     }
 }
 

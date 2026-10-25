@@ -8,6 +8,7 @@
 #include "panel/panel.h"
 #include "panel/scene_hierarchy_panel.h"
 #include "panel/stats_panel.h"
+#include "scripts/script_library.h"
 #include <imgui.h>
 #include <ivx.h>
 #include <vector>
@@ -28,6 +29,10 @@ class EditLayer : public Layer {
     void draw_viewport_content();
 
     void setup_panels();
+
+    // Destroys every script instance, rebuilds VXScripts.dll and re-binds the
+    // scripts by name so a code change goes live without restarting.
+    void reload_scripts();
 
     Ref<Texture2D> texture_;
     Ref<SubTexture2D> sub_texture_;
@@ -59,5 +64,7 @@ class EditLayer : public Layer {
     Ref<CameraPanel> camera_panel_;
     Ref<ConsolePanel> console_panel_;
     Ref<StatsPanel> stats_panel_;
+
+    ScriptLibrary scripts_library_;
 };
 } // namespace ivx
