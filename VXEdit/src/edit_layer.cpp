@@ -13,6 +13,7 @@
 #include "panel/layout.h"
 #include "scripts/controller.h"
 #include <algorithm>
+#include <filesystem>
 #include <cstdint>
 #include <imgui.h>
 
@@ -26,6 +27,13 @@ EditLayer::EditLayer() : Layer("EditLayer") {
 
 void EditLayer::on_attach() {
     IVX_PROFILE_FUNCTION();
+
+    // The editor layout is stored next to the assets instead of the process
+    // working directory, so it survives being launched from anywhere.
+    Application::get().imgui_layer()->set_ini_filename(LAYOUT);
+    // A saved ini means the user already has a layout: do not rebuild the
+    // default one over it (Reset Layout in the Layout menu still does).
+    layout_initialized_ = std::filesystem::exists(LAYOUT);
 
     ImGuiIO &io = ImGui::GetIO();
     ImFontConfig cfg;

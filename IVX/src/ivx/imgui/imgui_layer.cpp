@@ -42,6 +42,12 @@ void ImGuiLayer::on_attach() {
     // io.ConfigViewportsNoAutoMerge = true;
     // io.ConfigViewportsNoTaskBarIcon = true;
 
+    // Keep the layout where the host app asked for it (instead of the process
+    // working directory).
+    if (!ini_filename_.empty()) {
+        io.IniFilename = ini_filename_.c_str();
+    }
+
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
     // ImGui::StyleColorsLight();
@@ -82,6 +88,15 @@ void ImGuiLayer::on_detach() {
     ImGui_ImplGlfw_Shutdown();
 #endif
     ImGui::DestroyContext();
+}
+
+void ImGuiLayer::set_ini_filename(std::string filename) {
+    ini_filename_ = std::move(filename);
+
+    if (ImGui::GetCurrentContext() != nullptr) {
+        ImGui::GetIO().IniFilename =
+            ini_filename_.empty() ? nullptr : ini_filename_.c_str();
+    }
 }
 
 void ImGuiLayer::on_event(Event &event) {

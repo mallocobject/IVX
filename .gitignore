@@ -4,6 +4,8 @@ bin-int/
 *.user
 build*/
 .cache/
+# ImGui editor layout, regenerated per machine
+VXEdit/assets/layout.ini
 # .vscode/
 deps/
 .clangd

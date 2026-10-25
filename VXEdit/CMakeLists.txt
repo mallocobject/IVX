@@ -10,4 +10,5 @@ target_link_libraries(VXEdit PRIVATE IVX)
 target_compile_definitions(VXEdit PRIVATE
     TEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/"
     SHADERS="${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/"
-    FONTS="${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/")
+    FONTS="${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/"
+    LAYOUT="${CMAKE_CURRENT_SOURCE_DIR}/assets/layout.ini")
