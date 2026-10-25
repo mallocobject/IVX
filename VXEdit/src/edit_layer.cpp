@@ -16,7 +16,9 @@
 #include "ui/theme.h"
 #include <algorithm>
 #include <chrono>
+#include <cmath>
 #include <cstdint>
+#include <cstdio>
 #include <filesystem>
 #include <imgui.h>
 #include <imgui_internal.h> // FindWindowByName (viewport focus after a layout reset)
@@ -113,21 +115,6 @@ void EditLayer::on_attach() {
         // Initial pose: one unit in front of the sprite plane (z = 0), looking
         // down -Z. near/far are distances, so 0.01 .. 1000 covers it.
         camera_entity_.get_component<TransformComponent>().translation =
-            glm::vec3{0.f, 0.f, 1.f};
-    }
-    // No entity gets a script by default, except the primary camera: without a
-    // controller the WASD/wheel handling does nothing and the editor looks
-    // broken. See bind_default_camera_script().
-    second_camera_entity_ = scene_->create_entity("CameraB Entity");
-    {
-        auto &camera = second_camera_entity_.add_component<CameraComponent>();
-        // Half the height, fixed aspect: acts as a "close-up" camera.
-        camera.camera.set_orthographic_size(static_cast<float>(HEIGHT) / 2.f);
-        camera.camera.set_projection_type(
-            SceneCamera::ProjectionType::Orthographic);
-        camera.primary = false;
-        camera.fixed_aspect_ratio = true;
-        second_camera_entity_.get_component<TransformComponent>().translation =
             glm::vec3{0.f, 0.f, 1.f};
     }
 
@@ -346,6 +333,20 @@ void EditLayer::draw_menu_bar() {
     if (ImGui::BeginMenu("Layout")) {
         if (ImGui::MenuItem("Reset Layout")) {
             reset_layout_requested_ = true;
+        }
+        if (ImGui::BeginMenu("UI Scale")) {
+            // Fonts and spacings scale together (see ui::set_scale), and the
+            // choice is stored next to the editor assets so it survives a
+            // restart.
+            for (const float option : {0.9f, 1.f, 1.1f, 1.2f, 1.3f, 1.5f}) {
+                char label[16];
+                std::snprintf(label, sizeof(label), "%.0f%%", option * 100.f);
+                const bool selected = std::abs(ui::scale() - option) < 0.001f;
+                if (ImGui::MenuItem(label, nullptr, selected)) {
+                    ui::set_scale(option);
+                }
+            }
+            ImGui::EndMenu();
         }
         ImGui::EndMenu();
     }

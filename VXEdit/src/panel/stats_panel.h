@@ -69,6 +69,8 @@ class StatsPanel : public Panel {
     // time.
     bool placed_{false};
     bool host_visible_{true};
+    // Scale the window was last auto-sized for (see begin_window).
+    float sized_for_scale_{0.f};
 
     float frame_ms_{0.f}; // raw delta of the finalized frame
     float smoothed_ms_{0.f};

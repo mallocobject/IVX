@@ -64,7 +64,6 @@ class EditLayer : public Layer {
     Ref<Scene> scene_;
     Entity square_entity_;
     Entity camera_entity_;
-    Entity second_camera_entity_;
 
     bool viewport_focused_{false};
     bool viewport_hovered_{false};

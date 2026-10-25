@@ -114,7 +114,9 @@ void ScriptPanel::on_imgui() {
     // into a tab (or the editor into a dock column) made one of the two
     // unusable.
     const float available = ImGui::GetContentRegionAvail().x;
-    const float library_width = std::clamp(available * 0.34f, 300.f, 460.f);
+    const float ui_scale = ui::scale();
+    const float library_width =
+        std::clamp(available * 0.34f, 300.f * ui_scale, 460.f * ui_scale);
 
     if (ImGui::BeginChild(
             "##library", ImVec2{library_width, 0.f}, ImGuiChildFlags_None)) {

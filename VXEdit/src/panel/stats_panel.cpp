@@ -6,8 +6,10 @@
 #include "ivx/core/logger.h"
 #include "ivx/core/window.h"
 #include "ivx/renderer/renderer2d.h"
+#include "ui/theme.h"
 
 #include <algorithm>
+#include <cmath>
 #include <imgui.h>
 
 namespace ivx {
@@ -40,7 +42,9 @@ void format_count(char *buffer, std::size_t size, float value) {
 } // namespace
 
 StatsPanel::StatsPanel() : Panel("Stats") {
-    set_default_size(ImVec2{560.f, 360.f});
+    // Sized in begin_window (it has to follow the UI scale), so the base class
+    // must not apply its own first-use size.
+    set_default_size(ImVec2{0.f, 0.f});
     // Floating overlay: it must never take a dock slot, and it should not steal
     // the focus when it appears or when the layout is rebuilt.
     set_window_flags(ImGuiWindowFlags_NoDocking |
@@ -83,6 +87,17 @@ bool StatsPanel::begin_window() {
             placed_ = true;
         }
     }
+    // The overlay is sized in pixels, so a UI-scale change has to re-size it or
+    // the content overflows. Manual resizes still stick: the size is only
+    // re-applied when the scale actually changed.
+    const float current_scale = ui::scale();
+    if (!(std::abs(sized_for_scale_ - current_scale) < 0.001f)) {
+        ImGui::SetNextWindowSize(
+            ImVec2{560.f * current_scale, 360.f * current_scale},
+            ImGuiCond_Always);
+        sized_for_scale_ = current_scale;
+    }
+
     // Slightly transparent so the scene behind it stays visible.
     ImGui::SetNextWindowBgAlpha(0.88f);
     return Panel::begin_window();

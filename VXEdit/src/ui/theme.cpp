@@ -2,8 +2,10 @@
 
 #include "ivx/core/logger.h"
 
+#include <algorithm>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <string>
 
 namespace ivx::ui {
@@ -51,6 +53,32 @@ std::filesystem::path windows_font(const char *file) {
         return {};
     }
     return std::filesystem::path{windir} / "Fonts" / file;
+}
+
+// Style at 100%: set_scale() rescales from this copy so repeated changes never
+// accumulate drift.
+ImGuiStyle base_style;
+
+std::filesystem::path scale_file() {
+    // Next to the editor assets (like layout.ini) so it survives being launched
+    // from anywhere; gitignored because it is a per-machine preference.
+    return std::filesystem::path{LAYOUT}.parent_path() / "ui_scale.txt";
+}
+
+float load_scale() {
+    std::ifstream file{scale_file()};
+    float value = 1.f;
+    if (file >> value && value >= 0.8f && value <= 2.f) {
+        return value;
+    }
+    return 1.f;
+}
+
+void save_scale(float value) {
+    std::ofstream file{scale_file(), std::ios::trunc};
+    if (file) {
+        file << value;
+    }
 }
 
 } // namespace
@@ -176,6 +204,39 @@ void apply_theme() {
     style.SeparatorTextAlign = ImVec2{0.f, 0.5f};
     style.SeparatorTextPadding = ImVec2{12.f, 3.f};
     style.LogSliderDeadzone = 4.f;
+
+    style.FontSizeBase = kBaseFontSize;
+
+    // Remember the 100% layout: set_scale() always rescales from this copy, so
+    // switching back and forth never accumulates rounding drift.
+    base_style = style;
+    set_scale(load_scale());
+}
+
+float &current_scale() {
+    static float value = 1.f;
+    return value;
+}
+
+float scale() {
+    return current_scale();
+}
+
+void set_scale(float value) {
+    value = std::clamp(value, 0.8f, 2.f);
+    current_scale() = value;
+
+    ImGuiStyle &style = ImGui::GetStyle();
+    style = base_style;
+    // One multiplier for fonts, one for every spacing metric: text and paddings
+    // grow together, so the layout keeps its proportions instead of just
+    // getting cramped.
+    style.FontSizeBase = kBaseFontSize * value;
+    style.ScaleAllSizes(value);
+
+    if (value != load_scale()) {
+        save_scale(value);
+    }
 }
 
 const Fonts &load_fonts() {
@@ -186,11 +247,11 @@ const Fonts &load_fonts() {
 
     ImGuiIO &io = ImGui::GetIO();
 
-    // Monospace first: it is the fallback face, so the UI still works if the
-    // system font is missing.
+    // Both faces are loaded once at the base size; ImGui bakes whatever size
+    // the style asks for at draw time, so the UI scale needs no reload.
     ImFontConfig mono_config;
-    fonts.mono =
-        io.Fonts->AddFontFromFileTTF(FONTS "/consola.ttf", 16.f, &mono_config);
+    fonts.mono = io.Fonts->AddFontFromFileTTF(
+        FONTS "/consola.ttf", kBaseMonoFontSize, &mono_config);
     if (fonts.mono == nullptr) {
         IVX_ERROR("Failed to load Consolas; using the built-in font");
         fonts.mono = io.Fonts->AddFontDefault();
@@ -203,7 +264,7 @@ const Fonts &load_fonts() {
     const std::filesystem::path segoe = windows_font("segoeui.ttf");
     if (!segoe.empty() && std::filesystem::exists(segoe)) {
         fonts.ui = io.Fonts->AddFontFromFileTTF(
-            segoe.string().c_str(), 15.f, &ui_config);
+            segoe.string().c_str(), kBaseFontSize, &ui_config);
     }
     if (fonts.ui == nullptr) {
         IVX_WARN("Segoe UI not found, falling back to the monospace face for "
