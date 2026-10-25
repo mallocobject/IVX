@@ -2,6 +2,7 @@
 
 #include "ivx/scene/components.h"
 #include "ivx/scene/scene.h"
+#include <cstdint>
 #include <entt.hpp>
 #include <string>
 
@@ -46,7 +47,7 @@ class Entity {
     }
 
     const std::string &get_name() const { // TagComponent assistant
-        return get_component<TagComponent>().value;
+        return get_component<TagComponent>().tag;
     }
 
     entt::entity handle() const {
@@ -59,6 +60,11 @@ class Entity {
     operator entt::entity() const {
         return handle_;
     }
+
+    operator std::uintptr_t() const {
+        return static_cast<std::uintptr_t>(handle_);
+    }
+
     explicit operator bool() const {
         return handle_ != entt::null && scene_ != nullptr;
     }

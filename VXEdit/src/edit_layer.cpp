@@ -4,7 +4,6 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/application.h"
-#include "ivx/core/logger.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/event.h"
 #include "ivx/renderer/render_command.h"
@@ -12,7 +11,6 @@
 #include "ivx/scene/scriptable_entity.h"
 #include "scripts/controller.h"
 #include <algorithm>
-#include <cfloat>
 #include <cstdint>
 #include <imgui.h>
 
@@ -74,9 +72,11 @@ void EditLayer::on_attach() {
         -w, w, -h, h, -1.f, 1.f, 1.f, true, false);
     camera_entity_.add_component<NativeScriptComponent>().bind<Controller>();
 
-    second_camera_entity_ = scene_->create_entity("Clip-Space Entity");
+    second_camera_entity_ = scene_->create_entity("CameraB Entity");
     second_camera_entity_.add_component<CameraComponent>(
         -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f, 1.f, false, true);
+
+    scene_hierarchy_panel_.set_scene_context(scene_);
 }
 
 void EditLayer::on_detach() {
@@ -155,6 +155,9 @@ void EditLayer::on_render() {
     }
 
     draw_settings_panel();
+    scene_hierarchy_panel_.on_render();
+
+    draw_viewport();
 }
 
 void EditLayer::draw_settings_panel() {
@@ -169,7 +172,7 @@ void EditLayer::draw_settings_panel() {
 
     if (square_entity_) {
         ImGui::Separator();
-        auto &tag = square_entity_.get_component<TagComponent>().value;
+        auto &tag = square_entity_.get_component<TagComponent>().tag;
         ImGui::Text("%s", tag.c_str());
 
         auto &squareColor =
@@ -209,7 +212,8 @@ void EditLayer::draw_settings_panel() {
     }
 
     ImGui::End();
-
+}
+void EditLayer::draw_viewport() {
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.f, 0.f});
     ImGui::Begin("Viewport");
     viewport_focused_ = ImGui::IsWindowFocused();

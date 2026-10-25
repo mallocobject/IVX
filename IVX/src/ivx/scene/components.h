@@ -18,21 +18,11 @@ namespace ivx {
 using namespace entt::literals;
 
 struct TagComponent {
-    entt::id_type id{"Entity"_hs};
-    std::string value{"Entity"};
+    std::string tag{"Entity"};
 
     TagComponent() = default;
     // avoid TagComponent ... = name
-    explicit TagComponent(std::string_view name)
-        : id(entt::hashed_string(name.data(), name.size())), value(name) {
-    }
-
-    auto operator==(const TagComponent &other) const noexcept {
-        return id == other.id;
-    }
-
-    auto operator<=>(const TagComponent &other) const noexcept {
-        return id <=> other.id;
+    explicit TagComponent(std::string_view name) : tag(name) {
     }
 };
 

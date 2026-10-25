@@ -1,6 +1,7 @@
 #pragma once
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
+#include "panel/scene_hierarchy_panel.h"
 #include <imgui.h>
 #include <ivx.h>
 #include <vector>
@@ -17,6 +18,7 @@ class EditLayer : public Layer {
 
   private:
     void draw_settings_panel();
+    void draw_viewport();
 
     glm::vec4 color_{1.f};
     Ref<Texture2D> texture_;
@@ -34,5 +36,7 @@ class EditLayer : public Layer {
     bool viewport_hovered_{false};
     bool visible_{false};
     ImVec2 viewport_size_{0.f, 0.f};
+
+    SceneHierarchyPanel scene_hierarchy_panel_;
 };
 } // namespace ivx

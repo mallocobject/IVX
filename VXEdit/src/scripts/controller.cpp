@@ -4,7 +4,7 @@
 namespace ivx {
 void Controller::on_create() {
     IVX_CORE_DEBUG("Controller attached to '{}'",
-                   get_component<TagComponent>().value);
+                   get_component<TagComponent>().tag);
 }
 
 void Controller::on_update(float dt) {
