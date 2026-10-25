@@ -11,8 +11,7 @@ constexpr const char *kDragPayload = "IVX_SCENE_ENTITY";
 ImGuiTreeNodeFlags base_flags() {
     return ImGuiTreeNodeFlags_OpenOnArrow |
            ImGuiTreeNodeFlags_OpenOnDoubleClick |
-           ImGuiTreeNodeFlags_SpanAvailWidth |
-           ImGuiTreeNodeFlags_DefaultOpen;
+           ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
 }
 } // namespace
 
@@ -60,8 +59,8 @@ void SceneHierarchyPanel::draw_toolbar() {
         set_selected(scene.create_entity("Entity"));
     }
     ImGui::SameLine();
-    // Kept short on purpose: the hierarchy dock is narrow, and a long label gets
-    // clipped instead of being readable.
+    // Kept short on purpose: the hierarchy dock is narrow, and a long label
+    // gets clipped instead of being readable.
     ImGui::TextDisabled("| %zu", scene.registry().view<TagComponent>().size());
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip("%zu root(s), %zu entity(ies)",
@@ -109,8 +108,8 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
             const auto dragged =
                 *static_cast<const entt::entity *>(payload->Data);
             if (context_.scene->registry().valid(dragged)) {
-                context_.scene->set_parent(Entity{dragged, context_.scene.get()},
-                                           entity);
+                context_.scene->set_parent(
+                    Entity{dragged, context_.scene.get()}, entity);
             }
         }
         ImGui::EndDragDropTarget();
@@ -161,10 +160,9 @@ void SceneHierarchyPanel::draw_node_context_menu(Entity entity) {
 }
 
 void SceneHierarchyPanel::draw_empty_context_menu() {
-    if (!ImGui::BeginPopupContextWindow(
-            "##empty_ctx",
-            ImGuiPopupFlags_MouseButtonRight |
-                ImGuiPopupFlags_NoOpenOverItems)) {
+    if (!ImGui::BeginPopupContextWindow("##empty_ctx",
+                                        ImGuiPopupFlags_MouseButtonRight |
+                                            ImGuiPopupFlags_NoOpenOverItems)) {
         return;
     }
 

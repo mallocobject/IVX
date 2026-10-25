@@ -1,0 +1,3 @@
+# Normalise line endings in the index; the working tree keeps whatever the editor
+# writes (clang-format emits LF, MSVC and git handle both).
+* text=auto

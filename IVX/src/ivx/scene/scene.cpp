@@ -14,7 +14,6 @@
 #include <cstdint>
 #include <vector>
 
-
 namespace ivx {
 namespace {
 // Scripts only see events while they are enabled and instantiated.
@@ -46,7 +45,8 @@ void release_script(entt::registry &registry, entt::entity handle) {
 Scene::~Scene() {
     // Scripts are owned by the entities, so they have to be released before the
     // registry (which only destroys the components) goes away.
-    for (auto [handle, script] : registry_.view<NativeScriptComponent>().each()) {
+    for (auto [handle, script] :
+         registry_.view<NativeScriptComponent>().each()) {
         release_script(registry_, handle);
     }
     registry_.clear();
@@ -85,7 +85,8 @@ void Scene::destroy_entity(Entity entity) {
     // Detach from the parent so its children list does not keep a stale handle.
     if (auto *rel = entity.try_get_component<RelationshipComponent>();
         rel != nullptr && rel->parent != entt::null) {
-        if (auto *parent_rel = registry_.try_get<RelationshipComponent>(rel->parent);
+        if (auto *parent_rel =
+                registry_.try_get<RelationshipComponent>(rel->parent);
             parent_rel != nullptr) {
             auto &siblings = parent_rel->children;
             std::erase(siblings, entity.handle());
@@ -111,8 +112,8 @@ void Scene::set_parent(Entity child, Entity parent) {
 
     // Detach from the current parent.
     if (child_rel->parent != entt::null) {
-        if (auto *old_rel = registry_.try_get<RelationshipComponent>(
-                child_rel->parent);
+        if (auto *old_rel =
+                registry_.try_get<RelationshipComponent>(child_rel->parent);
             old_rel != nullptr) {
             std::erase(old_rel->children, child.handle());
         }
@@ -261,7 +262,8 @@ void Scene::update_world_recursive(Entity entity,
         world = transform->world;
     }
 
-    const auto *relationship = entity.try_get_component<RelationshipComponent>();
+    const auto *relationship =
+        entity.try_get_component<RelationshipComponent>();
     if (relationship == nullptr) {
         return;
     }
@@ -307,10 +309,8 @@ void Scene::on_render() {
                                       sprite.tiling_factor,
                                       sprite.color);
             } else if (sprite.texture) {
-                Renderer2D::draw_quad(model,
-                                      sprite.texture,
-                                      sprite.tiling_factor,
-                                      sprite.color);
+                Renderer2D::draw_quad(
+                    model, sprite.texture, sprite.tiling_factor, sprite.color);
             } else {
                 Renderer2D::draw_quad(model, sprite.color);
             }

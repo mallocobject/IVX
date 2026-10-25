@@ -13,9 +13,9 @@ namespace ivx {
 //
 // Layout: numbers on the left, frame-time graph on the right.
 //
-// It is a floating overlay in the top-right corner rather than a docked panel: it
-// is reference information you glance at, and a dock slot would compete with the
-// console for the bottom strip.
+// It is a floating overlay in the top-right corner rather than a docked panel:
+// it is reference information you glance at, and a dock slot would compete with
+// the console for the bottom strip.
 class StatsPanel : public Panel {
   public:
     StatsPanel();
@@ -23,12 +23,13 @@ class StatsPanel : public Panel {
     // 60 Hz budget; the graph and the headline are coloured against it.
     static constexpr float kBudgetMs = 16.7f;
 
-    // Called once per frame with the frame delta; finalizes the previous frame's
-    // measurements and pushes the new sample into the history.
+    // Called once per frame with the frame delta; finalizes the previous
+    // frame's measurements and pushes the new sample into the history.
     void begin_frame(float delta_time);
 
-    // The overlay only makes sense while the viewport is on screen: hide it when the
-    // viewport tab is not the selected one (e.g. while writing a script).
+    // The overlay only makes sense while the viewport is on screen: hide it
+    // when the viewport tab is not the selected one (e.g. while writing a
+    // script).
     void set_host_visible(bool visible) {
         host_visible_ = visible;
     }
@@ -64,7 +65,8 @@ class StatsPanel : public Panel {
     int history_offset_{0};
     int history_count_{0};
 
-    // True once the overlay has been placed inside the viewport for the first time.
+    // True once the overlay has been placed inside the viewport for the first
+    // time.
     bool placed_{false};
     bool host_visible_{true};
 

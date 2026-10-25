@@ -47,9 +47,9 @@ void Sandbox2D::on_event(ivx::Event &event) {
 void Sandbox2D::on_render() {
     IVX_PROFILE_FUNCTION();
 
-    // Application::run() clears the default framebuffer right after on_update(),
-    // so drawing has to happen here: anything issued in on_update() is wiped
-    // before the buffer is presented.
+    // Application::run() clears the default framebuffer right after
+    // on_update(), so drawing has to happen here: anything issued in
+    // on_update() is wiped before the buffer is presented.
     {
         IVX_PROFILE_SCOPE("Renderer draw");
 

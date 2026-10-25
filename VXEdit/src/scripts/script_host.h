@@ -17,10 +17,10 @@ class Scene;
 // Owns the script module and everything that mutates it: load at startup,
 // generate new script sources from a template, build + hot reload.
 //
-// The build runs on a worker thread: MSBuild takes seconds and doing that on the
-// UI thread freezes the editor. The main thread follows it through poll_build(),
-// which also performs the reload (loading a DLL and touching scene components has
-// to stay on the main thread).
+// The build runs on a worker thread: MSBuild takes seconds and doing that on
+// the UI thread freezes the editor. The main thread follows it through
+// poll_build(), which also performs the reload (loading a DLL and touching
+// scene components has to stay on the main thread).
 class ScriptHost {
   public:
     // Where generated scripts are written; passed in by CMake.
@@ -33,13 +33,13 @@ class ScriptHost {
 
     bool load_initial(std::string &error);
 
-    // Starts a build. Instances are unbound and the module unloaded first, because
-    // the linker cannot overwrite a DLL that is still mapped in.
+    // Starts a build. Instances are unbound and the module unloaded first,
+    // because the linker cannot overwrite a DLL that is still mapped in.
     // Returns false when a build is already running.
     bool begin_build();
 
-    // Call once per frame. When the worker finished it joins it, loads the fresh
-    // module and re-binds every script by name.
+    // Call once per frame. When the worker finished it joins it, loads the
+    // fresh module and re-binds every script by name.
     void poll_build();
 
     bool is_building() const {

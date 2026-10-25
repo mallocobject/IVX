@@ -6,6 +6,9 @@ build*/
 .cache/
 # ImGui editor layout, regenerated per machine
 VXEdit/assets/layout.ini
-# .vscode/
+# deps are fetched by setup_deps; the rest is machine state
 deps/
-.clangd
+# clangd database: generated per machine by tools/gen-compile-db.ps1
+compile_commands.json
+# ImGui's own window state (the editor uses VXEdit/assets/layout.ini instead)
+imgui.ini

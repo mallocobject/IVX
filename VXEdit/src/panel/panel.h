@@ -80,9 +80,9 @@ class Panel : public RefCounted {
     virtual bool begin_window();
     virtual void end_window();
 
-    // Panels that should disappear without being "closed" (the stats overlay only
-    // makes sense while the viewport is on screen) override this. Returning false
-    // skips Begin/End entirely for the frame.
+    // Panels that should disappear without being "closed" (the stats overlay
+    // only makes sense while the viewport is on screen) override this.
+    // Returning false skips Begin/End entirely for the frame.
     virtual bool should_draw() const {
         return opened_;
     }
@@ -159,7 +159,8 @@ class PanelManager {
     // Must be called from inside a menu bar.
     void draw_view_menu(const char *menu_name = "View");
 
-    template <typename T> Ref<T> find() {
+    template <typename T>
+    Ref<T> find() {
         if constexpr (std::is_base_of_v<Panel, T>) {
             for (auto &panel : panels_) {
                 if (auto *typed = dynamic_cast<T *>(panel.get())) {

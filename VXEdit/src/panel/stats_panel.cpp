@@ -13,9 +13,10 @@
 namespace ivx {
 namespace {
 
-constexpr ImU32 kGood = IM_COL32(110, 210, 130, 255);   // comfortably inside budget
-constexpr ImU32 kWarn = IM_COL32(235, 200, 90, 255);    // near the 60 Hz budget
-constexpr ImU32 kBad = IM_COL32(235, 110, 110, 255);    // over budget
+constexpr ImU32 kGood =
+    IM_COL32(110, 210, 130, 255); // comfortably inside budget
+constexpr ImU32 kWarn = IM_COL32(235, 200, 90, 255); // near the 60 Hz budget
+constexpr ImU32 kBad = IM_COL32(235, 110, 110, 255); // over budget
 
 ImU32 budget_color(float ms) {
     if (ms > StatsPanel::kBudgetMs) {
@@ -40,19 +41,20 @@ void format_count(char *buffer, std::size_t size, float value) {
 
 StatsPanel::StatsPanel() : Panel("Stats") {
     set_default_size(ImVec2{560.f, 360.f});
-    // Floating overlay: it must never take a dock slot, and it should not steal the
-    // focus when it appears or when the layout is rebuilt.
+    // Floating overlay: it must never take a dock slot, and it should not steal
+    // the focus when it appears or when the layout is rebuilt.
     set_window_flags(ImGuiWindowFlags_NoDocking |
                      ImGuiWindowFlags_NoFocusOnAppearing |
                      ImGuiWindowFlags_NoNav);
 }
 
 bool StatsPanel::begin_window() {
-    // Anchored inside the viewport's top-right corner rather than the window's: the
-    // right column belongs to the inspector, and covering it would hide the panel
-    // the overlay is supposed to complement.
+    // Anchored inside the viewport's top-right corner rather than the window's:
+    // the right column belongs to the inspector, and covering it would hide the
+    // panel the overlay is supposed to complement.
     ImVec2 anchor;
-    if (const ImGuiWindow *viewport_window = ImGui::FindWindowByName("Viewport")) {
+    if (const ImGuiWindow *viewport_window =
+            ImGui::FindWindowByName("Viewport")) {
         // +32 skips the viewport's own tab bar, so the overlay starts below it.
         anchor = ImVec2{viewport_window->Pos.x + viewport_window->Size.x - 18.f,
                         viewport_window->Pos.y + 32.f};
@@ -62,13 +64,13 @@ bool StatsPanel::begin_window() {
                         viewport->WorkPos.y + 18.f};
     }
 
-    // Pivot (1, 0) pins the right edge, so the overlay stays in the corner when its
-    // size changes (e.g. the phase list grows).
+    // Pivot (1, 0) pins the right edge, so the overlay stays in the corner when
+    // its size changes (e.g. the phase list grows).
     //
-    // The position is forced until the anchor looks sane: the dock layout is built
-    // over the first frames, and committing FirstUseEver to an anchor measured before
-    // the viewport got its rect would pin the overlay off-screen for the rest of the
-    // session.
+    // The position is forced until the anchor looks sane: the dock layout is
+    // built over the first frames, and committing FirstUseEver to an anchor
+    // measured before the viewport got its rect would pin the overlay
+    // off-screen for the rest of the session.
     if (!placed_) {
         ImGui::SetNextWindowPos(anchor, ImGuiCond_Always, ImVec2{1.f, 0.f});
         const ImGuiViewport *main = ImGui::GetMainViewport();
@@ -89,8 +91,8 @@ bool StatsPanel::begin_window() {
 void StatsPanel::end_window() {
     Panel::end_window();
 
-    // The overlay floats on top of the viewport, so clicking the viewport would bury
-    // it: keep it at the front of the window stack while it is open.
+    // The overlay floats on top of the viewport, so clicking the viewport would
+    // bury it: keep it at the front of the window stack while it is open.
     if (ImGuiWindow *window = ImGui::FindWindowByName(name_.c_str())) {
         ImGui::BringWindowToDisplayFront(window);
     }
@@ -130,8 +132,7 @@ void StatsPanel::on_imgui() {
     // Numbers left, graph right. The info column keeps a readable width, the
     // graph absorbs the rest.
     const float total_width = ImGui::GetContentRegionAvail().x;
-    const float info_width =
-        std::clamp(total_width * 0.5f, 220.f, 420.f);
+    const float info_width = std::clamp(total_width * 0.5f, 220.f, 420.f);
 
     ImGui::BeginChild("##stats_info", ImVec2{info_width, 0.f});
     draw_info_column();
@@ -161,11 +162,13 @@ void StatsPanel::draw_info_column() {
         Application::get().get_window().set_v_sync(vsync);
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Turn off to measure the actual frame cost\n"
-                          "(with VSync on the frame is capped to the refresh rate).");
+        ImGui::SetTooltip(
+            "Turn off to measure the actual frame cost\n"
+            "(with VSync on the frame is capped to the refresh rate).");
     }
 
-    ImGui::TextDisabled("budget %.1f ms  |  %.0f%% used", kBudgetMs,
+    ImGui::TextDisabled("budget %.1f ms  |  %.0f%% used",
+                        kBudgetMs,
                         smoothed_ms_ > 0.f ? smoothed_ms_ / kBudgetMs * 100.f
                                            : 0.f);
     ImGui::TextDisabled("last %.2f  avg %.2f", frame_ms_, avg_ms_);
@@ -175,10 +178,12 @@ void StatsPanel::draw_info_column() {
     ImGui::SeparatorText("Phases");
 
     float measured = 0.f;
-    if (ImGui::BeginTable("##phases", 2,
+    if (ImGui::BeginTable("##phases",
+                          2,
                           ImGuiTableFlags_SizingStretchProp |
                               ImGuiTableFlags_NoSavedSettings)) {
-        ImGui::TableSetupColumn("phase", ImGuiTableColumnFlags_WidthFixed, 62.f);
+        ImGui::TableSetupColumn(
+            "phase", ImGuiTableColumnFlags_WidthFixed, 62.f);
         ImGui::TableSetupColumn("%", ImGuiTableColumnFlags_WidthStretch);
 
         auto row = [this](const char *name, float ms, ImU32 color) {
@@ -219,22 +224,29 @@ void StatsPanel::draw_info_column() {
     const auto stats = Renderer2D::get_stats();
     char verts[16] = {};
     char indices[16] = {};
-    format_count(verts, sizeof(verts),
+    format_count(verts,
+                 sizeof(verts),
                  static_cast<float>(stats.get_total_vertex_count()));
-    format_count(indices, sizeof(indices),
+    format_count(indices,
+                 sizeof(indices),
                  static_cast<float>(stats.get_total_index_count()));
     ImGui::TextDisabled("draw calls %d   quads %d   verts %s   idx %s",
-                        stats.num_draw_calls, stats.num_quads, verts, indices);
+                        stats.num_draw_calls,
+                        stats.num_quads,
+                        verts,
+                        indices);
 
     ImGui::SeparatorText("ImGui");
     if (const ImDrawData *draw_data = ImGui::GetDrawData()) {
         char lists[16] = {};
         char vtx[16] = {};
-        format_count(lists, sizeof(lists),
-                     static_cast<float>(draw_data->CmdListsCount));
-        format_count(vtx, sizeof(vtx),
-                     static_cast<float>(draw_data->TotalVtxCount));
-        ImGui::TextDisabled("lists %s   verts %s   windows %d", lists, vtx,
+        format_count(
+            lists, sizeof(lists), static_cast<float>(draw_data->CmdListsCount));
+        format_count(
+            vtx, sizeof(vtx), static_cast<float>(draw_data->TotalVtxCount));
+        ImGui::TextDisabled("lists %s   verts %s   windows %d",
+                            lists,
+                            vtx,
                             ImGui::GetIO().MetricsRenderWindows);
     }
 }
@@ -243,7 +255,8 @@ void StatsPanel::draw_graph_column() {
     // Scale: always keep the 60 Hz budget visible, otherwise fit the window.
     const float scale_max = std::max({kBudgetMs * 1.1f, max_ms_ * 1.1f, 1.f});
 
-    ImGui::PushStyleColor(ImGuiCol_Text, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::PushStyleColor(ImGuiCol_Text,
+                          ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
     ImGui::Text("frame time (ms)  last %d", history_count_);
     ImGui::PopStyleColor();
 
@@ -272,9 +285,10 @@ void StatsPanel::draw_graph_column() {
                            1.f);
         char label[32] = {};
         std::snprintf(label, sizeof(label), "%.1f ms", kBudgetMs);
-        draw_list->AddText(ImVec2{plot_min.x + 4.f, y - ImGui::GetTextLineHeight()},
-                           IM_COL32(235, 200, 90, 180),
-                           label);
+        draw_list->AddText(
+            ImVec2{plot_min.x + 4.f, y - ImGui::GetTextLineHeight()},
+            IM_COL32(235, 200, 90, 180),
+            label);
     }
 }
 

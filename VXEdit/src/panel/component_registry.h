@@ -51,8 +51,8 @@ class ComponentRegistry {
         if (custom_add) {
             entry.add = std::move(custom_add);
         } else {
-            // if constexpr keeps add_component<T>() out of the instantiation for
-            // types without a default constructor (CameraComponent).
+            // if constexpr keeps add_component<T>() out of the instantiation
+            // for types without a default constructor (CameraComponent).
             entry.add = [](Entity entity) {
                 if constexpr (std::is_default_constructible_v<T>) {
                     entity.add_component<T>();
@@ -71,8 +71,8 @@ class ComponentRegistry {
         return entries_;
     }
 
-    // Lets other panels reuse a component's editor UI (CameraPanel does this for
-    // CameraComponent).
+    // Lets other panels reuse a component's editor UI (CameraPanel does this
+    // for CameraComponent).
     const ComponentEntry *find(std::string_view name) const {
         for (const auto &entry : entries_) {
             if (entry.name == name) {

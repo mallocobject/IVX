@@ -5,9 +5,9 @@
 #include "ivx/scene/scriptable_entity.h"
 #include "scripts/script_registry.h"
 
+#include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
-#include <algorithm>
 #include <string>
 
 namespace ivx {
@@ -165,8 +165,9 @@ void CameraPanel::draw_camera_details(Entity entity) {
                     camera->camera.get_orthographic_width(),
                     camera->camera.get_orthographic_height());
     } else {
-        ImGui::Text("Vertical FOV: %.1f deg",
-                    glm::degrees(camera->camera.get_perspective_vertical_fov()));
+        ImGui::Text(
+            "Vertical FOV: %.1f deg",
+            glm::degrees(camera->camera.get_perspective_vertical_fov()));
     }
 
     if (ImGui::TreeNode("Projection matrix (read-only)")) {
@@ -178,8 +179,9 @@ void CameraPanel::draw_camera_details(Entity entity) {
 }
 
 void CameraPanel::draw_controller_row(Entity entity) {
-    // A camera without a controller script simply does not react to the keyboard.
-    // Making that state visible here saves the "why is WASD dead?" round trip.
+    // A camera without a controller script simply does not react to the
+    // keyboard. Making that state visible here saves the "why is WASD dead?"
+    // round trip.
     ImGui::TextDisabled("WASD / wheel:");
 
     auto *script = entity.try_get_component<NativeScriptComponent>();
@@ -193,7 +195,8 @@ void CameraPanel::draw_controller_row(Entity entity) {
             script->unbind();
         }
         if (ImGui::IsItemHovered()) {
-            ImGui::SetTooltip("Removes the controller script from this camera.");
+            ImGui::SetTooltip(
+                "Removes the controller script from this camera.");
         }
         return;
     }
@@ -257,7 +260,8 @@ void CameraPanel::focus_selection(Entity camera_entity, bool also_frame) {
         return;
     }
 
-    auto *camera_transform = camera_entity.try_get_component<TransformComponent>();
+    auto *camera_transform =
+        camera_entity.try_get_component<TransformComponent>();
     const auto *target_transform =
         selection.try_get_component<TransformComponent>();
     if (camera_transform == nullptr || target_transform == nullptr) {
@@ -275,9 +279,8 @@ void CameraPanel::focus_selection(Entity camera_entity, bool also_frame) {
     // Orthographic only: choose a size that leaves a little margin around the
     // selected sprite.
     auto *camera = camera_entity.try_get_component<CameraComponent>();
-    if (camera == nullptr ||
-        camera->camera.get_projection_type() !=
-            SceneCamera::ProjectionType::Orthographic) {
+    if (camera == nullptr || camera->camera.get_projection_type() !=
+                                 SceneCamera::ProjectionType::Orthographic) {
         return;
     }
 

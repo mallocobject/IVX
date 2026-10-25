@@ -10,8 +10,8 @@ Panel::Panel(std::string_view name, bool default_open)
 }
 
 void Panel::on_render() {
-    // should_draw() covers both "closed through the title bar or the View menu" and
-    // panels that hide themselves contextually.
+    // should_draw() covers both "closed through the title bar or the View menu"
+    // and panels that hide themselves contextually.
     if (!should_draw()) {
         on_after_draw(false);
         return;

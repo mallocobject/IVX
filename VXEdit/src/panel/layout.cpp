@@ -39,8 +39,8 @@ void setup_default_layout(ImGuiID dockspace_id) {
     const ImGuiID bottom = ImGui::DockBuilderSplitNode(
         center, ImGuiDir_Down, 0.20f, nullptr, &center);
 
-    // Tab order inside a node: the last window docked is the one shown on startup,
-    // so the viewport is docked after the Scripts panel.
+    // Tab order inside a node: the last window docked is the one shown on
+    // startup, so the viewport is docked after the Scripts panel.
     ImGui::DockBuilderDockWindow("Scene Hierarchy", left);
 
     // Scripts share the centre as a tab, Godot style: a script editor and the
@@ -49,15 +49,15 @@ void setup_default_layout(ImGuiID dockspace_id) {
     ImGui::DockBuilderDockWindow("Viewport", center);
 
     // The camera panel is about the scene, not about the selection, but it is a
-    // property sheet like the inspector, so it belongs in the same column instead
-    // of taking a slot in the short bottom strip.
+    // property sheet like the inspector, so it belongs in the same column
+    // instead of taking a slot in the short bottom strip.
     ImGui::DockBuilderDockWindow("Camera", right);
     ImGui::DockBuilderDockWindow("Inspector", right);
 
-    // Only the console occupies the bottom strip. "Stats" is a floating overlay in
-    // the top-right corner (StatsPanel::begin_window) and the status bar sits on the
-    // main viewport's bottom edge (EditLayer::draw_status_bar), so neither of them
-    // competes for a dock slot.
+    // Only the console occupies the bottom strip. "Stats" is a floating overlay
+    // in the top-right corner (StatsPanel::begin_window) and the status bar
+    // sits on the main viewport's bottom edge (EditLayer::draw_status_bar), so
+    // neither of them competes for a dock slot.
     ImGui::DockBuilderDockWindow("Console", bottom);
 
     ImGui::DockBuilderFinish(dockspace_id);

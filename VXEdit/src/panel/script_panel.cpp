@@ -24,7 +24,11 @@ namespace {
 void reveal_in_explorer(const std::filesystem::path &path) {
 #if defined(IVX_PLATFORM_WINDOWS)
     const std::wstring argument = L"/select,\"" + path.wstring() + L"\"";
-    ::ShellExecuteW(nullptr, L"open", L"explorer.exe", argument.c_str(), nullptr,
+    ::ShellExecuteW(nullptr,
+                    L"open",
+                    L"explorer.exe",
+                    argument.c_str(),
+                    nullptr,
                     SW_SHOWNORMAL);
 #else
     (void)path;
@@ -58,9 +62,8 @@ TextEditor::ErrorMarkers parse_error_markers(const std::string &log,
     std::size_t pos = 0;
     while (pos < log.size()) {
         const std::size_t end = log.find('\n', pos);
-        std::string line = log.substr(pos, end == std::string::npos
-                                               ? std::string::npos
-                                               : end - pos);
+        std::string line = log.substr(
+            pos, end == std::string::npos ? std::string::npos : end - pos);
         pos = end == std::string::npos ? log.size() : end + 1;
 
         if (line.find(": error ") == std::string::npos &&
@@ -106,24 +109,23 @@ void ScriptPanel::on_imgui() {
     draw_status();
     ImGui::Separator();
 
-    // Side by side instead of tabs: while editing you still see the library, and the
-    // list is what you pick the next script from. Squeezing the list into a tab (or
-    // the editor into a dock column) made one of the two unusable.
+    // Side by side instead of tabs: while editing you still see the library,
+    // and the list is what you pick the next script from. Squeezing the list
+    // into a tab (or the editor into a dock column) made one of the two
+    // unusable.
     const float available = ImGui::GetContentRegionAvail().x;
-    const float library_width =
-        std::clamp(available * 0.34f, 300.f, 460.f);
+    const float library_width = std::clamp(available * 0.34f, 300.f, 460.f);
 
-    if (ImGui::BeginChild("##library",
-                          ImVec2{library_width, 0.f},
-                          ImGuiChildFlags_None)) {
+    if (ImGui::BeginChild(
+            "##library", ImVec2{library_width, 0.f}, ImGuiChildFlags_None)) {
         draw_library_pane();
     }
     ImGui::EndChild();
 
     ImGui::SameLine();
 
-    // A slightly lighter background than the code editor's own: the empty pane has to
-    // read as "nothing open yet", not as a broken view.
+    // A slightly lighter background than the code editor's own: the empty pane
+    // has to read as "nothing open yet", not as a broken view.
     ImGui::PushStyleColor(ImGuiCol_ChildBg,
                           ImVec4{0.169f, 0.169f, 0.176f, 1.f});
     if (ImGui::BeginChild("##editor", ImVec2{0.f, 0.f}, ImGuiChildFlags_None)) {
@@ -132,8 +134,9 @@ void ScriptPanel::on_imgui() {
     ImGui::EndChild();
     ImGui::PopStyleColor();
 
-    // Panel-level shortcuts: Ctrl+S writes the file only, Ctrl+B saves and rebuilds
-    // the module; keeping them apart matters because the build is the slow half.
+    // Panel-level shortcuts: Ctrl+S writes the file only, Ctrl+B saves and
+    // rebuilds the module; keeping them apart matters because the build is the
+    // slow half.
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
         ImGui::GetIO().KeyCtrl) {
         if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
@@ -167,11 +170,11 @@ void ScriptPanel::draw_status() {
 
     if (!status_.empty()) {
         if (status_is_error_) {
-            ImGui::TextColored(ImVec4{1.f, 0.45f, 0.45f, 1.f}, "%s",
-                               status_.c_str());
+            ImGui::TextColored(
+                ImVec4{1.f, 0.45f, 0.45f, 1.f}, "%s", status_.c_str());
         } else {
-            ImGui::TextColored(ImVec4{0.55f, 0.85f, 0.55f, 1.f}, "%s",
-                               status_.c_str());
+            ImGui::TextColored(
+                ImVec4{0.55f, 0.85f, 0.55f, 1.f}, "%s", status_.c_str());
         }
         return;
     }
@@ -224,8 +227,9 @@ void ScriptPanel::draw_toolbar() {
                           host_.scripts_dir().string().c_str());
     }
 
-    // On its own line: the left pane is narrow, and the module state is secondary
-    // information that can be truncated without losing anything useful.
+    // On its own line: the left pane is narrow, and the module state is
+    // secondary information that can be truncated without losing anything
+    // useful.
     ImGui::TextDisabled("module: %s", host_.is_loaded() ? "loaded" : "missing");
 }
 
@@ -237,8 +241,8 @@ void ScriptPanel::draw_new_script_form() {
         focus_new_script_ = false;
     }
     ImGui::SetNextItemWidth(-FLT_MIN);
-    ImGui::InputTextWithHint("##new_script", "MyScript", new_script_name_,
-                             sizeof(new_script_name_));
+    ImGui::InputTextWithHint(
+        "##new_script", "MyScript", new_script_name_, sizeof(new_script_name_));
     ImGui::BeginDisabled(host_.is_building());
     if (ImGui::Button("Create + Build", ImVec2{-FLT_MIN, 0.f})) {
         std::filesystem::path header_path;
@@ -272,8 +276,8 @@ void ScriptPanel::draw_script_list() {
         return;
     }
 
-    // Same split as the pane itself: the list grows, the build output keeps a fixed
-    // slot at the bottom.
+    // Same split as the pane itself: the list grows, the build output keeps a
+    // fixed slot at the bottom.
     constexpr float kBuildOutputHeight = 150.f;
     if (!ImGui::BeginChild("##script_list",
                            ImVec2{0.f, -kBuildOutputHeight},
@@ -283,15 +287,15 @@ void ScriptPanel::draw_script_list() {
     }
 
     // Two columns instead of a full-width Selectable with SameLine buttons: the
-    // Selectable used to cover the whole row and swallow every click meant for the
-    // buttons. A single click opens the script, the way a file gets opened in an
-    // editor's explorer.
+    // Selectable used to cover the whole row and swallow every click meant for
+    // the buttons. A single click opens the script, the way a file gets opened
+    // in an editor's explorer.
     const ImGuiTableFlags flags =
         ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoSavedSettings;
     if (ImGui::BeginTable("##scripts", 2, flags)) {
         ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch);
-        ImGui::TableSetupColumn("actions", ImGuiTableColumnFlags_WidthFixed,
-                                64.f);
+        ImGui::TableSetupColumn(
+            "actions", ImGuiTableColumnFlags_WidthFixed, 64.f);
 
         for (const ScriptEntry &entry : entries) {
             ImGui::PushID(entry.name.c_str());
@@ -304,7 +308,8 @@ void ScriptPanel::draw_script_list() {
                 open_script(entry.name);
             }
             if (ImGui::IsItemHovered()) {
-                ImGui::SetTooltip("%s", host_.script_path(entry.name).string().c_str());
+                ImGui::SetTooltip(
+                    "%s", host_.script_path(entry.name).string().c_str());
             }
 
             ImGui::TableNextColumn();
@@ -322,9 +327,9 @@ void ScriptPanel::draw_script_list() {
 }
 
 void ScriptPanel::draw_empty_editor() {
-    // Centred "what to do next" block instead of an empty black column: the pane is
-    // useless without a file, so it should explain itself and offer the two things a
-    // user can reasonably do from here.
+    // Centred "what to do next" block instead of an empty black column: the
+    // pane is useless without a file, so it should explain itself and offer the
+    // two things a user can reasonably do from here.
     const ImVec2 available = ImGui::GetContentRegionAvail();
     ImGuiStyle &style = ImGui::GetStyle();
 
@@ -333,7 +338,8 @@ void ScriptPanel::draw_empty_editor() {
     const float button_height = ImGui::GetFrameHeight();
 
     const char *title = "No script open";
-    const char *hint = "Pick one in the library on the left, or create a new one";
+    const char *hint =
+        "Pick one in the library on the left, or create a new one";
     const char *shortcuts = "Ctrl+S  save        Ctrl+B  save & build";
 
     auto centered_text = [&available](const char *text, ImVec4 color) {
@@ -352,7 +358,8 @@ void ScriptPanel::draw_empty_editor() {
 
     // Total height, used to centre the block vertically.
     const float block_height = glyph_size + line_height * 2.f + button_height +
-                               ImGui::GetTextLineHeight() + style.ItemSpacing.y * 4.f;
+                               ImGui::GetTextLineHeight() +
+                               style.ItemSpacing.y * 4.f;
     ImGui::SetCursorPosY(ImGui::GetCursorPosY() +
                          std::max(0.f, (available.y - block_height) * 0.5f));
 
@@ -372,8 +379,8 @@ void ScriptPanel::draw_empty_editor() {
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
                          std::max(0.f, (available.x - row_width) * 0.5f));
     if (ImGui::Button("New script", ImVec2{new_width, 0.f})) {
-        // The name field lives in the left pane, which is drawn before this one, so
-        // the request is picked up on the next frame.
+        // The name field lives in the left pane, which is drawn before this
+        // one, so the request is picked up on the next frame.
         focus_new_script_ = true;
     }
     ImGui::SameLine();
@@ -412,8 +419,9 @@ void ScriptPanel::draw_editor_pane() {
     }
     ImGui::EndDisabled();
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Saves, then compiles VXScripts.dll on a worker thread\n"
-                          "and hot reloads it (Ctrl+B).");
+        ImGui::SetTooltip(
+            "Saves, then compiles VXScripts.dll on a worker thread\n"
+            "and hot reloads it (Ctrl+B).");
     }
     ImGui::SameLine();
     if (ImGui::Button("Revert") && !open_script_.empty()) {
@@ -428,16 +436,16 @@ void ScriptPanel::draw_editor_pane() {
 
     ImGui::Separator();
 
-    // Code is column-aligned by nature: use the monospace face even though the rest
-    // of the editor is proportional.
+    // Code is column-aligned by nature: use the monospace face even though the
+    // rest of the editor is proportional.
     ImGui::PushFont(ui::load_fonts().mono, 0.f);
     editor_.Render("##code", ImVec2{-FLT_MIN, -FLT_MIN}, false);
     ImGui::PopFont();
 
-    // The editor is a custom widget, not an ImGui InputText: ImGui only asks the
-    // SDL backend to start text input for its own InputText widgets, so without
-    // this no SDL_EVENT_TEXT_INPUT ever arrives and typing does nothing. The
-    // widget sets io.WantTextInput while it owns the keyboard.
+    // The editor is a custom widget, not an ImGui InputText: ImGui only asks
+    // the SDL backend to start text input for its own InputText widgets, so
+    // without this no SDL_EVENT_TEXT_INPUT ever arrives and typing does
+    // nothing. The widget sets io.WantTextInput while it owns the keyboard.
     Application::get().get_window().set_text_input_enabled(
         ImGui::GetIO().WantTextInput);
 }
@@ -483,9 +491,9 @@ void ScriptPanel::open_script(const std::string &name) {
 
     editor_.SetText(text);
     editor_.SetCursorPosition({0, 0});
-    // Take the baseline from the widget, not from the file: the editor splits the
-    // text into lines and joins them with '\n', so a CRLF file would otherwise
-    // look modified right after opening.
+    // Take the baseline from the widget, not from the file: the editor splits
+    // the text into lines and joins them with '\n', so a CRLF file would
+    // otherwise look modified right after opening.
     saved_text_ = editor_.GetText();
     open_script_ = name;
     status_.clear();
@@ -528,14 +536,15 @@ bool ScriptPanel::save_script() {
 
 void ScriptPanel::draw_build_output() {
     if (ImGui::CollapsingHeader("Build output",
-                               show_build_log_ ? ImGuiTreeNodeFlags_DefaultOpen
-                                               : ImGuiTreeNodeFlags_None)) {
+                                show_build_log_ ? ImGuiTreeNodeFlags_DefaultOpen
+                                                : ImGuiTreeNodeFlags_None)) {
         show_build_log_ = true;
         const std::string &log = host_.build_log();
         if (log.empty()) {
             ImGui::TextDisabled("(nothing yet)");
         } else if (ImGui::BeginChild("##build_log", ImVec2{0.f, 0.f})) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.75f, 0.75f, 0.75f, 1.f});
+            ImGui::PushStyleColor(ImGuiCol_Text,
+                                  ImVec4{0.75f, 0.75f, 0.75f, 1.f});
             ImGui::TextUnformatted(log.c_str());
             ImGui::PopStyleColor();
             ImGui::EndChild();

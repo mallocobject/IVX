@@ -35,8 +35,8 @@ class Application {
     }
 
   protected:
-    // Width/height are the initial window size. The default fits a plain game view;
-    // an editor with several panels needs more room.
+    // Width/height are the initial window size. The default fits a plain game
+    // view; an editor with several panels needs more room.
     Application(const std::string &title = "IVX Engine",
                 uint32_t width = 1280,
                 uint32_t height = 720);

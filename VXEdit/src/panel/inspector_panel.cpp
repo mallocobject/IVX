@@ -45,14 +45,14 @@ void InspectorPanel::draw_entity_header(Entity entity) {
     // field is not overwritten by the component value every frame.
     if (name_buffer_entity_ != entity.handle()) {
         name_buffer_entity_ = entity.handle();
-        std::snprintf(name_buffer_, sizeof(name_buffer_), "%s",
-                      tag->tag.c_str());
+        std::snprintf(
+            name_buffer_, sizeof(name_buffer_), "%s", tag->tag.c_str());
     }
 
     // The one and only name editor: TagComponent has no section of its own.
-    ImGui::TextDisabled("Entity %u",
-                        static_cast<uint32_t>(
-                            static_cast<entt::id_type>(entity.handle())));
+    ImGui::TextDisabled(
+        "Entity %u",
+        static_cast<uint32_t>(static_cast<entt::id_type>(entity.handle())));
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     // Live editing (no EnterReturnsTrue): the hierarchy renames as you type.
@@ -83,7 +83,8 @@ void InspectorPanel::draw_components(Entity entity) {
         // Right-click on the header: destructive actions (context menus are
         // more reliable than popups anchored to a button, and they cannot be
         // clipped by the window edge).
-        if (entry.flags.removable && ImGui::BeginPopupContextItem("##entry_ctx")) {
+        if (entry.flags.removable &&
+            ImGui::BeginPopupContextItem("##entry_ctx")) {
             if (ImGui::MenuItem("Remove Component")) {
                 pending_remove_.push_back(entry.name);
             }

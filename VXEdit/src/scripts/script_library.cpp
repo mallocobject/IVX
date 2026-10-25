@@ -159,7 +159,8 @@ int run_command(const std::string &command, std::string &log) {
 // The Ninja build of the script module needs the MSVC environment (cl.exe,
 // INCLUDE, LIB). vcvars64.bat takes a couple of seconds, so the environment is
 // captured once in the background (warm_up_script_build_environment) and only
-// *applied* on the build thread: _putenv_s is not thread safe, running vcvars is.
+// *applied* on the build thread: _putenv_s is not thread safe, running vcvars
+// is.
 std::mutex g_env_mutex;
 std::vector<std::pair<std::string, std::string>> g_env_values;
 bool g_env_captured = false;
@@ -173,9 +174,9 @@ bool capture_msvc_environment(std::string &log) {
         return false;
     }
 
-    // `set` prints the environment as KEY=VALUE lines after vcvars ran. The whole
-    // command is wrapped in quotes because it starts with one (the path contains
-    // spaces) and _popen() hands it to `cmd /c`.
+    // `set` prints the environment as KEY=VALUE lines after vcvars ran. The
+    // whole command is wrapped in quotes because it starts with one (the path
+    // contains spaces) and _popen() hands it to `cmd /c`.
     std::string output;
     const std::string inner =
         "\"" + vcvars.string() + "\" >nul 2>&1 && set 2>&1";
@@ -187,9 +188,8 @@ bool capture_msvc_environment(std::string &log) {
     std::size_t pos = 0;
     while (pos < output.size()) {
         const std::size_t end = output.find('\n', pos);
-        std::string line = output.substr(pos, end == std::string::npos
-                                                  ? std::string::npos
-                                                  : end - pos);
+        std::string line = output.substr(
+            pos, end == std::string::npos ? std::string::npos : end - pos);
         pos = end == std::string::npos ? output.size() : end + 1;
         while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) {
             line.pop_back();
@@ -278,11 +278,12 @@ bool build_script_module(bool reconfigure, std::string &log) {
         return false;
     }
 
-    // `cmake --build` on the standalone project: Ninja only touches what changed
-    // and re-runs CMake itself when the source glob changes. Nothing here knows
-    // about the editor's solution, so a script rebuild cannot invalidate it.
-    const std::string build_command = "cmake --build \"" +
-                                      std::string{SCRIPTS_BUILD_DIR} + "\" 2>&1";
+    // `cmake --build` on the standalone project: Ninja only touches what
+    // changed and re-runs CMake itself when the source glob changes. Nothing
+    // here knows about the editor's solution, so a script rebuild cannot
+    // invalidate it.
+    const std::string build_command =
+        "cmake --build \"" + std::string{SCRIPTS_BUILD_DIR} + "\" 2>&1";
     IVX_CORE_DEBUG("script build command: {}", build_command);
     const int build_exit = run_command("\"" + build_command + "\"", log);
     if (log.empty()) {

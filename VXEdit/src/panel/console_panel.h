@@ -16,8 +16,8 @@ class ConsolePanel : public Panel {
   public:
     ConsolePanel();
 
-    // Pulls new messages from bqlog's buffer. Called from the layer's update, so
-    // messages keep being collected while the panel is closed.
+    // Pulls new messages from bqlog's buffer. Called from the layer's update,
+    // so messages keep being collected while the panel is closed.
     void pump();
 
   protected:

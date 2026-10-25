@@ -11,9 +11,9 @@ namespace ivx {
 //
 // Near/far are *distances along the view direction*, never world coordinates:
 // the camera looks down -Z of its own view space, so the near plane sits at
-// z_view = -near. That is the same convention as glm::perspective()/glm::ortho()
-// and it is why near/far are always positive even though the visible geometry
-// has negative view-space z.
+// z_view = -near. That is the same convention as
+// glm::perspective()/glm::ortho() and it is why near/far are always positive
+// even though the visible geometry has negative view-space z.
 class SceneCamera {
   public:
     enum class ProjectionType { Perspective = 0, Orthographic = 1 };

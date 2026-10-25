@@ -8,10 +8,10 @@ namespace ivx {
 // ---- script module boundary ----
 //
 // Script modules are separate DLLs that include the engine *headers* only: they
-// never link the engine. Everything that is not header-only (logging, input) has
-// to come back through this flat function table, which the host installs when it
-// loads the module. Keeping it C-compatible means no STL/CRT coupling across the
-// module boundary, which is what makes hot reload survivable.
+// never link the engine. Everything that is not header-only (logging, input)
+// has to come back through this flat function table, which the host installs
+// when it loads the module. Keeping it C-compatible means no STL/CRT coupling
+// across the module boundary, which is what makes hot reload survivable.
 
 inline constexpr std::uint32_t kScriptModuleVersion = 1;
 
@@ -41,8 +41,8 @@ struct ScriptRegistrar {
 //                             const ivx::ScriptApi *api);
 //
 // Each module gets its own copy of the slot below (inline variables are not
-// merged across Windows DLLs), so the host's install and the module's install do
-// not interfere.
+// merged across Windows DLLs), so the host's install and the module's install
+// do not interfere.
 inline const ScriptApi *g_script_api = nullptr;
 
 inline void install_script_api(const ScriptApi *api) {

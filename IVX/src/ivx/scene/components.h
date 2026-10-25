@@ -79,8 +79,8 @@ struct SpriteRendererComponent {
                             float tiling_factor = 1.f,
                             const glm::vec4 &color = glm::vec4{1.f},
                             const glm::vec2 &size = glm::vec2{1.f})
-        : sub_texture(sub_texture), size(size),
-          tiling_factor(tiling_factor), color(color) {
+        : sub_texture(sub_texture), size(size), tiling_factor(tiling_factor),
+          color(color) {
     }
 };
 

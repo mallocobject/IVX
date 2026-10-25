@@ -6,8 +6,8 @@
 #include "panel/editor_context.h"
 #include "panel/inspector_panel.h"
 #include "panel/panel.h"
-#include "panel/script_panel.h"
 #include "panel/scene_hierarchy_panel.h"
+#include "panel/script_panel.h"
 #include "panel/stats_panel.h"
 #include "scripts/script_host.h"
 #include <imgui.h>
@@ -35,16 +35,18 @@ class EditLayer : public Layer {
     void draw_menu_bar();
     void draw_status_bar();
 
-    // Set when the default layout was (re)built: the viewport tab has to be brought
-    // to the front once the panels exist.
-    // Starts true: the viewport is the tab you want on startup, no matter which tab
-    // the saved layout.ini restored.
+    // Set when the default layout was (re)built: the viewport tab has to be
+    // brought to the front once the panels exist. Starts true: the viewport is
+    // the tab you want on startup, no matter which tab the saved layout.ini
+    // restored.
     bool pending_viewport_focus_{true};
 
-    // Starts a non-blocking rebuild of VXScripts.dll; poll_scripts() finishes it.
+    // Starts a non-blocking rebuild of VXScripts.dll; poll_scripts() finishes
+    // it.
     void reload_scripts();
     // Called every frame: joins a finished build, loads the new module and
-    // re-binds the scripts by name so a code change goes live without restarting.
+    // re-binds the scripts by name so a code change goes live without
+    // restarting.
     void poll_scripts();
 
     // Binds CameraController to the primary camera once per session (see the
@@ -66,8 +68,8 @@ class EditLayer : public Layer {
 
     bool viewport_focused_{false};
     bool viewport_hovered_{false};
-    // Set while the viewport panel draws; the input gate is cleared when a frame
-    // passes without it (closed/collapsed viewport).
+    // Set while the viewport panel draws; the input gate is cleared when a
+    // frame passes without it (closed/collapsed viewport).
     bool viewport_sampled_{false};
     bool visible_{false};
     ImVec2 viewport_size_{0.f, 0.f};
@@ -85,8 +87,8 @@ class EditLayer : public Layer {
     Ref<ConsolePanel> console_panel_;
     Ref<StatsPanel> stats_panel_;
     Ref<ScriptPanel> script_panel_;
-    // The viewport is a LambdaPanel; kept so the stats overlay can tell whether the
-    // viewport tab is the one currently on screen.
+    // The viewport is a LambdaPanel; kept so the stats overlay can tell whether
+    // the viewport tab is the one currently on screen.
     Ref<Panel> viewport_panel_;
 
     ScriptHost scripts_;

@@ -13,8 +13,9 @@ namespace {
 uint8_t g_sdl_initialized = 0;
 
 // ivx::KeyCode mirrors the GLFW key values (uppercase letters, 256+ for the
-// special keys), while SDL reports scancodes / lowercase keycodes. Physical keys
-// are mapped through the scancode so the result does not depend on the layout.
+// special keys), while SDL reports scancodes / lowercase keycodes. Physical
+// keys are mapped through the scancode so the result does not depend on the
+// layout.
 KeyCode key_from_scancode(SDL_Scancode sc) {
     using enum KeyCode;
 
@@ -163,7 +164,8 @@ MouseCode mouse_code_from_sdl(uint8_t button) {
     }
 }
 
-// SDL_EVENT_TEXT_INPUT delivers UTF-8, ivx::KeyTypedEvent carries one codepoint.
+// SDL_EVENT_TEXT_INPUT delivers UTF-8, ivx::KeyTypedEvent carries one
+// codepoint.
 std::vector<uint32_t> decode_utf8(std::string_view text) {
     std::vector<uint32_t> out;
     out.reserve(text.size());

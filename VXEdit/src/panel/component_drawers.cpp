@@ -105,7 +105,8 @@ void draw_camera(Entity /*entity*/,
         }
     }
 
-    ImGui::TextDisabled("Aspect %.3f (from viewport)", scene_camera.get_aspect_ratio());
+    ImGui::TextDisabled("Aspect %.3f (from viewport)",
+                        scene_camera.get_aspect_ratio());
     ImGui::Checkbox("Fixed Aspect Ratio", &camera.fixed_aspect_ratio);
 
     ImGui::Separator();
@@ -121,16 +122,18 @@ void draw_script(Entity entity,
     const char *bound_name = scripts.name_of(script.instantiate);
 
     if (script.is_bound()) {
-        ImGui::Text("Script: %s", bound_name != nullptr ? bound_name : "<unknown>");
+        ImGui::Text("Script: %s",
+                    bound_name != nullptr ? bound_name : "<unknown>");
     } else {
         ImGui::TextDisabled("No script bound");
     }
 
     // Picking a script binds it (and destroys the previous instance).
-    if (ImGui::BeginCombo("##script",
-                          script.is_bound() ? (bound_name != nullptr ? bound_name
-                                                                    : "<unknown>")
-                                            : "Select script...")) {
+    if (ImGui::BeginCombo(
+            "##script",
+            script.is_bound()
+                ? (bound_name != nullptr ? bound_name : "<unknown>")
+                : "Select script...")) {
         for (const ScriptEntry &entry : scripts.entries()) {
             const bool selected =
                 bound_name != nullptr && entry.name == bound_name;
@@ -167,23 +170,21 @@ void register_all_components() {
 
     // Tag is edited by the inspector header (the entity name), so it has no
     // section of its own and cannot be added/removed.
-    registry.add<TagComponent>("Tag",
-                               /*draw*/ {},
-                               {.removable = false,
-                                .addable = false,
-                                .draw_in_inspector = false});
+    registry.add<TagComponent>(
+        "Tag",
+        /*draw*/ {},
+        {.removable = false, .addable = false, .draw_in_inspector = false});
     registry.add<TransformComponent>(
         "Transform", draw_transform, {.removable = false});
     registry.add<SpriteRendererComponent>("Sprite Renderer", draw_sprite);
     // Cameras are entities, not something you bolt onto a sprite: they are
     // created from the Camera panel. Still editable/removable when present.
-    registry.add<CameraComponent>("Camera",
-                                  draw_camera,
-                                  {.addable = false});
+    registry.add<CameraComponent>("Camera", draw_camera, {.addable = false});
     registry.add<NativeScriptComponent>(
         "Native Script", draw_script, {.removable = false});
 
-    IVX_CORE_DEBUG("Registered {} component type(s)", registry.entries().size());
+    IVX_CORE_DEBUG("Registered {} component type(s)",
+                   registry.entries().size());
 }
 
 } // namespace ivx

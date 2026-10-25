@@ -21,9 +21,9 @@ class ImGuiLayer : public Layer {
         event_blocked_ = enabled;
     }
 
-    // Where ImGui stores the window layout (docking, panel sizes, ...). An empty
-    // string disables persistence (io.IniFilename = nullptr). Setting it after
-    // on_attach() takes effect immediately.
+    // Where ImGui stores the window layout (docking, panel sizes, ...). An
+    // empty string disables persistence (io.IniFilename = nullptr). Setting it
+    // after on_attach() takes effect immediately.
     void set_ini_filename(std::string filename);
 
   private:

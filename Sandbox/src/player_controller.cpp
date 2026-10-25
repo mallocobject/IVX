@@ -9,9 +9,8 @@
 namespace ivx {
 
 void PlayerController::on_create() {
-    IVX_CORE_INFO("PlayerController attached to '{}'", get_component<
-                                                           TagComponent>()
-                                                            .tag);
+    IVX_CORE_INFO("PlayerController attached to '{}'",
+                  get_component<TagComponent>().tag);
 }
 
 void PlayerController::on_update(float delta_time) {

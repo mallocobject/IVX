@@ -46,7 +46,8 @@ ImVec4 level_color(LogLevel level) {
     return ImVec4{1.f, 1.f, 1.f, 1.f};
 }
 
-bool contains_case_insensitive(const std::string &haystack, const char *needle) {
+bool contains_case_insensitive(const std::string &haystack,
+                               const char *needle) {
     if (needle == nullptr || needle[0] == '\0') {
         return true;
     }
@@ -157,8 +158,8 @@ void ConsolePanel::draw_toolbar() {
 }
 
 void ConsolePanel::draw_entries() {
-    // Log lines are columns of similar-looking glyphs: monospace keeps timestamps and
-    // banners aligned.
+    // Log lines are columns of similar-looking glyphs: monospace keeps
+    // timestamps and banners aligned.
     ImGui::PushFont(ui::load_fonts().mono, 0.f);
 
     if (!ImGui::BeginChild("##console_scroll",

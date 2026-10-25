@@ -33,8 +33,9 @@ class Scene : public RefCounted {
 
     void on_update(float dt);
     // Forwards an engine event to every enabled script's on_key_* / on_mouse_*
-    // hooks. Call it from the layer's on_event(), so scripts see the same events
-    // the rest of the app sees (and nothing while ImGui has the keyboard).
+    // hooks. Call it from the layer's on_event(), so scripts see the same
+    // events the rest of the app sees (and nothing while ImGui has the
+    // keyboard).
     void on_event(Event &event);
     // Draws every entity that has a TransformComponent +
     // SpriteRendererComponent. The caller owns the camera: wrap it in

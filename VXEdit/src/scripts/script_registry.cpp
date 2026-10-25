@@ -32,7 +32,8 @@ const char *ScriptRegistry::name_of(ScriptableEntity *(*instantiate)()) const {
     return nullptr;
 }
 
-bool ScriptRegistry::bind_by_name(const std::string &name, Entity entity) const {
+bool ScriptRegistry::bind_by_name(const std::string &name,
+                                  Entity entity) const {
     if (!entity) {
         return false;
     }

@@ -30,9 +30,9 @@ class ScriptableEntity {
 
     // ---- event hooks ----
     // Push-based input, for things that polling handles badly (taps, toggles,
-    // scroll). Parameters are plain values so nothing but the vtable crosses the
-    // module boundary. Polling in on_update() stays available for continuous
-    // input such as movement.
+    // scroll). Parameters are plain values so nothing but the vtable crosses
+    // the module boundary. Polling in on_update() stays available for
+    // continuous input such as movement.
     virtual void on_key_pressed(KeyCode /*key*/, bool /*repeat*/) {
     }
     virtual void on_key_released(KeyCode /*key*/) {

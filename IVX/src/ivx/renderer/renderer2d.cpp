@@ -124,9 +124,9 @@ void Renderer2D::begin_scene(const glm::mat4 &projection,
     IVX_PROFILE_FUNCTION();
 
     // `view` is already the inverse of the camera world transform: inverting it
-    // here as well would turn the camera transform into a model transform, which
-    // is invisible while the camera sits at the origin and completely wrong once
-    // it moves (sprites end up behind the eye and get clipped).
+    // here as well would turn the camera transform into a model transform,
+    // which is invisible while the camera sits at the origin and completely
+    // wrong once it moves (sprites end up behind the eye and get clipped).
     auto vp = projection * view;
     data.texture_shader->set("u_VP", vp);
 

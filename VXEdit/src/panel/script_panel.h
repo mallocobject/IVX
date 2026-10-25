@@ -11,8 +11,9 @@ namespace ivx {
 class ScriptHost;
 
 // Script panel: the module's script library, a "New Script" form that generates
-// C++ sources from a template, an embedded code editor with syntax highlighting,
-// and a build & reload button (hot reload) with the compiler output.
+// C++ sources from a template, an embedded code editor with syntax
+// highlighting, and a build & reload button (hot reload) with the compiler
+// output.
 //
 // Docked next to the Viewport, Godot style: the file being edited shows up as a
 // sibling tab of the viewport.
@@ -46,10 +47,11 @@ class ScriptPanel : public Panel {
 
     TextEditor editor_;
     bool editor_ready_{false};
-    // Detects the building -> idle edge so the error markers refresh exactly once.
+    // Detects the building -> idle edge so the error markers refresh exactly
+    // once.
     bool was_building_{false};
-    // Set by the empty state's "New script" button; the name field picks it up on
-    // the next frame (the library column is drawn before the editor column).
+    // Set by the empty state's "New script" button; the name field picks it up
+    // on the next frame (the library column is drawn before the editor column).
     bool focus_new_script_{false};
 
     char new_script_name_[64]{};
