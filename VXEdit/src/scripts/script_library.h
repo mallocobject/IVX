@@ -33,7 +33,12 @@ class ScriptLibrary {
 };
 
 // Builds the script module target and reloads it. `log` receives the compiler
-// output so the console can show errors. Blocks while compiling.
-bool rebuild_scripts(ScriptLibrary &library, std::string &log);
+// Builds the script module target (and nothing else: the engine and the editor
+// are separate targets and stay untouched) and loads it again. `reconfigure` runs
+// CMake first, which is only needed when the *set* of script files changed; plain
+// source edits go straight to the compiler. Blocks while compiling.
+bool rebuild_scripts(ScriptLibrary &library,
+                     bool reconfigure,
+                     std::string &log);
 
 } // namespace ivx

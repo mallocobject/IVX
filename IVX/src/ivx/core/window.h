@@ -34,6 +34,12 @@ class Window : public RefCounted {
     virtual void set_v_sync(bool enabled) = 0;
     virtual bool is_v_sync() const = 0;
 
+    // Text input (SDL_EVENT_TEXT_INPUT on SDL3) is only delivered while it is
+    // started, and ImGui's SDL3 backend starts it for its own InputText widgets
+    // only. A custom text widget has to ask for it through this.
+    virtual void set_text_input_enabled(bool /*enabled*/) {
+    }
+
     virtual void *get_native_window() = 0;
 
     // Graphics context handle (SDL_GLContext for the SDL3 backend); nullptr

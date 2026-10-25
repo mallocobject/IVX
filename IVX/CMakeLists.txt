@@ -60,7 +60,12 @@ endif()
 add_library(IVXHeaders INTERFACE)
 target_include_directories(IVXHeaders INTERFACE
     "${CMAKE_CURRENT_SOURCE_DIR}/src")
-target_link_libraries(IVXHeaders INTERFACE glm entt)
+# glm and ennt are header-only for our use: depend on the include dirs, not on the
+# library targets, so building a script module does not pull any other project
+# into the build (that is what made an incremental script rebuild take seconds).
+target_include_directories(IVXHeaders INTERFACE
+    "${CMAKE_SOURCE_DIR}/deps/glm"
+    "${VENDOR_DIR}/entt/include")
 target_compile_definitions(IVXHeaders INTERFACE
     IVX_PLATFORM_WINDOWS
     $<$<CONFIG:Debug>:IVX_CONFIG_DEBUG>

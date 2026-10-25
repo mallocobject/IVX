@@ -1,5 +1,6 @@
-#include "camera_controller.h"
+#include "CameraController.h"
 
+#include "ivx/script/script_module.h"
 #include "ivx/scene/components.h"
 
 #include <glm/glm.hpp>
@@ -87,4 +88,19 @@ void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
     camera.camera.set_orthographic_size(next);
     log("CameraController: zoom -> " + std::to_string(next));
 }
+// Stays inside namespace ivx: IVX_REGISTER_SCRIPT pastes the type name into an
+// identifier, so the type has to be unqualified.
+IVX_REGISTER_SCRIPT(CameraController)
 } // namespace ivx
+
+
+
+
+
+
+
+
+
+
+
+

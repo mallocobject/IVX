@@ -137,29 +137,82 @@ bool ScriptLibrary::reload(std::string &error) {
     return load(dll, error);
 }
 
-bool rebuild_scripts(ScriptLibrary &library, std::string &log) {
-#if defined(IVX_PLATFORM_WINDOWS)
-    // The caller must have unloaded the module first: the linker cannot overwrite
-    // a DLL that is still mapped into the process.
-    const std::filesystem::path dll = library.path();
-
-    // MSBuild only relinks what changed, so this stays a sub-second operation for
-    // a single edited script.
-    const std::string command = std::string{"cmake --build \""} +
-                                IVX_BUILD_DIR + "\" --config " +
-                                IVX_BUILD_CONFIG + " --target VXScripts 2>&1";
-
+namespace {
+// Runs a shell command and appends its combined stdout/stderr to `log`.
+int run_command(const std::string &command, std::string &log) {
     std::array<char, 512> buffer{};
     FILE *pipe = _popen(command.c_str(), "r");
     if (pipe == nullptr) {
-        log = "failed to start the compiler";
-        return false;
+        log += "failed to start: " + command + "\n";
+        return -1;
     }
     while (std::fgets(buffer.data(), static_cast<int>(buffer.size()), pipe) !=
            nullptr) {
         log += buffer.data();
     }
-    const int exit_code = _pclose(pipe);
+    return _pclose(pipe);
+}
+
+// MSBuild path, handed over by CMake (CMAKE_MAKE_PROGRAM), so there is no runtime
+// lookup. Empty if the generator was not Visual Studio, in which case the slower
+// solution-level `cmake --build` is used instead.
+const std::string &msbuild_path() {
+    static const std::string path = IVX_MSBUILD;
+    return path;
+}
+} // namespace
+
+bool rebuild_scripts(ScriptLibrary &library,
+                     bool reconfigure,
+                     std::string &log) {
+#if defined(IVX_PLATFORM_WINDOWS)
+    // The caller must have unloaded the module first: the linker cannot overwrite
+    // a DLL that is still mapped into the process.
+    const std::filesystem::path dll = library.path();
+
+    if (reconfigure) {
+        // Only needed when the file *set* changed: the sources are collected with
+        // a GLOB and a plain `--target VXScripts` build does not re-run the glob
+        // (ZERO_CHECK only hangs off ALL_BUILD), so a freshly created script would
+        // silently not be compiled.
+        const int configure_exit =
+            run_command(std::string{"cmake -S \""} + IVX_SOURCE_DIR + "\" -B \"" +
+                            IVX_BUILD_DIR + "\" 2>&1",
+                        log);
+        if (configure_exit != 0) {
+            log += "\nCMake configure failed\n";
+            return false;
+        }
+    }
+
+    // Scoped to the module: only the script sources are compiled and linked into
+    // VXScripts.dll. IVX and VXEdit are different targets and are not rebuilt.
+    //
+    // The project file is built directly instead of going through
+    // `cmake --build <sln> --target VXScripts`: the solution-level invocation
+    // evaluates every project in the tree and costs several seconds even when
+    // there is nothing to compile.
+    std::string build_command;
+    const std::string &msbuild = msbuild_path();
+    const std::filesystem::path project =
+        std::filesystem::path{IVX_BUILD_DIR} / "VXEdit" / "VXScripts.vcxproj";
+    if (!msbuild.empty() && std::filesystem::exists(project)) {
+        build_command = "\"" + msbuild + "\" \"" + project.string() +
+                        "\" /t:Build /p:Configuration=" + IVX_BUILD_CONFIG +
+                        " /p:Platform=x64 /nologo /v:m /m 2>&1";
+    } else {
+        build_command = std::string{"cmake --build \""} + IVX_BUILD_DIR +
+                        "\" --config " + IVX_BUILD_CONFIG +
+                        " --target VXScripts 2>&1";
+    }
+    IVX_CORE_DEBUG("script build command: {}", build_command);
+    // _popen() runs the string through `cmd /c`, and cmd strips quotes when the
+    // command *starts* with one (our MSBuild path contains spaces). Wrapping the
+    // whole command in an extra pair keeps cmd from mangling it.
+    const int build_exit = run_command("\"" + build_command + "\"", log);
+    if (log.empty()) {
+        log = build_command; // keep the log informative even on a no-op build
+    }
 
     // Load even when the build failed: the linker did not touch the old DLL in
     // that case, so the previous code keeps working instead of leaving the editor
@@ -169,9 +222,10 @@ bool rebuild_scripts(ScriptLibrary &library, std::string &log) {
     if (!loaded) {
         log += "\n" + error;
     }
-    return exit_code == 0 && loaded;
+    return build_exit == 0 && loaded;
 #else
     (void)library;
+    (void)reconfigure;
     log = "script modules are only implemented for Windows";
     return false;
 #endif

@@ -77,6 +77,15 @@ target_include_directories(stb_image PUBLIC "${VENDOR_DIR}/stb_image")
 add_library(entt INTERFACE)
 target_include_directories(entt INTERFACE "${VENDOR_DIR}/entt/include")
 
+# ---- ImGuiColorTextEdit ----
+# Syntax highlighting editor widget used by the editor's script panel.
+# BalazsJako's original API: TextEditor.h / TextEditor.cpp (MIT).
+add_library(ImGuiColorTextEdit STATIC
+    "${VENDOR_DIR}/ImGuiColorTextEdit/TextEditor.cpp")
+target_include_directories(ImGuiColorTextEdit PUBLIC
+    "${VENDOR_DIR}/ImGuiColorTextEdit")
+target_link_libraries(ImGuiColorTextEdit PUBLIC imgui)
+
 add_subdirectory(IVX)
 add_subdirectory(VXEdit)
 # add_subdirectory(Sandbox)

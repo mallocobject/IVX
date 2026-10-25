@@ -6,9 +6,10 @@
 #include "panel/editor_context.h"
 #include "panel/inspector_panel.h"
 #include "panel/panel.h"
+#include "panel/script_panel.h"
 #include "panel/scene_hierarchy_panel.h"
 #include "panel/stats_panel.h"
-#include "scripts/script_library.h"
+#include "scripts/script_host.h"
 #include <imgui.h>
 #include <ivx.h>
 #include <vector>
@@ -64,7 +65,8 @@ class EditLayer : public Layer {
     Ref<CameraPanel> camera_panel_;
     Ref<ConsolePanel> console_panel_;
     Ref<StatsPanel> stats_panel_;
+    Ref<ScriptPanel> script_panel_;
 
-    ScriptLibrary scripts_library_;
+    ScriptHost scripts_;
 };
 } // namespace ivx

@@ -298,6 +298,25 @@ void SDLWindow::set_v_sync(bool enabled) {
     data_.v_sync = enabled;
 }
 
+void SDLWindow::set_text_input_enabled(bool enabled) {
+    IVX_PROFILE_FUNCTION();
+
+    if (window_handle_ == nullptr) {
+        return;
+    }
+
+    // SDL3 no longer sends SDL_EVENT_TEXT_INPUT unless text input is started.
+    // ImGui's backend starts it for its own InputText widgets only, so custom
+    // text widgets (the script editor) have to toggle it themselves.
+    if (enabled) {
+        if (!SDL_TextInputActive(window_handle_)) {
+            SDL_StartTextInput(window_handle_);
+        }
+    } else if (SDL_TextInputActive(window_handle_)) {
+        SDL_StopTextInput(window_handle_);
+    }
+}
+
 void SDLWindow::process_event(const SDL_Event &e) {
     auto emit = [this](Event &ev) {
         if (data_.event_callback) {

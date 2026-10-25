@@ -34,7 +34,7 @@ void EditLayer::on_attach() {
     // script. A missing DLL is not fatal, the editor just has no script types.
     {
         std::string error;
-        if (!scripts_library_.load(SCRIPTS_DLL, error)) {
+        if (!scripts_.load_initial(error)) {
             IVX_ERROR("Script module not loaded: {}", error);
         }
     }
@@ -125,6 +125,9 @@ void EditLayer::on_attach() {
             glm::vec3{0.f, 0.f, 1.f};
     }
 
+    // The script host needs the scene to re-bind scripts after a hot reload.
+    scripts_.set_scene(scene_.get());
+
     setup_panels();
 }
 
@@ -202,38 +205,14 @@ void EditLayer::on_update(float dt) {
 void EditLayer::reload_scripts() {
     IVX_PROFILE_FUNCTION();
 
-    // Instances live in the module that is about to be unloaded, so they have to
-    // go first. Remember the names to re-bind afterwards.
-    std::vector<std::pair<Entity, std::string>> bindings;
-    for (auto [handle, script] :
-         scene_->registry().view<NativeScriptComponent>().each()) {
-        if (!script.script_name.empty()) {
-            bindings.emplace_back(Entity{handle, scene_.get()}, script.script_name);
-        }
-        script.unbind(); // also clears script_name
-    }
-
     std::string log;
-    // Unload first: the linker cannot overwrite a DLL that is still mapped in.
-    scripts_library_.unload();
-    const bool ok = rebuild_scripts(scripts_library_, log);
+    const bool ok = scripts_.build_and_reload(log);
     if (!log.empty()) {
         IVX_INFO("Script build output:\n{}", log);
     }
     if (!ok) {
-        IVX_ERROR("Script rebuild failed, bindings were dropped");
-        return;
+        IVX_ERROR("Script rebuild failed");
     }
-
-    std::size_t restored = 0;
-    for (auto &[entity, name] : bindings) {
-        if (ScriptRegistry::get().bind_by_name(name, entity)) {
-            restored++;
-        }
-    }
-    IVX_INFO("Scripts reloaded: {} type(s), {} binding(s) restored",
-             ScriptRegistry::get().entries().size(),
-             restored);
 }
 
 void EditLayer::on_event(Event &event) {
@@ -268,6 +247,7 @@ void EditLayer::setup_panels() {
     camera_panel_ = panels_.add<CameraPanel>(context_);
     console_panel_ = panels_.add<ConsolePanel>();
     stats_panel_ = panels_.add<StatsPanel>();
+    script_panel_ = panels_.add<ScriptPanel>(scripts_);
 }
 
 void EditLayer::on_render() {

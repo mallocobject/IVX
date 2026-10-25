@@ -27,6 +27,8 @@ void setup_default_layout(ImGuiID dockspace_id) {
     ImGui::DockBuilderDockWindow("Scene Hierarchy", left);
     ImGui::DockBuilderDockWindow("Inspector", right);
     ImGui::DockBuilderDockWindow("Viewport", center);
+    // Scripts sit next to the viewport as a tab, Godot style.
+    ImGui::DockBuilderDockWindow("Scripts", center);
     // Bottom strip as tabs: the console gets the full width when selected.
     ImGui::DockBuilderDockWindow("Console", bottom);
     ImGui::DockBuilderDockWindow("Camera", bottom);

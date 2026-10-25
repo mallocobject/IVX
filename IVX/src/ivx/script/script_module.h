@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <vector>
 
 namespace ivx {
 
@@ -74,5 +75,62 @@ inline void script_mouse_pos(float *x, float *y) {
         *y = 0.f;
     }
 }
+
+// ---- self registration ----
+//
+// Scripts register themselves at module load time, so adding a file does not
+// require touching the module's entry point:
+//
+//   class MyScript : public ScriptableEntity { ... };
+//   IVX_REGISTER_SCRIPT(MyScript);
+//
+struct ScriptTypeEntry {
+    const char *name;
+    ScriptableEntity *(*instantiate)();
+    void (*destroy)(NativeScriptComponent *);
+};
+
+class ScriptModuleBuilder {
+  public:
+    static ScriptModuleBuilder &get() {
+        static ScriptModuleBuilder instance;
+        return instance;
+    }
+
+    void add(const char *name,
+             ScriptableEntity *(*instantiate)(),
+             void (*destroy)(NativeScriptComponent *)) {
+        entries_.push_back({name, instantiate, destroy});
+    }
+
+    // Called by the module's entry point.
+    void publish(const ScriptRegistrar *registrar) const {
+        if (registrar == nullptr || registrar->add == nullptr) {
+            return;
+        }
+        for (const ScriptTypeEntry &entry : entries_) {
+            registrar->add(entry.name, entry.instantiate, entry.destroy);
+        }
+    }
+
+  private:
+    std::vector<ScriptTypeEntry> entries_;
+};
+
+#define IVX_REGISTER_SCRIPT(Type)                                              \
+    namespace {                                                                \
+    struct Type##_ScriptRegistrar {                                            \
+        Type##_ScriptRegistrar() {                                             \
+            ::ivx::ScriptModuleBuilder::get().add(                             \
+                #Type,                                                         \
+                []() -> ::ivx::ScriptableEntity * { return new Type(); },      \
+                [](::ivx::NativeScriptComponent *component) {                  \
+                    delete static_cast<Type *>(component->instance);           \
+                    component->instance = nullptr;                             \
+                });                                                            \
+        }                                                                      \
+    };                                                                         \
+    const Type##_ScriptRegistrar g_##Type##_script_registrar{};                \
+    }
 
 } // namespace ivx

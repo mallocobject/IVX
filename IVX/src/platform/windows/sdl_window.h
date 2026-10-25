@@ -25,6 +25,7 @@ class SDLWindow : public Window {
     bool is_v_sync() const override {
         return data_.v_sync;
     }
+    void set_text_input_enabled(bool enabled) override;
     void *get_native_window() override {
         return window_handle_;
     }
