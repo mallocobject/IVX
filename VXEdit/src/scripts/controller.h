@@ -3,7 +3,7 @@
 #include <ivx.h>
 
 namespace ivx {
-class Rotator : public ScriptableEntity {
+class Controller : public ScriptableEntity {
   public:
     virtual void on_create() override;
     virtual void on_update(float dt) override;

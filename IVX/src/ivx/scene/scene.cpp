@@ -41,7 +41,9 @@ void Scene::on_update(float dt) {
     }
 
     for (auto [handle, nsc] : registry_.view<NativeScriptComponent>().each()) {
-        nsc.instance->on_update(dt);
+        if (nsc.enabled) {
+            nsc.instance->on_update(dt);
+        }
     }
 }
 

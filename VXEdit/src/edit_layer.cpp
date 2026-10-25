@@ -10,7 +10,7 @@
 #include "ivx/renderer/render_command.h"
 #include "ivx/scene/scene.h"
 #include "ivx/scene/scriptable_entity.h"
-#include "scripts/rotator.h"
+#include "scripts/controller.h"
 #include <algorithm>
 #include <cfloat>
 #include <cstdint>
@@ -26,6 +26,14 @@ EditLayer::EditLayer() : Layer("EditLayer") {
 
 void EditLayer::on_attach() {
     IVX_PROFILE_FUNCTION();
+
+    ImGuiIO &io = ImGui::GetIO();
+    ImFontConfig cfg;
+    // cfg.PixelSnapH = true;
+    ImFont *font =
+        io.Fonts->AddFontFromFileTTF(FONTS "/consola.ttf", 16.0f, &cfg);
+    IVX_CORE_ASSERT(font, "Failed to load Consolas");
+    io.FontDefault = font;
 
     // static uint32_t WIDTH = Application::get().get_window().get_width();
     // static uint32_t HEIGHT = Application::get().get_window().get_height();
@@ -64,19 +72,11 @@ void EditLayer::on_attach() {
     float h = HEIGHT / 2.f;
     camera_entity_.add_component<CameraComponent>(
         -w, w, -h, h, -1.f, 1.f, 1.f, true, false);
-    camera_entity_.add_component<NativeScriptComponent>().bind<Rotator>();
+    camera_entity_.add_component<NativeScriptComponent>().bind<Controller>();
 
     second_camera_entity_ = scene_->create_entity("Clip-Space Entity");
     second_camera_entity_.add_component<CameraComponent>(
         -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f, 1.f, false, true);
-
-    ImGuiIO &io = ImGui::GetIO();
-    ImFontConfig cfg;
-    // cfg.PixelSnapH = true;
-    ImFont *font =
-        io.Fonts->AddFontFromFileTTF(FONTS "/consola.ttf", 16.0f, &cfg);
-    IVX_CORE_ASSERT(font, "Failed to load Consolas");
-    io.FontDefault = font;
 }
 
 void EditLayer::on_detach() {
@@ -100,6 +100,9 @@ void EditLayer::on_update(float dt) {
 
     // update
     if (viewport_focused_) {
+        camera_entity_.get_component<NativeScriptComponent>().enabled = true;
+    } else {
+        camera_entity_.get_component<NativeScriptComponent>().enabled = false;
     }
 
     scene_->on_update(dt);

@@ -32,6 +32,7 @@ struct NativeScriptComponent {
     ScriptableEntity *instance{nullptr};
     ScriptableEntity *(*instantiate)(){nullptr};
     void (*destroy)(NativeScriptComponent *){nullptr};
+    bool enabled{false};
 
     template <typename T>
     void bind() {
