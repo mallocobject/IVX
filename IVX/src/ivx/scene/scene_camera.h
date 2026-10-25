@@ -6,6 +6,8 @@
 namespace ivx {
 class SceneCamera {
   public:
+    enum class Mode { Orthogonal, Perspective };
+
     // orthogonal
     SceneCamera(float size, float n, float f, float zoom_level);
 
@@ -17,9 +19,27 @@ class SceneCamera {
     void set_zoom_level(float zoom_level);
     void set_fov(float fov);
 
+    // Inspectors need to read back what they can edit.
+    void set_mode(Mode m);
+    Mode get_mode() const {
+        return mode;
+    }
+
+    float get_size() const; // orthogonal only
+    void set_size(float size);
+
+    float get_zoom_level() const; // orthogonal only
+
+    float get_fov() const; // perspective only
+
+    float get_near() const;
+    void set_near(float n);
+    float get_far() const;
+    void set_far(float f);
+
     glm::mat4 get_proj_matrix() const;
 
-    enum class Mode { Orthogonal, Perspective } mode;
+    Mode mode;
 
   private:
     union {
@@ -32,7 +52,6 @@ class SceneCamera {
 
     float n_;
     float f_;
-
     float aspect_ratio_{1.f};
 };
 } // namespace ivx

@@ -50,6 +50,13 @@ class Panel : public RefCounted {
         return visible_this_frame_;
     }
 
+    // Size used the first time the window appears (ignored once ImGui has a
+    // saved layout for it). Docked windows ignore it as well.
+    Panel &set_default_size(ImVec2 size) {
+        default_size_ = size;
+        return *this;
+    }
+
   protected:
     virtual void on_imgui() = 0;
 
@@ -68,6 +75,7 @@ class Panel : public RefCounted {
 
     std::string name_;
     bool opened_{true};
+    ImVec2 default_size_{0.f, 0.f};
 
   private:
     bool first_open_done_{false};

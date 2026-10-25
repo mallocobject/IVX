@@ -1,5 +1,6 @@
 #pragma once
 
+#include "editor_context.h"
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
@@ -10,15 +11,9 @@
 namespace ivx {
 class SceneHierarchyPanel : public Panel {
   public:
-    SceneHierarchyPanel();
-    explicit SceneHierarchyPanel(const Ref<Scene> &scene);
+    explicit SceneHierarchyPanel(EditorContext &context);
 
-    void set_scene_context(const Ref<Scene> &scene);
-
-    Ref<Scene> get_scene() const {
-        return scene_;
-    }
-    // Validated against the registry, so it is safe to call every frame.
+    // Convenience wrappers over the shared selection.
     Entity get_selected() const;
     void set_selected(Entity entity);
 
@@ -32,8 +27,7 @@ class SceneHierarchyPanel : public Panel {
     void draw_empty_context_menu();
     void flush_pending_delete();
 
-    Ref<Scene> scene_;
-    entt::entity selected_{entt::null};
+    EditorContext &context_;
     std::vector<entt::entity> pending_delete_;
 };
 } // namespace ivx

@@ -9,6 +9,8 @@
 #include "ivx/renderer/render_command.h"
 #include "ivx/scene/scene.h"
 #include "ivx/scene/scriptable_entity.h"
+#include "panel/component_registry.h"
+#include "panel/layout.h"
 #include "scripts/controller.h"
 #include <algorithm>
 #include <cstdint>
@@ -47,6 +49,7 @@ void EditLayer::on_attach() {
     frame_buffer_ = FrameBuffer::create(spec);
 
     scene_ = make_ref<Scene>();
+    context_.scene = scene_;
     square_entity_ = scene_->create_entity("Colorful Square");
 
     // auto transform = [](const glm::vec3 &translation = glm::vec3{0.f},
@@ -149,10 +152,10 @@ void EditLayer::on_event(Event &event) {
 void EditLayer::setup_panels() {
     IVX_PROFILE_FUNCTION();
 
-    // Content panels first (they only emit widgets), then the hierarchy panel
-    // so the draw order is deterministic: Hierarchy -> Viewport -> Settings.
-    scene_hierarchy_panel_ = panels_.add<SceneHierarchyPanel>();
-    scene_hierarchy_panel_->set_scene_context(scene_);
+    register_all_components();
+
+    // Deterministic draw order: Hierarchy -> Viewport -> Inspector -> Settings.
+    scene_hierarchy_panel_ = panels_.add<SceneHierarchyPanel>(context_);
 
     auto viewport = panels_.add<LambdaPanel>(
         "Viewport", [this]() { draw_viewport_content(); });
@@ -165,6 +168,8 @@ void EditLayer::setup_panels() {
         Application::get().imgui_layer()->block_event(true);
     });
 
+    inspector_panel_ = panels_.add<InspectorPanel>(context_);
+
     panels_.add<LambdaPanel>("Settings",
                              [this]() { draw_settings_content(); });
 }
@@ -173,8 +178,17 @@ void EditLayer::on_render() {
     IVX_PROFILE_FUNCTION();
 
     // replace fullscreen host window + DockSpace
-    ImGui::DockSpaceOverViewport(
-        0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+    const ImGuiID dockspace_id =
+        ImGui::DockSpaceOverViewport(0,
+                                     ImGui::GetMainViewport(),
+                                     ImGuiDockNodeFlags_PassthruCentralNode);
+
+    // First frame (or after "Reset Layout") build the default arrangement.
+    if (!layout_initialized_ || reset_layout_requested_) {
+        setup_default_layout(dockspace_id);
+        layout_initialized_ = true;
+        reset_layout_requested_ = false;
+    }
 
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("File")) {
@@ -184,6 +198,12 @@ void EditLayer::on_render() {
             ImGui::EndMenu();
         }
         panels_.draw_view_menu();
+        if (ImGui::BeginMenu("Layout")) {
+            if (ImGui::MenuItem("Reset Layout")) {
+                reset_layout_requested_ = true;
+            }
+            ImGui::EndMenu();
+        }
         ImGui::EndMainMenuBar();
     }
 

@@ -16,51 +16,37 @@ ImGuiTreeNodeFlags base_flags() {
 }
 } // namespace
 
-SceneHierarchyPanel::SceneHierarchyPanel() : Panel("Scene Hierarchy") {
-}
-
-SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene> &scene)
-    : Panel("Scene Hierarchy"), scene_(scene) {
-}
-
-void SceneHierarchyPanel::set_scene_context(const Ref<Scene> &scene) {
-    scene_ = scene;
+SceneHierarchyPanel::SceneHierarchyPanel(EditorContext &context)
+    : Panel("Scene Hierarchy"), context_(context) {
+    set_default_size(ImVec2{320.f, 520.f});
 }
 
 Entity SceneHierarchyPanel::get_selected() const {
-    if (!scene_ || selected_ == entt::null ||
-        !scene_->registry().valid(selected_)) {
-        return {};
-    }
-    return Entity{selected_, scene_.get()};
+    return context_.selected_entity();
 }
 
 void SceneHierarchyPanel::set_selected(Entity entity) {
-    selected_ = entity ? entity.handle() : entt::null;
+    context_.select(entity);
 }
 
 void SceneHierarchyPanel::on_imgui() {
-    if (!scene_) {
+    if (!context_.scene) {
         ImGui::TextUnformatted("No scene");
         return;
     }
-
-    // The selection may have been destroyed from anywhere in the editor.
-    if (selected_ != entt::null && !scene_->registry().valid(selected_)) {
-        selected_ = entt::null;
-    }
+    context_.validate_selection();
 
     draw_toolbar();
     ImGui::Separator();
 
-    for (Entity root : scene_->get_root_entities()) {
+    for (Entity root : context_.scene->get_root_entities()) {
         draw_entity_node(root);
     }
 
     // Clicking the empty area clears the selection.
     if (ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered() &&
         ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-        selected_ = entt::null;
+        context_.clear_selection();
     }
 
     draw_empty_context_menu();
@@ -68,13 +54,15 @@ void SceneHierarchyPanel::on_imgui() {
 }
 
 void SceneHierarchyPanel::draw_toolbar() {
+    Scene &scene = *context_.scene;
+
     if (ImGui::Button("+ Entity")) {
-        set_selected(scene_->create_entity("Entity"));
+        set_selected(scene.create_entity("Entity"));
     }
     ImGui::SameLine();
     ImGui::TextDisabled("| %zu root(s), %zu entity(ies)",
-                        scene_->get_root_entities().size(),
-                        scene_->registry().view<TagComponent>().size());
+                        scene.get_root_entities().size(),
+                        scene.registry().view<TagComponent>().size());
 }
 
 void SceneHierarchyPanel::draw_entity_node(Entity entity) {
@@ -90,7 +78,7 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
         static_cast<entt::id_type>(entity.handle()))));
 
     ImGuiTreeNodeFlags flags = base_flags();
-    if (selected_ == entity.handle()) {
+    if (context_.selected == entity.handle()) {
         flags |= ImGuiTreeNodeFlags_Selected;
     }
     if (children.empty()) {
@@ -100,7 +88,7 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
     const bool open = ImGui::TreeNodeEx("##node", flags, "%s", name.c_str());
 
     if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
-        selected_ = entity.handle();
+        context_.selected = entity.handle();
     }
 
     // Drag: reparent onto another node.
@@ -113,10 +101,11 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
     if (ImGui::BeginDragDropTarget()) {
         if (const ImGuiPayload *payload =
                 ImGui::AcceptDragDropPayload(kDragPayload)) {
-            const auto dragged = *static_cast<const entt::entity *>(
-                payload->Data);
-            if (scene_->registry().valid(dragged)) {
-                scene_->set_parent(Entity{dragged, scene_.get()}, entity);
+            const auto dragged =
+                *static_cast<const entt::entity *>(payload->Data);
+            if (context_.scene->registry().valid(dragged)) {
+                context_.scene->set_parent(Entity{dragged, context_.scene.get()},
+                                           entity);
             }
         }
         ImGui::EndDragDropTarget();
@@ -126,10 +115,10 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
 
     if (open) {
         for (auto child_handle : children) {
-            if (!scene_->registry().valid(child_handle)) {
+            if (!context_.scene->registry().valid(child_handle)) {
                 continue; // stale entry, repaired by the next set_parent
             }
-            draw_entity_node(Entity{child_handle, scene_.get()});
+            draw_entity_node(Entity{child_handle, context_.scene.get()});
         }
         ImGui::TreePop();
     }
@@ -142,18 +131,19 @@ void SceneHierarchyPanel::draw_node_context_menu(Entity entity) {
         return;
     }
 
-    selected_ = entity.handle();
+    Scene &scene = *context_.scene;
+    context_.selected = entity.handle();
 
     if (ImGui::MenuItem("Create Child")) {
-        set_selected(scene_->create_child(entity, "Entity"));
+        set_selected(scene.create_child(entity, "Entity"));
     }
     if (ImGui::MenuItem("Add Sibling")) {
         Entity parent = entity.parent();
-        set_selected(parent ? scene_->create_child(parent, "Entity")
-                            : scene_->create_entity("Entity"));
+        set_selected(parent ? scene.create_child(parent, "Entity")
+                            : scene.create_entity("Entity"));
     }
     if (ImGui::MenuItem("Unparent", nullptr, false, entity.has_parent())) {
-        scene_->set_parent(entity, {});
+        scene.set_parent(entity, {});
     }
 
     ImGui::Separator();
@@ -174,7 +164,7 @@ void SceneHierarchyPanel::draw_empty_context_menu() {
     }
 
     if (ImGui::MenuItem("Create Empty")) {
-        set_selected(scene_->create_entity("Entity"));
+        set_selected(context_.scene->create_entity("Entity"));
     }
     ImGui::EndPopup();
 }
@@ -185,11 +175,12 @@ void SceneHierarchyPanel::flush_pending_delete() {
     }
 
     for (auto handle : pending_delete_) {
-        if (scene_->registry().valid(handle)) {
-            scene_->destroy_entity(Entity{handle, scene_.get()});
+        if (context_.scene->registry().valid(handle)) {
+            context_.scene->destroy_entity(
+                Entity{handle, context_.scene.get()});
         }
-        if (selected_ == handle) {
-            selected_ = entt::null;
+        if (context_.selected == handle) {
+            context_.clear_selection();
         }
     }
     pending_delete_.clear();

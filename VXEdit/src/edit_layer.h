@@ -1,6 +1,8 @@
 #pragma once
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
+#include "panel/editor_context.h"
+#include "panel/inspector_panel.h"
 #include "panel/panel.h"
 #include "panel/scene_hierarchy_panel.h"
 #include <imgui.h>
@@ -30,6 +32,10 @@ class EditLayer : public Layer {
     Ref<SubTexture2D> sub_texture_;
     Ref<FrameBuffer> frame_buffer_;
 
+    // Shared editor state (scene + selection). Panels reference it, so it must
+    // outlive them: declared before panels_ and never re-assigned afterwards.
+    EditorContext context_;
+
     Ref<Scene> scene_;
     Entity square_entity_;
     Entity camera_entity_;
@@ -42,7 +48,11 @@ class EditLayer : public Layer {
     bool visible_{false};
     ImVec2 viewport_size_{0.f, 0.f};
 
+    bool layout_initialized_{false};
+    bool reset_layout_requested_{false};
+
     PanelManager panels_;
     Ref<SceneHierarchyPanel> scene_hierarchy_panel_;
+    Ref<InspectorPanel> inspector_panel_;
 };
 } // namespace ivx

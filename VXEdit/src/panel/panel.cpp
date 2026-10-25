@@ -30,6 +30,10 @@ void Panel::on_render() {
 }
 
 bool Panel::begin_window() {
+    // FirstUseEver only applies while ImGui has no saved layout for the window.
+    if (default_size_.x > 0.f && default_size_.y > 0.f) {
+        ImGui::SetNextWindowSize(default_size_, ImGuiCond_FirstUseEver);
+    }
     return ImGui::Begin(name_.c_str(), &opened_);
 }
 
