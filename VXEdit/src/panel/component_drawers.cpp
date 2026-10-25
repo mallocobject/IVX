@@ -16,7 +16,7 @@ void drag_vec2(const char *label, glm::vec2 &value, float speed) {
     ImGui::DragFloat2(label, glm::value_ptr(value), speed);
 }
 
-void draw_tag(TagComponent &tag, EditorContext & /*context*/) {
+void draw_tag(Entity /*entity*/, TagComponent &tag, EditorContext & /*context*/) {
     char buffer[256];
     std::snprintf(buffer, sizeof(buffer), "%s", tag.tag.c_str());
     if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
@@ -24,7 +24,9 @@ void draw_tag(TagComponent &tag, EditorContext & /*context*/) {
     }
 }
 
-void draw_transform(TransformComponent &transform, EditorContext & /*context*/) {
+void draw_transform(Entity /*entity*/,
+                    TransformComponent &transform,
+                    EditorContext & /*context*/) {
     ImGui::DragFloat3("Position", glm::value_ptr(transform.translation), 0.5f);
     ImGui::DragFloat("Rotation", &transform.rotation, 0.5f);
     drag_vec2("Scale", transform.scale, 0.01f);
@@ -45,7 +47,9 @@ void draw_transform(TransformComponent &transform, EditorContext & /*context*/) 
     }
 }
 
-void draw_sprite(SpriteRendererComponent &sprite, EditorContext & /*context*/) {
+void draw_sprite(Entity /*entity*/,
+                 SpriteRendererComponent &sprite,
+                 EditorContext & /*context*/) {
     ImGui::DragFloat2("Size", glm::value_ptr(sprite.size), 0.5f);
     ImGui::DragFloat("Tiling", &sprite.tiling_factor, 0.05f, 0.01f, 64.f);
     ImGui::ColorEdit4("Color", glm::value_ptr(sprite.color));
@@ -66,7 +70,9 @@ void draw_sprite(SpriteRendererComponent &sprite, EditorContext & /*context*/) {
     }
 }
 
-void draw_camera(CameraComponent &camera, EditorContext & /*context*/) {
+void draw_camera(Entity /*entity*/,
+                 CameraComponent &camera,
+                 EditorContext & /*context*/) {
     SceneCamera &scene_camera = camera.camera;
 
     // Hazel-style: one projection switch, each type keeps its own parameters.
@@ -84,11 +90,11 @@ void draw_camera(CameraComponent &camera, EditorContext & /*context*/) {
             scene_camera.set_orthographic_size(size);
         }
         float near_clip = scene_camera.get_orthographic_near();
-        if (ImGui::DragFloat("Near", &near_clip, 0.01f, -10000.f, 10000.f)) {
+        if (ImGui::DragFloat("Near", &near_clip, 0.01f, 0.001f, 10000.f)) {
             scene_camera.set_orthographic_near(near_clip);
         }
         float far_clip = scene_camera.get_orthographic_far();
-        if (ImGui::DragFloat("Far", &far_clip, 0.01f, -10000.f, 10000.f)) {
+        if (ImGui::DragFloat("Far", &far_clip, 1.f, 0.01f, 100000.f)) {
             scene_camera.set_orthographic_far(far_clip);
         }
     } else {
@@ -114,7 +120,9 @@ void draw_camera(CameraComponent &camera, EditorContext & /*context*/) {
     ImGui::Checkbox("Primary", &camera.primary);
 }
 
-void draw_script(NativeScriptComponent &script, EditorContext & /*context*/) {
+void draw_script(Entity /*entity*/,
+                 NativeScriptComponent &script,
+                 EditorContext & /*context*/) {
     if (script.instantiate != nullptr) {
         ImGui::TextDisabled("Script bound");
     } else {

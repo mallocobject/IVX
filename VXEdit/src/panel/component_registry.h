@@ -27,9 +27,11 @@ class ComponentRegistry {
 
     // `add`/`custom_add` default to plain add_component<T>() / remove_component<T>().
     // Types without a default constructor (CameraComponent) pass a custom add.
+    // The draw callback also receives the entity, so a drawer can inspect the
+    // other components (e.g. Transform locking its Z for cameras).
     template <typename T>
     void add(std::string name,
-             std::function<void(T &, EditorContext &)> draw,
+             std::function<void(Entity, T &, EditorContext &)> draw,
              bool removable = true,
              std::function<void(Entity)> custom_add = {}) {
         ComponentEntry entry;
@@ -50,7 +52,7 @@ class ComponentRegistry {
         }
         if (draw) {
             entry.draw = [draw](Entity entity, EditorContext &context) {
-                draw(entity.get_component<T>(), context);
+                draw(entity, entity.get_component<T>(), context);
             };
         }
         entries_.push_back(std::move(entry));

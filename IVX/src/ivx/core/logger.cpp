@@ -135,4 +135,42 @@ void flush_logs() {
     // Covers both log objects; safe to call before they exist.
     bq::log::force_flush_all_logs();
 }
+
+namespace {
+// Set for the duration of drain_console(). The bqlog API has no user-data
+// parameter, so the sink is passed through this pointer instead. Only the main
+// thread ever calls drain_console(), and the callback never logs, as required by
+// bqlog's documentation.
+std::vector<ConsoleMessage> *g_console_sink = nullptr;
+
+void BQ_STDCALL console_buffer_callback(std::uint64_t log_id,
+                                       std::int32_t /*category_idx*/,
+                                       bq::log_level level,
+                                       const char *content,
+                                       std::int32_t length) {
+    if (g_console_sink == nullptr) {
+        return;
+    }
+
+    ConsoleMessage message;
+    message.log_id = log_id;
+    message.level = static_cast<LogLevel>(level); // same order as bq::log_level
+    if (content != nullptr && length > 0) {
+        message.text.assign(content, static_cast<std::size_t>(length));
+    }
+    g_console_sink->push_back(std::move(message));
+}
+} // namespace
+
+void enable_console_capture(bool enable) {
+    bq::log::set_console_buffer_enable(enable);
+}
+
+void drain_console(std::vector<ConsoleMessage> &out) {
+    g_console_sink = &out;
+    // The API pops a single entry per call and returns false once drained.
+    while (bq::log::fetch_and_remove_console_buffer(&console_buffer_callback)) {
+    }
+    g_console_sink = nullptr;
+}
 } // namespace ivx

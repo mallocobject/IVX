@@ -13,8 +13,9 @@ class Renderer2D {
   public:
     static void init();
     static void shutdown();
-    static void begin_scene(const glm::mat4 &projection,
-                            const glm::mat4 &camera_transform);
+    // `view` is a view matrix (inverse of the camera's world transform), the
+    // same convention as the OrthoGraphicCamera overload below.
+    static void begin_scene(const glm::mat4 &projection, const glm::mat4 &view);
     static void
     begin_scene(const Ref<OrthoGraphicCamera> &camera); // TODO: remove
     static void end_scene();

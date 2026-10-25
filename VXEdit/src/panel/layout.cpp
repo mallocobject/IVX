@@ -27,6 +27,8 @@ void setup_default_layout(ImGuiID dockspace_id) {
     ImGui::DockBuilderDockWindow("Scene Hierarchy", left);
     ImGui::DockBuilderDockWindow("Inspector", right);
     ImGui::DockBuilderDockWindow("Viewport", center);
+    // Bottom strip as tabs: the console gets the full width when selected.
+    ImGui::DockBuilderDockWindow("Console", bottom);
     ImGui::DockBuilderDockWindow("Camera", bottom);
 
     ImGui::DockBuilderFinish(dockspace_id);

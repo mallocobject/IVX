@@ -2,6 +2,7 @@
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
 #include "panel/camera_panel.h"
+#include "panel/console_panel.h"
 #include "panel/editor_context.h"
 #include "panel/inspector_panel.h"
 #include "panel/panel.h"
@@ -52,5 +53,6 @@ class EditLayer : public Layer {
     Ref<SceneHierarchyPanel> scene_hierarchy_panel_;
     Ref<InspectorPanel> inspector_panel_;
     Ref<CameraPanel> camera_panel_;
+    Ref<ConsolePanel> console_panel_;
 };
 } // namespace ivx

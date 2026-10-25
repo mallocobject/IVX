@@ -16,6 +16,9 @@ class VEXEdit : public Application {
 };
 
 Application *create_application() {
+    // Before the window/renderer exist: window creation, GL info and the first
+    // scene messages should already land in the Console panel.
+    enable_console_capture(true);
     return new VEXEdit;
 }
 

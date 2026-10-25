@@ -6,6 +6,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vector>
 
 namespace ivx {
 
@@ -32,6 +33,22 @@ void set_log_threshold(LogLevel lv);
 
 // Blocks until buffered entries reach the appenders (also runs at exit).
 void flush_logs();
+
+// ---- in-editor console capture ----
+// While enabled, bqlog stores console output in its own thread-safe buffer
+// instead of invoking callbacks from the logging threads. drain_console() then
+// pulls the entries on the main thread, which is what an ImGui console needs.
+// Off by default: an app that never drains would grow the buffer forever.
+void enable_console_capture(bool enable);
+
+struct ConsoleMessage {
+    std::uint64_t log_id{0}; // 0 = engine log object, see bqlog's registry
+    LogLevel level{LogLevel::INFO};
+    std::string text;
+};
+
+// Moves every buffered message into `out`. Main thread only.
+void drain_console(std::vector<ConsoleMessage> &out);
 
 namespace detail {
 // "IVX" (engine) and "APP" (client) are two bqlog log objects, which is what

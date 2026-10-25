@@ -88,10 +88,14 @@ void EditLayer::on_attach() {
     camera_entity_ = scene_->create_entity("Camera Entity");
     {
         auto &camera = camera_entity_.add_component<CameraComponent>();
-        camera.camera.set_orthographic(static_cast<float>(HEIGHT), -1.f, 1.f);
+        camera.camera.set_orthographic_size(static_cast<float>(HEIGHT));
         camera.camera.set_projection_type(
             SceneCamera::ProjectionType::Orthographic);
         camera.primary = true;
+        // Initial pose: one unit in front of the sprite plane (z = 0), looking
+        // down -Z. near/far are distances, so 0.01 .. 1000 covers it.
+        camera_entity_.get_component<TransformComponent>().translation =
+            glm::vec3{0.f, 0.f, 1.f};
     }
     camera_entity_.add_component<NativeScriptComponent>().bind<Controller>();
 
@@ -99,13 +103,13 @@ void EditLayer::on_attach() {
     {
         auto &camera = second_camera_entity_.add_component<CameraComponent>();
         // Half the height, fixed aspect: acts as a "close-up" camera.
-        camera.camera.set_orthographic(static_cast<float>(HEIGHT) / 2.f,
-                                       -1.f,
-                                       1.f);
+        camera.camera.set_orthographic_size(static_cast<float>(HEIGHT) / 2.f);
         camera.camera.set_projection_type(
             SceneCamera::ProjectionType::Orthographic);
         camera.primary = false;
         camera.fixed_aspect_ratio = true;
+        second_camera_entity_.get_component<TransformComponent>().translation =
+            glm::vec3{0.f, 0.f, 1.f};
     }
 
     setup_panels();
@@ -117,6 +121,11 @@ void EditLayer::on_detach() {
 
 void EditLayer::on_update(float dt) {
     IVX_PROFILE_FUNCTION();
+
+    // Keeps collecting log output even when the Console panel is closed.
+    if (console_panel_) {
+        console_panel_->pump();
+    }
 
     if (visible_) {
         const auto &spec = frame_buffer_->get_specification();
@@ -186,6 +195,7 @@ void EditLayer::setup_panels() {
 
     inspector_panel_ = panels_.add<InspectorPanel>(context_);
     camera_panel_ = panels_.add<CameraPanel>(context_);
+    console_panel_ = panels_.add<ConsolePanel>();
 }
 
 void EditLayer::on_render() {

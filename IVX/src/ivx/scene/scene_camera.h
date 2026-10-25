@@ -9,9 +9,11 @@ namespace ivx {
 // an explicit switch and each type keeps its own parameters, so flipping the
 // type never destroys the other side's values.
 //
-// The engine renders with reverse-Z and glClipControl(GL_ZERO_TO_ONE), therefore
-// the orthographic near/far are view-space z values (default -1 .. 1) instead of
-// positive distances.
+// Near/far are *distances along the view direction*, never world coordinates:
+// the camera looks down -Z of its own view space, so the near plane sits at
+// z_view = -near. That is the same convention as glm::perspective()/glm::ortho()
+// and it is why near/far are always positive even though the visible geometry
+// has negative view-space z.
 class SceneCamera {
   public:
     enum class ProjectionType { Perspective = 0, Orthographic = 1 };
@@ -25,6 +27,7 @@ class SceneCamera {
     }
 
     // Convenience setters that also select the matching projection type.
+    // near_clip/far_clip are positive distances.
     void set_orthographic(float size, float near_clip, float far_clip);
     void set_perspective(float vertical_fov, float near_clip, float far_clip);
 
@@ -39,11 +42,11 @@ class SceneCamera {
         return orthographic_size_;
     }
     void set_orthographic_size(float size);
-    float get_orthographic_near() const {
+    float get_orthographic_near() const { // positive distance
         return orthographic_near_;
     }
     void set_orthographic_near(float near_clip);
-    float get_orthographic_far() const {
+    float get_orthographic_far() const { // positive distance
         return orthographic_far_;
     }
     void set_orthographic_far(float far_clip);
@@ -53,11 +56,11 @@ class SceneCamera {
         return perspective_vertical_fov_;
     }
     void set_perspective_vertical_fov(float vertical_fov);
-    float get_perspective_near() const {
+    float get_perspective_near() const { // positive distance
         return perspective_near_;
     }
     void set_perspective_near(float near_clip);
-    float get_perspective_far() const {
+    float get_perspective_far() const { // positive distance
         return perspective_far_;
     }
     void set_perspective_far(float far_clip);
@@ -72,8 +75,8 @@ class SceneCamera {
     ProjectionType projection_type_{ProjectionType::Orthographic};
 
     float orthographic_size_{720.f};
-    float orthographic_near_{-1.f};
-    float orthographic_far_{1.f};
+    float orthographic_near_{0.01f};
+    float orthographic_far_{1000.f};
 
     float perspective_vertical_fov_{0.785398f}; // 45 degrees
     float perspective_near_{0.01f};
