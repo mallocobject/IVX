@@ -174,38 +174,80 @@ void Scene::on_update(float dt) {
     }
 }
 
+void Scene::update_world_transforms() {
+    for (Entity root : get_root_entities()) {
+        update_world_recursive(root, glm::mat4{1.f}, 0);
+    }
+}
+
+void Scene::update_world_recursive(Entity entity,
+                                   const glm::mat4 &parent_world,
+                                   int depth) {
+    // Cycles are rejected by set_parent(), the depth cap only protects against
+    // a corrupted RelationshipComponent.
+    constexpr int kMaxDepth = 128;
+    if (!entity || depth > kMaxDepth) {
+        return;
+    }
+
+    glm::mat4 world = parent_world;
+    if (auto *transform = entity.try_get_component<TransformComponent>()) {
+        transform->world = parent_world * transform->load_matrix();
+        world = transform->world;
+    }
+
+    const auto *relationship = entity.try_get_component<RelationshipComponent>();
+    if (relationship == nullptr) {
+        return;
+    }
+    for (auto child : relationship->children) {
+        if (registry_.valid(child)) {
+            update_world_recursive(Entity{child, this}, world, depth + 1);
+        }
+    }
+}
+
 void Scene::on_render() {
+    update_world_transforms();
+
     glm::mat4 camera_projection{1.f};
-    glm::mat4 camera_transform{1.f};
+    glm::mat4 camera_view{1.f};
     bool has_main_camera = false;
 
     for (auto [handle, camera, transform] :
          registry_.view<CameraComponent, TransformComponent>().each()) {
         if (camera.primary) {
             camera_projection = camera.camera.get_proj_matrix();
-            camera_transform = transform.load_matrix();
+            // The camera entity stores its pose as a world transform, the view
+            // matrix is its inverse.
+            camera_view = glm::inverse(transform.world);
             has_main_camera = true;
             break;
         }
     }
 
     if (has_main_camera) {
-        Renderer2D::begin_scene(camera_projection, camera_transform);
+        Renderer2D::begin_scene(camera_projection, camera_view);
         for (auto [handle, transform, sprite] :
              registry_.view<TransformComponent, SpriteRendererComponent>()
                  .each()) {
+            // The quad is unit sized, the sprite's own size is applied here so
+            // that a parent's TransformComponent::scale does not scale it.
+            const glm::mat4 model =
+                transform.world *
+                glm::scale(glm::mat4{1.f}, glm::vec3{sprite.size, 1.f});
             if (sprite.sub_texture) {
-                Renderer2D::draw_quad(transform.load_matrix(),
+                Renderer2D::draw_quad(model,
                                       sprite.sub_texture,
                                       sprite.tiling_factor,
                                       sprite.color);
             } else if (sprite.texture) {
-                Renderer2D::draw_quad(transform.load_matrix(),
+                Renderer2D::draw_quad(model,
                                       sprite.texture,
                                       sprite.tiling_factor,
                                       sprite.color);
             } else {
-                Renderer2D::draw_quad(transform.load_matrix(), sprite.color);
+                Renderer2D::draw_quad(model, sprite.color);
             }
         }
         Renderer2D::end_scene();

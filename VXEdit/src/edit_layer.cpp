@@ -60,14 +60,19 @@ void EditLayer::on_attach() {
     //            glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
     // };
 
+    // Scale stays 1: the quad size lives in SpriteRendererComponent so that
+    // children are not scaled by their parent.
     square_entity_.get_component<TransformComponent>().translation =
         glm::vec3{0.f};
     square_entity_.get_component<TransformComponent>().rotation = 0.f;
     square_entity_.get_component<TransformComponent>().scale =
-        glm::vec2{400.f, 200.f};
+        glm::vec2{1.f, 1.f};
 
     square_entity_.add_component<SpriteRendererComponent>(
-        sub_texture_, 1.f, glm::vec4{1.f, 1.f, 1.f, 1.f});
+        sub_texture_,
+        1.f,
+        glm::vec4{1.f, 1.f, 1.f, 1.f},
+        glm::vec2{400.f, 200.f});
 
     camera_entity_ = scene_->create_entity("Camera Entity");
 

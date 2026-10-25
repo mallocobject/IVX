@@ -34,7 +34,12 @@ struct TransformComponent {
     float rotation{0.f};
     glm::vec2 scale{1.f};
 
-    // lazy load
+    // Derived state: refreshed once per frame by
+    // Scene::update_world_transforms() as world = parent_world * load_matrix().
+    // Never write it by hand, it is overwritten before rendering.
+    glm::mat4 world{1.f};
+
+    // Local matrix (T * R * S) built from the fields above.
     glm::mat4 load_matrix() const {
         return glm::translate(glm::mat4{1.f}, translation) *
                glm::rotate(glm::mat4{1.f},
@@ -55,18 +60,27 @@ struct RelationshipComponent {
 struct SpriteRendererComponent {
     Ref<Texture2D> texture;
     Ref<SubTexture2D> sub_texture;
+    // Size of the quad in world units. Kept here (and not in
+    // TransformComponent::scale) so that scaling a parent does not multiply the
+    // sprite size of its children.
+    glm::vec2 size{1.f};
     float tiling_factor{1.f};
     glm::vec4 color{1.f};
+
     SpriteRendererComponent() = default;
     SpriteRendererComponent(const Ref<Texture2D> &texture,
                             float tiling_factor = 1.f,
-                            const glm::vec4 &color = glm::vec4{1.f})
-        : texture(texture), tiling_factor(tiling_factor), color(color) {
+                            const glm::vec4 &color = glm::vec4{1.f},
+                            const glm::vec2 &size = glm::vec2{1.f})
+        : texture(texture), size(size), tiling_factor(tiling_factor),
+          color(color) {
     }
     SpriteRendererComponent(const Ref<SubTexture2D> &sub_texture,
                             float tiling_factor = 1.f,
-                            const glm::vec4 &color = glm::vec4{1.f})
-        : sub_texture(sub_texture), tiling_factor(tiling_factor), color(color) {
+                            const glm::vec4 &color = glm::vec4{1.f},
+                            const glm::vec2 &size = glm::vec2{1.f})
+        : sub_texture(sub_texture), size(size),
+          tiling_factor(tiling_factor), color(color) {
     }
 };
 

@@ -36,6 +36,11 @@ class Scene : public RefCounted {
     // Renderer2D::begin_scene()/end_scene().
     void on_render();
 
+    // Refreshes TransformComponent::world for the whole hierarchy, parents
+    // before children (world = parent_world * local). on_render() calls this,
+    // call it yourself if you need world transforms outside of rendering.
+    void update_world_transforms();
+
     void on_viewport_resize(uint32_t width, uint32_t height);
 
     entt::registry &registry() {
@@ -51,6 +56,10 @@ class Scene : public RefCounted {
     }
 
   private:
+    void update_world_recursive(Entity entity,
+                                const glm::mat4 &parent_world,
+                                int depth);
+
     entt::registry registry_;
 };
 } // namespace ivx
