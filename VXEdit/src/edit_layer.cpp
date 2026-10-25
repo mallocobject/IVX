@@ -49,32 +49,35 @@ void EditLayer::on_attach() {
     scene_ = make_ref<Scene>();
     square_entity_ = scene_->create_entity("Colorful Square");
 
-    auto transform = [](const glm::vec3 &translation = glm::vec3{0.f},
-                        float rotation = 0.f,
-                        const glm::vec2 &scale = glm::vec2{1.f}) -> glm::mat4 {
-        return glm::translate(glm::mat4{1.f}, translation) *
-               glm::rotate(glm::mat4{1.f},
-                           glm::radians(rotation),
-                           glm::vec3{0.f, 0.f, 1.f}) *
-               glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
-    };
+    // auto transform = [](const glm::vec3 &translation = glm::vec3{0.f},
+    //                     float rotation = 0.f,
+    //                     const glm::vec2 &scale = glm::vec2{1.f}) -> glm::mat4
+    //                     {
+    //     return glm::translate(glm::mat4{1.f}, translation) *
+    //            glm::rotate(glm::mat4{1.f},
+    //                        glm::radians(rotation),
+    //                        glm::vec3{0.f, 0.f, 1.f}) *
+    //            glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
+    // };
 
-    square_entity_.get_component<TransformComponent>().transform =
-        transform(glm::vec3{0.f}, 0.f, glm::vec2{400.f, 200.f});
+    square_entity_.get_component<TransformComponent>().translation =
+        glm::vec3{0.f};
+    square_entity_.get_component<TransformComponent>().rotation = 0.f;
+    square_entity_.get_component<TransformComponent>().scale =
+        glm::vec2{400.f, 200.f};
 
     square_entity_.add_component<SpriteRendererComponent>(
         sub_texture_, 1.f, glm::vec4{1.f, 1.f, 1.f, 1.f});
 
     camera_entity_ = scene_->create_entity("Camera Entity");
-    float w = WIDTH / 2.f;
-    float h = HEIGHT / 2.f;
+
     camera_entity_.add_component<CameraComponent>(
-        -w, w, -h, h, -1.f, 1.f, 1.f, true, false);
+        static_cast<float>(HEIGHT), -1.f, 1.f, 1.f, true, false);
     camera_entity_.add_component<NativeScriptComponent>().bind<Controller>();
 
     second_camera_entity_ = scene_->create_entity("CameraB Entity");
     second_camera_entity_.add_component<CameraComponent>(
-        -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f, 1.f, false, true);
+        static_cast<float>(HEIGHT) / 2.f, -1.f, 1.f, 1.f, false, true);
 
     scene_hierarchy_panel_.set_scene_context(scene_);
 }
@@ -92,8 +95,7 @@ void EditLayer::on_update(float dt) {
             uint32_t w = static_cast<uint32_t>(viewport_size_.x);
             uint32_t h = static_cast<uint32_t>(viewport_size_.y);
 
-            scene_->on_viewport_resize(
-                -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f);
+            scene_->on_viewport_resize(w, h);
             frame_buffer_->resize(w, h);
         }
     }
@@ -188,7 +190,7 @@ void EditLayer::draw_settings_panel() {
         ImGui::DragFloat2(
             "Camera Translation",
             glm::value_ptr(camera_entity_.get_component<TransformComponent>()
-                               .transform[3]));
+                               .translation));
 
         camera_entity_.get_component<CameraComponent>().camera.set_zoom_level(
             zoom_level);
@@ -198,7 +200,7 @@ void EditLayer::draw_settings_panel() {
             "Camera Translation",
             glm::value_ptr(
                 second_camera_entity_.get_component<TransformComponent>()
-                    .transform[3]));
+                    .translation));
 
         second_camera_entity_.get_component<CameraComponent>()
             .camera.set_zoom_level(zoom_level);

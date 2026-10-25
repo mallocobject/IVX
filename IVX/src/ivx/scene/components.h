@@ -1,6 +1,8 @@
 #pragma once
 
 #include "glm/ext/matrix_float4x4.hpp"
+#include "glm/ext/vector_float2.hpp"
+#include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/ref.hpp"
 #include "ivx/renderer/camera.h"
@@ -27,26 +29,17 @@ struct TagComponent {
 };
 
 struct TransformComponent {
-    glm::mat4 transform{1.f};
+    glm::vec3 translation{0.f};
+    float rotation{0.f};
+    glm::vec2 scale{1.f};
 
-    operator glm::mat4 &() {
-        return transform;
-    }
-
-    operator const glm::mat4 &() const {
-        return transform;
-    }
-};
-
-struct ProjectionComponent {
-    glm::mat4 projection{1.f};
-
-    operator glm::mat4 &() {
-        return projection;
-    }
-
-    operator const glm::mat4 &() const {
-        return projection;
+    // lazy load
+    glm::mat4 load_matrix() const {
+        return glm::translate(glm::mat4{1.f}, translation) *
+               glm::rotate(glm::mat4{1.f},
+                           glm::radians(rotation),
+                           glm::vec3{0.f, 0.f, 1.f}) *
+               glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
     }
 };
 
@@ -74,17 +67,26 @@ struct CameraComponent {
     SceneCamera camera;
     bool primary{true};
     bool fixed_aspect_ratio{false};
+    bool perspective{false};
+    // false: orthogonal
+    // true: perspective
 
-    CameraComponent(float left,
-                    float right,
-                    float bottom,
-                    float top,
+    CameraComponent(float size,
                     float n,
                     float f,
                     float zoom_level,
                     bool primary = true,
                     bool fix_aspect_ratio = false)
-        : camera(left, right, bottom, top, n, f, zoom_level), primary(primary),
+        : camera(size, n, f, zoom_level), primary(primary),
+          fixed_aspect_ratio(fix_aspect_ratio) {
+    }
+
+    CameraComponent(float fov,
+                    float n,
+                    float f,
+                    bool primary = true,
+                    bool fix_aspect_ratio = false)
+        : camera(fov, n, f), primary(primary),
           fixed_aspect_ratio(fix_aspect_ratio) {
     }
 };

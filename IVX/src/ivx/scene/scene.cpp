@@ -8,6 +8,7 @@
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scriptable_entity.h"
+#include <cstdint>
 
 namespace ivx {
 Scene::~Scene() {
@@ -56,7 +57,7 @@ void Scene::on_render() {
          registry_.view<CameraComponent, TransformComponent>().each()) {
         if (camera.primary) {
             camera_projection = camera.camera.get_proj_matrix();
-            camera_transform = transform;
+            camera_transform = transform.load_matrix();
             has_main_camera = true;
             break;
         }
@@ -68,28 +69,27 @@ void Scene::on_render() {
              registry_.view<TransformComponent, SpriteRendererComponent>()
                  .each()) {
             if (sprite.sub_texture) {
-                Renderer2D::draw_quad(transform,
+                Renderer2D::draw_quad(transform.load_matrix(),
                                       sprite.sub_texture,
                                       sprite.tiling_factor,
                                       sprite.color);
             } else if (sprite.texture) {
-                Renderer2D::draw_quad(transform,
+                Renderer2D::draw_quad(transform.load_matrix(),
                                       sprite.texture,
                                       sprite.tiling_factor,
                                       sprite.color);
             } else {
-                Renderer2D::draw_quad(transform, sprite.color);
+                Renderer2D::draw_quad(transform.load_matrix(), sprite.color);
             }
         }
         Renderer2D::end_scene();
     }
 }
 
-void Scene::on_viewport_resize(
-    float left, float right, float bottom, float top, float n, float f) {
+void Scene::on_viewport_resize(uint32_t width, uint32_t height) {
     for (auto [handle, camera] : registry_.view<CameraComponent>().each()) {
         if (!camera.fixed_aspect_ratio) {
-            camera.camera.set_view_field(left, right, bottom, top, n, f);
+            camera.camera.set_viewport_size(width, height);
         }
     }
 }

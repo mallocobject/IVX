@@ -1,32 +1,38 @@
 #pragma once
 
+#include <cstdint>
 #include <glm/glm.hpp>
 
 namespace ivx {
 class SceneCamera {
   public:
-    SceneCamera(float left,
-                float right,
-                float bottom,
-                float top,
-                float n,
-                float f,
-                float zoom_level);
+    // orthogonal
+    SceneCamera(float size, float n, float f, float zoom_level);
 
-    void set_view_field(
-        float left, float right, float bottom, float top, float n, float f);
+    // perspective
+    SceneCamera(float fov, float n, float f);
+
+    void set_viewport_size(uint32_t width, uint32_t height);
 
     void set_zoom_level(float zoom_level);
+    void set_fov(float fov);
 
     glm::mat4 get_proj_matrix() const;
 
+    enum class Mode { Orthogonal, Perspective } mode;
+
   private:
-    float left_;
-    float right_;
-    float bottom_;
-    float top_;
+    union {
+        struct {
+            float size;
+            float zoom;
+        } size_zoom_;
+        float fov_;
+    };
+
     float n_;
     float f_;
-    float zoom_level_;
+
+    float aspect_ratio_{1.f};
 };
 } // namespace ivx

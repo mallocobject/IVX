@@ -42,9 +42,9 @@ void Controller::on_update(float dt) {
         rotation -= delta * dt;
     }
 
-    auto &tf = get_component<TransformComponent>().transform;
-    tf = glm::translate(tf, translation);
-    tf = glm::rotate(tf, glm::radians(rotation), glm::vec3{0, 0, 1});
+    auto &tf = get_component<TransformComponent>();
+    tf.translation += translation;
+    tf.rotation += rotation;
 }
 
 void Controller::on_destroy() {

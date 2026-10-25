@@ -24,8 +24,7 @@ class Scene : public RefCounted {
     // Renderer2D::begin_scene()/end_scene().
     void on_render();
 
-    void on_viewport_resize(
-        float left, float right, float bottom, float top, float n, float f);
+    void on_viewport_resize(uint32_t width, uint32_t height);
 
     entt::registry &registry() {
         return registry_;
