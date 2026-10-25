@@ -9,6 +9,8 @@
 #include "ivx/event/event.h"
 #include "ivx/renderer/render_command.h"
 #include "ivx/scene/scene.h"
+#include "ivx/scene/scriptable_entity.h"
+#include "scripts/rotator.h"
 #include <algorithm>
 #include <cfloat>
 #include <cstdint>
@@ -20,8 +22,6 @@ static constexpr uint32_t WIDTH = 1280;
 static constexpr uint32_t HEIGHT = 720;
 
 EditLayer::EditLayer() : Layer("EditLayer") {
-    camera_controller_ =
-        make_ref<OrthoGraphicCameraController>(WIDTH, HEIGHT, 1.f, true);
 }
 
 void EditLayer::on_attach() {
@@ -64,6 +64,7 @@ void EditLayer::on_attach() {
     float h = HEIGHT / 2.f;
     camera_entity_.add_component<CameraComponent>(
         -w, w, -h, h, -1.f, 1.f, 1.f, true, false);
+    camera_entity_.add_component<NativeScriptComponent>().bind<Rotator>();
 
     second_camera_entity_ = scene_->create_entity("Clip-Space Entity");
     second_camera_entity_.add_component<CameraComponent>(
@@ -90,7 +91,7 @@ void EditLayer::on_update(float delta_time) {
         if (spec.width != viewport_size_.x || spec.height != viewport_size_.y) {
             uint32_t w = static_cast<uint32_t>(viewport_size_.x);
             uint32_t h = static_cast<uint32_t>(viewport_size_.y);
-            camera_controller_->resize(w, h);
+
             scene_->on_viewport_resize(
                 -(w / 2.f), w / 2.f, -(h / 2.f), h / 2.f, -1.f, 1.f);
             frame_buffer_->resize(w, h);
@@ -99,7 +100,6 @@ void EditLayer::on_update(float delta_time) {
 
     // update
     if (viewport_focused_) {
-        camera_controller_->on_update(delta_time);
     }
 
     scene_->on_update(delta_time);
@@ -132,8 +132,6 @@ void EditLayer::on_event(Event &event) {
                              EventCategory::kEventCategoryKeyboard)) {
         // IVX_VERBOSE("{}", event.to_string());
     }
-
-    camera_controller_->on_event(event);
 }
 
 void EditLayer::on_render() {

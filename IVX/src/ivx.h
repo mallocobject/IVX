@@ -14,7 +14,6 @@
 #include "ivx/debug/instrumentor.h"
 
 #include "ivx/renderer/buffer.h"
-#include "ivx/renderer/camera_controller.h"
 #include "ivx/renderer/frame_buffer.h"
 #include "ivx/renderer/render_command.h"
 #include "ivx/renderer/renderer.h"

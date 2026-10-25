@@ -18,7 +18,6 @@ class EditLayer : public Layer {
   private:
     void draw_settings_panel();
 
-    Ref<OrthoGraphicCameraController> camera_controller_;
     glm::vec4 color_{1.f};
     Ref<Texture2D> texture_;
     Ref<SubTexture2D> sub_texture_;
