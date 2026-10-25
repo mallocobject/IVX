@@ -5,6 +5,7 @@
 #include "ivx/core/window.h"
 #include "scripts/script_host.h"
 #include "scripts/script_registry.h"
+#include "ui/theme.h"
 
 #include <cstdio>
 #include <filesystem>
@@ -124,7 +125,7 @@ void ScriptPanel::on_imgui() {
     // A slightly lighter background than the code editor's own: the empty pane has to
     // read as "nothing open yet", not as a broken view.
     ImGui::PushStyleColor(ImGuiCol_ChildBg,
-                          ImVec4{0.121f, 0.121f, 0.133f, 1.f});
+                          ImVec4{0.169f, 0.169f, 0.176f, 1.f});
     if (ImGui::BeginChild("##editor", ImVec2{0.f, 0.f}, ImGuiChildFlags_None)) {
         draw_editor_pane();
     }
@@ -427,7 +428,11 @@ void ScriptPanel::draw_editor_pane() {
 
     ImGui::Separator();
 
+    // Code is column-aligned by nature: use the monospace face even though the rest
+    // of the editor is proportional.
+    ImGui::PushFont(ui::load_fonts().mono, 0.f);
     editor_.Render("##code", ImVec2{-FLT_MIN, -FLT_MIN}, false);
+    ImGui::PopFont();
 
     // The editor is a custom widget, not an ImGui InputText: ImGui only asks the
     // SDL backend to start text input for its own InputText widgets, so without

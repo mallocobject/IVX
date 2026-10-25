@@ -13,6 +13,7 @@
 #include "panel/component_registry.h"
 #include "scripts/script_registry.h"
 #include "panel/layout.h"
+#include "ui/theme.h"
 #include <algorithm>
 #include <chrono>
 #include <imgui.h>
@@ -56,13 +57,10 @@ void EditLayer::on_attach() {
     // default one over it (Reset Layout in the Layout menu still does).
     layout_initialized_ = std::filesystem::exists(LAYOUT);
 
-    ImGuiIO &io = ImGui::GetIO();
-    ImFontConfig cfg;
-    // cfg.PixelSnapH = true;
-    ImFont *font =
-        io.Fonts->AddFontFromFileTTF(FONTS "/consola.ttf", 16.0f, &cfg);
-    IVX_CORE_ASSERT(font, "Failed to load Consolas");
-    io.FontDefault = font;
+    // Photoshop-style dark theme plus the two faces: proportional for the chrome,
+    // monospace for code and logs. Both live in ui/theme.cpp.
+    ui::apply_theme();
+    ui::load_fonts();
 
     // static uint32_t WIDTH = Application::get().get_window().get_width();
     // static uint32_t HEIGHT = Application::get().get_window().get_height();
@@ -356,7 +354,7 @@ void EditLayer::draw_status_bar() {
     ImGuiViewport *viewport = ImGui::GetMainViewport();
     const float height = ImGui::GetFrameHeight() + 2.f;
 
-    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{0.105f, 0.105f, 0.105f, 1.f});
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{0.149f, 0.149f, 0.149f, 1.f});
     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.62f, 0.62f, 0.62f, 1.f});
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{10.f, 3.f});
 

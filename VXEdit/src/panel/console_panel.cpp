@@ -3,6 +3,8 @@
 #include <cctype>
 #include <cstdio>
 #include <imgui.h>
+
+#include "ui/theme.h"
 #include <string>
 #include <vector>
 
@@ -155,11 +157,16 @@ void ConsolePanel::draw_toolbar() {
 }
 
 void ConsolePanel::draw_entries() {
+    // Log lines are columns of similar-looking glyphs: monospace keeps timestamps and
+    // banners aligned.
+    ImGui::PushFont(ui::load_fonts().mono, 0.f);
+
     if (!ImGui::BeginChild("##console_scroll",
                            ImVec2{0.f, 0.f},
                            ImGuiChildFlags_None,
                            ImGuiWindowFlags_HorizontalScrollbar)) {
         ImGui::EndChild();
+        ImGui::PopFont();
         return;
     }
 
@@ -179,6 +186,7 @@ void ConsolePanel::draw_entries() {
     scroll_to_bottom_ = false;
 
     ImGui::EndChild();
+    ImGui::PopFont();
 }
 
 bool ConsolePanel::visible(LogLevel level) const {
