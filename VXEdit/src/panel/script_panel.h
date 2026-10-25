@@ -24,6 +24,7 @@ class ScriptPanel : public Panel {
     void on_imgui() override;
 
   private:
+    void draw_status();
     void draw_library_tab();
     void draw_editor_tab();
     void draw_toolbar();
@@ -34,7 +35,8 @@ class ScriptPanel : public Panel {
     void open_script(const std::string &name);
     bool is_dirty() const;
     bool save_script();
-    bool build_and_reload();
+    // Hands the build to the host's worker thread; the panel keeps drawing.
+    void start_build();
     // Marks the lines the compiler complained about in the open file.
     void apply_error_markers();
 
@@ -45,12 +47,12 @@ class ScriptPanel : public Panel {
     // Set when a script is opened: the editor tab must become the active one,
     // otherwise the user keeps looking at the Library tab.
     bool focus_editor_tab_{false};
+    // Detects the building -> idle edge so the error markers refresh exactly once.
+    bool was_building_{false};
 
     char new_script_name_[64]{};
     std::string status_;
     bool status_is_error_{false};
-    bool last_build_ok_{false};
-    std::string build_log_;
     bool show_build_log_{false};
     std::string open_script_;
     // Content as of the last load/save, used for the dirty marker: the widget's

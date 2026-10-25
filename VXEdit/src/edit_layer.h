@@ -31,9 +31,11 @@ class EditLayer : public Layer {
 
     void setup_panels();
 
-    // Destroys every script instance, rebuilds VXScripts.dll and re-binds the
-    // scripts by name so a code change goes live without restarting.
+    // Starts a non-blocking rebuild of VXScripts.dll; poll_scripts() finishes it.
     void reload_scripts();
+    // Called every frame: joins a finished build, loads the new module and
+    // re-binds the scripts by name so a code change goes live without restarting.
+    void poll_scripts();
 
     Ref<Texture2D> texture_;
     Ref<SubTexture2D> sub_texture_;

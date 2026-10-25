@@ -95,15 +95,14 @@ ScriptPanel::ScriptPanel(ScriptHost &host) : Panel("Scripts"), host_(host) {
 }
 
 void ScriptPanel::on_imgui() {
-    if (!status_.empty()) {
-        if (status_is_error_) {
-            ImGui::TextColored(ImVec4{1.f, 0.45f, 0.45f, 1.f}, "%s",
-                               status_.c_str());
-        } else {
-            ImGui::TextColored(ImVec4{0.55f, 0.85f, 0.55f, 1.f}, "%s",
-                               status_.c_str());
-        }
+    // The panel keeps drawing while the worker thread compiles, so the finished
+    // build is picked up here: refresh the error markers exactly on that edge.
+    if (was_building_ && !host_.is_building()) {
+        apply_error_markers();
     }
+    was_building_ = host_.is_building();
+
+    draw_status();
 
     if (!ImGui::BeginTabBar("##script_tabs")) {
         return;
@@ -130,6 +129,65 @@ void ScriptPanel::on_imgui() {
     }
 
     ImGui::EndTabBar();
+
+    // Panel-level shortcuts, so they work from either tab. Ctrl+S writes the file
+    // only, Ctrl+B saves and rebuilds the module; keeping them apart matters
+    // because the build is the slow half.
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+        ImGui::GetIO().KeyCtrl) {
+        if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+            save_script();
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_B, false) && !host_.is_building() &&
+            !open_script_.empty()) {
+            if (save_script()) {
+                start_build();
+            }
+        }
+    }
+}
+
+void ScriptPanel::draw_status() {
+    if (host_.is_building()) {
+        // Spinner: the build is asynchronous, so the panel stays responsive.
+        static const char *kFrames[] = {"|", "/", "-", "\\"};
+        const int frame = static_cast<int>(ImGui::GetTime() * 10.0) % 4;
+        ImGui::TextColored(ImVec4{0.95f, 0.8f, 0.35f, 1.f},
+                           "%s Building VXScripts.dll... %.1f s",
+                           kFrames[frame],
+                           host_.build_seconds());
+        ImGui::SameLine();
+        ImGui::TextDisabled("%s",
+                            host_.last_build_reconfigured()
+                                ? "(reconfigured: file set changed)"
+                                : "(incremental)");
+        return;
+    }
+
+    if (!status_.empty()) {
+        if (status_is_error_) {
+            ImGui::TextColored(ImVec4{1.f, 0.45f, 0.45f, 1.f}, "%s",
+                               status_.c_str());
+        } else {
+            ImGui::TextColored(ImVec4{0.55f, 0.85f, 0.55f, 1.f}, "%s",
+                               status_.c_str());
+        }
+        return;
+    }
+
+    if (!host_.build_log().empty()) {
+        char text[128] = {};
+        std::snprintf(text,
+                      sizeof(text),
+                      "Last build %s in %.2f s",
+                      host_.last_build_ok() ? "succeeded" : "FAILED",
+                      host_.build_seconds());
+        if (host_.last_build_ok()) {
+            ImGui::TextColored(ImVec4{0.55f, 0.85f, 0.55f, 1.f}, "%s", text);
+        } else {
+            ImGui::TextColored(ImVec4{1.f, 0.45f, 0.45f, 1.f}, "%s", text);
+        }
+    }
 }
 
 void ScriptPanel::draw_library_tab() {
@@ -143,12 +201,17 @@ void ScriptPanel::draw_library_tab() {
 }
 
 void ScriptPanel::draw_toolbar() {
+    const bool building = host_.is_building();
+
+    ImGui::BeginDisabled(building);
     if (ImGui::Button("Build & Reload")) {
-        build_and_reload();
+        host_.begin_build();
+        status_.clear();
     }
+    ImGui::EndDisabled();
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Rebuilds VXScripts.dll and re-binds every script.\n"
-                          "Use it after editing sources outside the editor.");
+        ImGui::SetTooltip("Compiles only VXScripts.dll on a worker thread and\n"
+                          "hot reloads it. The editor stays responsive.");
     }
 
     ImGui::SameLine();
@@ -169,6 +232,7 @@ void ScriptPanel::draw_new_script_form() {
     ImGui::InputTextWithHint("##new_script", "MyScript", new_script_name_,
                              sizeof(new_script_name_));
     ImGui::SameLine();
+    ImGui::BeginDisabled(host_.is_building());
     if (ImGui::Button("Create + Build")) {
         std::filesystem::path header_path;
         std::filesystem::path source_path;
@@ -179,14 +243,13 @@ void ScriptPanel::draw_new_script_form() {
             status_ = error;
             status_is_error_ = true;
         } else {
-            build_and_reload();
-            status_ = "Created " + source_path.filename().string() +
-                      (last_build_ok_ ? " - build OK" : " - build FAILED");
-            status_is_error_ = !last_build_ok_;
+            host_.begin_build();
+            status_.clear();
             new_script_name_[0] = '\0';
             open_script(name);
         }
     }
+    ImGui::EndDisabled();
 }
 
 void ScriptPanel::draw_script_list() {
@@ -204,25 +267,40 @@ void ScriptPanel::draw_script_list() {
         return;
     }
 
-    for (const ScriptEntry &entry : entries) {
-        ImGui::PushID(entry.name.c_str());
+    // Two columns instead of a full-width Selectable with SameLine buttons: the
+    // Selectable used to cover the whole row and swallow every click meant for the
+    // buttons, so "Open" only selected the row.
+    const ImGuiTableFlags flags =
+        ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoSavedSettings;
+    if (ImGui::BeginTable("##scripts", 2, flags)) {
+        ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("actions", ImGuiTableColumnFlags_WidthFixed,
+                                128.f);
 
-        ImGui::Selectable(entry.name.c_str(), open_script_ == entry.name,
-                          ImGuiSelectableFlags_AllowDoubleClick);
-        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
-            open_script(entry.name);
+        for (const ScriptEntry &entry : entries) {
+            ImGui::PushID(entry.name.c_str());
+            ImGui::TableNextRow();
+
+            ImGui::TableNextColumn();
+            ImGui::Selectable(entry.name.c_str(), open_script_ == entry.name,
+                              ImGuiSelectableFlags_AllowDoubleClick);
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+                open_script(entry.name);
+            }
+
+            ImGui::TableNextColumn();
+            if (ImGui::SmallButton("Open")) {
+                open_script(entry.name);
+            }
+            ImGui::SameLine();
+            if (ImGui::SmallButton("Folder")) {
+                reveal_in_explorer(host_.script_path(entry.name));
+            }
+
+            ImGui::PopID();
         }
 
-        ImGui::SameLine(ImGui::GetContentRegionMax().x - 108.f);
-        if (ImGui::SmallButton("Open")) {
-            open_script(entry.name);
-        }
-        ImGui::SameLine();
-        if (ImGui::SmallButton("Folder")) {
-            reveal_in_explorer(host_.script_path(entry.name));
-        }
-
-        ImGui::PopID();
+        ImGui::EndTable();
     }
 
     ImGui::EndChild();
@@ -235,6 +313,7 @@ void ScriptPanel::draw_editor_tab() {
     }
 
     const bool dirty = is_dirty();
+    const bool building = host_.is_building();
 
     if (ImGui::Button("Save")) {
         save_script();
@@ -244,15 +323,16 @@ void ScriptPanel::draw_editor_tab() {
                           "Use Build & Reload to compile it.");
     }
     ImGui::SameLine();
+    ImGui::BeginDisabled(building);
     if (ImGui::Button("Save & Build")) {
         if (save_script()) {
-            build_and_reload();
-            apply_error_markers();
+            start_build();
         }
     }
+    ImGui::EndDisabled();
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Saves, then compiles VXScripts.dll and hot reloads it\n"
-                          "(Ctrl+B). Only the script module is rebuilt.");
+        ImGui::SetTooltip("Saves, then compiles VXScripts.dll on a worker thread\n"
+                          "and hot reloads it (Ctrl+B).");
     }
     ImGui::SameLine();
     if (ImGui::Button("Revert") && !open_script_.empty()) {
@@ -275,23 +355,6 @@ void ScriptPanel::draw_editor_tab() {
     // widget sets io.WantTextInput while it owns the keyboard.
     Application::get().get_window().set_text_input_enabled(
         ImGui::GetIO().WantTextInput);
-
-    // Shortcuts: Ctrl+S writes the file only, Ctrl+B saves and rebuilds the
-    // module. Keeping them apart matters because the build is the slow half.
-    const bool editor_window_focused =
-        ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows);
-
-    if (editor_window_focused && ImGui::GetIO().KeyCtrl) {
-        if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
-            save_script();
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_B, false)) {
-            if (save_script()) {
-                build_and_reload();
-                apply_error_markers();
-            }
-        }
-    }
 }
 
 void ScriptPanel::open_script(const std::string &name) {
@@ -357,6 +420,16 @@ bool ScriptPanel::save_script() {
         return false;
     }
     const std::filesystem::path path = host_.script_path(open_script_);
+
+    // Skipping the write when nothing changed is not just a micro-optimisation:
+    // rewriting the file bumps its timestamp, which makes the build system
+    // recompile a script that did not change.
+    if (!is_dirty()) {
+        status_ = path.filename().string() + " is unchanged";
+        status_is_error_ = false;
+        return true;
+    }
+
     const std::string content = editor_.GetText();
     if (!write_file(path, content)) {
         status_ = "could not write " + path.string();
@@ -374,11 +447,12 @@ void ScriptPanel::draw_build_output() {
                                show_build_log_ ? ImGuiTreeNodeFlags_DefaultOpen
                                                : ImGuiTreeNodeFlags_None)) {
         show_build_log_ = true;
-        if (build_log_.empty()) {
+        const std::string &log = host_.build_log();
+        if (log.empty()) {
             ImGui::TextDisabled("(nothing yet)");
         } else if (ImGui::BeginChild("##build_log", ImVec2{0.f, 0.f})) {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.75f, 0.75f, 0.75f, 1.f});
-            ImGui::TextUnformatted(build_log_.c_str());
+            ImGui::TextUnformatted(log.c_str());
             ImGui::PopStyleColor();
             ImGui::EndChild();
         } else {
@@ -387,36 +461,24 @@ void ScriptPanel::draw_build_output() {
     }
 }
 
-bool ScriptPanel::build_and_reload() {
-    build_log_.clear();
-    show_build_log_ = true;
-
-    const bool ok = host_.build_and_reload(build_log_);
-    last_build_ok_ = ok;
-
-    char timing[96] = {};
-    std::snprintf(timing,
-                  sizeof(timing),
-                  " in %.2f s%s",
-                  host_.last_build_ms(),
-                  host_.last_build_reconfigured() ? " (reconfigured)" : "");
-    if (ok) {
-        status_ = std::string{"Build OK, scripts reloaded"} + timing;
-        status_is_error_ = false;
-    } else {
-        status_ = std::string{"Build FAILED"} + timing + " - see output below";
-        status_is_error_ = true;
+void ScriptPanel::start_build() {
+    if (!host_.begin_build()) {
+        return; // already building
     }
-    apply_error_markers();
-    return ok;
+    show_build_log_ = true;
+    status_.clear();
+    // Old error markers are stale the moment a new build starts.
+    if (editor_ready_) {
+        editor_.SetErrorMarkers({});
+    }
 }
 
 void ScriptPanel::apply_error_markers() {
-    if (!editor_ready_ || open_script_.empty() || build_log_.empty()) {
+    if (!editor_ready_ || open_script_.empty() || host_.build_log().empty()) {
         return;
     }
     editor_.SetErrorMarkers(
-        parse_error_markers(build_log_, open_script_ + ".cpp"));
+        parse_error_markers(host_.build_log(), open_script_ + ".cpp"));
 }
 
 } // namespace ivx

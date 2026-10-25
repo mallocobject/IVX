@@ -32,10 +32,18 @@ void EditLayer::on_attach() {
 
     // Script module first: its registry has to exist before anything can bind a
     // script. A missing DLL is not fatal, the editor just has no script types.
+    // vcvars64.bat costs a couple of seconds, so start capturing the MSVC
+    // environment now: by the time the first build runs it is usually ready.
+    warm_up_script_build_environment();
+
     {
         std::string error;
         if (!scripts_.load_initial(error)) {
-            IVX_ERROR("Script module not loaded: {}", error);
+            IVX_WARN("Script module not loaded ({}), building it", error);
+            // The module lives in its own build directory, so a fresh tree has no
+            // DLL yet. Kick off the first build; poll_scripts() loads it when it is
+            // done.
+            scripts_.begin_build();
         }
     }
 
@@ -153,6 +161,10 @@ void EditLayer::on_update(float dt) {
         console_panel_->pump();
     }
 
+    // Finish a script build that ran on the worker thread this frame: the reload
+    // itself must happen here, on the main thread.
+    poll_scripts();
+
     if (visible_) {
         const auto &spec = frame_buffer_->get_specification();
         if (spec.width != viewport_size_.x || spec.height != viewport_size_.y) {
@@ -205,12 +217,27 @@ void EditLayer::on_update(float dt) {
 void EditLayer::reload_scripts() {
     IVX_PROFILE_FUNCTION();
 
-    std::string log;
-    const bool ok = scripts_.build_and_reload(log);
-    if (!log.empty()) {
-        IVX_INFO("Script build output:\n{}", log);
+    // Non-blocking: the build runs on a worker thread and is picked up by
+    // poll_scripts() in on_update().
+    if (!scripts_.begin_build()) {
+        IVX_WARN("Script build already running");
     }
-    if (!ok) {
+}
+
+void EditLayer::poll_scripts() {
+    if (!scripts_.is_building()) {
+        return;
+    }
+
+    scripts_.poll_build();
+    if (scripts_.is_building()) {
+        return; // still compiling
+    }
+
+    if (!scripts_.build_log().empty()) {
+        IVX_INFO("Script build output:\n{}", scripts_.build_log());
+    }
+    if (!scripts_.last_build_ok()) {
         IVX_ERROR("Script rebuild failed");
     }
 }

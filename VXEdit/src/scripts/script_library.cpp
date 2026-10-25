@@ -8,6 +8,9 @@
 #include <array>
 #include <cstdio>
 #include <cstdlib>
+#include <mutex>
+#include <thread>
+#include <utility>
 #include <vector>
 
 #if defined(IVX_PLATFORM_WINDOWS)
@@ -153,78 +156,140 @@ int run_command(const std::string &command, std::string &log) {
     return _pclose(pipe);
 }
 
-// MSBuild path, handed over by CMake (CMAKE_MAKE_PROGRAM), so there is no runtime
-// lookup. Empty if the generator was not Visual Studio, in which case the slower
-// solution-level `cmake --build` is used instead.
-const std::string &msbuild_path() {
-    static const std::string path = IVX_MSBUILD;
-    return path;
+// The Ninja build of the script module needs the MSVC environment (cl.exe,
+// INCLUDE, LIB). vcvars64.bat takes a couple of seconds, so the environment is
+// captured once in the background (warm_up_script_build_environment) and only
+// *applied* on the build thread: _putenv_s is not thread safe, running vcvars is.
+std::mutex g_env_mutex;
+std::vector<std::pair<std::string, std::string>> g_env_values;
+bool g_env_captured = false;
+bool g_env_failed = false;
+bool g_env_applied = false;
+
+bool capture_msvc_environment(std::string &log) {
+    const std::filesystem::path vcvars = VCVARS_PATH;
+    if (vcvars.empty() || !std::filesystem::exists(vcvars)) {
+        log += "vcvars64.bat not found (VCVARS_PATH); cannot set up MSVC\n";
+        return false;
+    }
+
+    // `set` prints the environment as KEY=VALUE lines after vcvars ran. The whole
+    // command is wrapped in quotes because it starts with one (the path contains
+    // spaces) and _popen() hands it to `cmd /c`.
+    std::string output;
+    const std::string inner =
+        "\"" + vcvars.string() + "\" >nul 2>&1 && set 2>&1";
+    if (run_command("\"" + inner + "\"", output) != 0) {
+        log += "failed to run vcvars64.bat\n" + output;
+        return false;
+    }
+
+    std::size_t pos = 0;
+    while (pos < output.size()) {
+        const std::size_t end = output.find('\n', pos);
+        std::string line = output.substr(pos, end == std::string::npos
+                                                  ? std::string::npos
+                                                  : end - pos);
+        pos = end == std::string::npos ? output.size() : end + 1;
+        while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) {
+            line.pop_back();
+        }
+        // Skip the "=C:=C:\..." style entries and anything without a name.
+        const std::size_t equals = line.find('=');
+        if (equals == std::string::npos || equals == 0) {
+            continue;
+        }
+        g_env_values.emplace_back(line.substr(0, equals),
+                                  line.substr(equals + 1));
+    }
+
+    IVX_CORE_DEBUG("Scripts: captured MSVC environment ({} variables)",
+                   g_env_values.size());
+    return !g_env_values.empty();
 }
-} // namespace
 
-bool rebuild_scripts(ScriptLibrary &library,
-                     bool reconfigure,
-                     std::string &log) {
-#if defined(IVX_PLATFORM_WINDOWS)
-    // The caller must have unloaded the module first: the linker cannot overwrite
-    // a DLL that is still mapped into the process.
-    const std::filesystem::path dll = library.path();
+bool ensure_msvc_environment(std::string &log) {
+    std::lock_guard<std::mutex> lock{g_env_mutex};
+    if (g_env_applied) {
+        return true;
+    }
+    if (g_env_failed) {
+        return false;
+    }
 
-    if (reconfigure) {
-        // Only needed when the file *set* changed: the sources are collected with
-        // a GLOB and a plain `--target VXScripts` build does not re-run the glob
-        // (ZERO_CHECK only hangs off ALL_BUILD), so a freshly created script would
-        // silently not be compiled.
-        const int configure_exit =
-            run_command(std::string{"cmake -S \""} + IVX_SOURCE_DIR + "\" -B \"" +
-                            IVX_BUILD_DIR + "\" 2>&1",
-                        log);
-        if (configure_exit != 0) {
-            log += "\nCMake configure failed\n";
+    if (!g_env_captured) {
+        g_env_failed = !capture_msvc_environment(log);
+        g_env_captured = true;
+        if (g_env_failed) {
             return false;
         }
     }
 
-    // Scoped to the module: only the script sources are compiled and linked into
-    // VXScripts.dll. IVX and VXEdit are different targets and are not rebuilt.
-    //
-    // The project file is built directly instead of going through
-    // `cmake --build <sln> --target VXScripts`: the solution-level invocation
-    // evaluates every project in the tree and costs several seconds even when
-    // there is nothing to compile.
-    std::string build_command;
-    const std::string &msbuild = msbuild_path();
-    const std::filesystem::path project =
-        std::filesystem::path{IVX_BUILD_DIR} / "VXEdit" / "VXScripts.vcxproj";
-    if (!msbuild.empty() && std::filesystem::exists(project)) {
-        build_command = "\"" + msbuild + "\" \"" + project.string() +
-                        "\" /t:Build /p:Configuration=" + IVX_BUILD_CONFIG +
-                        " /p:Platform=x64 /nologo /v:m /m 2>&1";
-    } else {
-        build_command = std::string{"cmake --build \""} + IVX_BUILD_DIR +
-                        "\" --config " + IVX_BUILD_CONFIG +
-                        " --target VXScripts 2>&1";
+    for (const auto &[name, value] : g_env_values) {
+        _putenv_s(name.c_str(), value.c_str());
     }
+    g_env_applied = true;
+    return true;
+}
+
+// Configures the standalone Ninja project. Only needed once (or when the
+// generator/build directory was removed): new or removed scripts are handled by
+// CONFIGURE_DEPENDS, which makes Ninja re-run CMake on its own.
+bool configure_script_project(std::string &log) {
+    const std::filesystem::path build_dir = SCRIPTS_BUILD_DIR;
+    if (std::filesystem::exists(build_dir / "build.ninja")) {
+        return true; // already configured
+    }
+
+    std::string command = "cmake -S \"" + std::string{SCRIPTS_PROJECT_DIR} +
+                          "\" -B \"" + build_dir.string() + "\" -G Ninja" +
+                          " -DCMAKE_BUILD_TYPE=" + IVX_BUILD_CONFIG +
+                          " -DIVX_ROOT=\"" + IVX_ROOT_DIR + "\" 2>&1";
+    const int exit_code = run_command("\"" + command + "\"", log);
+    if (exit_code != 0) {
+        log += "\nCMake configure of the script project failed\n";
+        return false;
+    }
+    return true;
+}
+} // namespace
+
+void warm_up_script_build_environment() {
+#if defined(IVX_PLATFORM_WINDOWS)
+    // Runs vcvars64.bat ahead of time so the first build does not pay for it.
+    std::thread{[] {
+        std::string ignored;
+        std::lock_guard<std::mutex> lock{g_env_mutex};
+        if (!g_env_captured) {
+            g_env_failed = !capture_msvc_environment(ignored);
+            g_env_captured = true;
+        }
+    }}.detach();
+#endif
+}
+
+bool build_script_module(bool reconfigure, std::string &log) {
+#if defined(IVX_PLATFORM_WINDOWS)
+    if (!ensure_msvc_environment(log)) {
+        return false;
+    }
+
+    if (reconfigure && !configure_script_project(log)) {
+        return false;
+    }
+
+    // `cmake --build` on the standalone project: Ninja only touches what changed
+    // and re-runs CMake itself when the source glob changes. Nothing here knows
+    // about the editor's solution, so a script rebuild cannot invalidate it.
+    const std::string build_command = "cmake --build \"" +
+                                      std::string{SCRIPTS_BUILD_DIR} + "\" 2>&1";
     IVX_CORE_DEBUG("script build command: {}", build_command);
-    // _popen() runs the string through `cmd /c`, and cmd strips quotes when the
-    // command *starts* with one (our MSBuild path contains spaces). Wrapping the
-    // whole command in an extra pair keeps cmd from mangling it.
     const int build_exit = run_command("\"" + build_command + "\"", log);
     if (log.empty()) {
         log = build_command; // keep the log informative even on a no-op build
     }
-
-    // Load even when the build failed: the linker did not touch the old DLL in
-    // that case, so the previous code keeps working instead of leaving the editor
-    // without any script types.
-    std::string error;
-    const bool loaded = library.load(dll, error);
-    if (!loaded) {
-        log += "\n" + error;
-    }
-    return build_exit == 0 && loaded;
+    return build_exit == 0;
 #else
-    (void)library;
     (void)reconfigure;
     log = "script modules are only implemented for Windows";
     return false;

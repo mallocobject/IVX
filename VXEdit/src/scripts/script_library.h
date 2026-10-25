@@ -32,13 +32,15 @@ class ScriptLibrary {
     std::filesystem::path path_;
 };
 
-// Builds the script module target and reloads it. `log` receives the compiler
-// Builds the script module target (and nothing else: the engine and the editor
-// are separate targets and stay untouched) and loads it again. `reconfigure` runs
-// CMake first, which is only needed when the *set* of script files changed; plain
-// source edits go straight to the compiler. Blocks while compiling.
-bool rebuild_scripts(ScriptLibrary &library,
-                     bool reconfigure,
-                     std::string &log);
+// Builds only the script module (VXScripts.dll): the engine and the editor are
+// separate targets and are not touched. `reconfigure` runs CMake first, which is
+// only needed when the *set* of script files changed; plain source edits go
+// straight to the compiler. Blocks while compiling, so call it from a worker
+// thread (see ScriptHost).
+bool build_script_module(bool reconfigure, std::string &log);
+
+// Captures the MSVC environment (vcvars64.bat) on a background thread, so the
+// first script build does not have to wait for it.
+void warm_up_script_build_environment();
 
 } // namespace ivx

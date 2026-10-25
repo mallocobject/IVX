@@ -11,35 +11,29 @@ target_include_directories(VXEdit PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 target_link_libraries(VXEdit PRIVATE IVX ImGuiColorTextEdit)
 
+# The script module is NOT part of this build: it has its own standalone Ninja
+# project in scripts/ that the editor configures and builds on demand, so a script
+# rebuild never re-evaluates this solution (see scripts/CMakeLists.txt).
+set(VX_SCRIPTS_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
+set(VX_SCRIPTS_BUILD_DIR "${CMAKE_BINARY_DIR}/scripts")
+
+# vcvars64.bat of the Visual Studio instance CMake is using: the Ninja build of the
+# script module needs the MSVC environment.
+set(VX_VCVARS "${CMAKE_GENERATOR_INSTANCE}/VC/Auxiliary/Build/vcvars64.bat")
+if(NOT EXISTS "${VX_VCVARS}")
+    set(VX_VCVARS "")
+endif()
+
 target_compile_definitions(VXEdit PRIVATE
     TEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/"
     SHADERS="${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/"
     FONTS="${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/"
     LAYOUT="${CMAKE_CURRENT_SOURCE_DIR}/assets/layout.ini"
-    # script module: where the editor expects the DLL and how to rebuild it
-    SCRIPTS_DLL="${CMAKE_BINARY_DIR}/VXEdit/$<CONFIG>/VXScripts.dll"
-    SCRIPTS_DIR="${CMAKE_CURRENT_SOURCE_DIR}/scripts"
-    IVX_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-    IVX_BUILD_DIR="${CMAKE_BINARY_DIR}"
+    # script module: where the DLL ends up and how to rebuild it
+    SCRIPTS_DLL="${VX_SCRIPTS_BUILD_DIR}/VXScripts.dll"
+    SCRIPTS_DIR="${VX_SCRIPTS_PROJECT_DIR}"
+    SCRIPTS_PROJECT_DIR="${VX_SCRIPTS_PROJECT_DIR}"
+    SCRIPTS_BUILD_DIR="${VX_SCRIPTS_BUILD_DIR}"
+    IVX_ROOT_DIR="${CMAKE_SOURCE_DIR}"
     IVX_BUILD_CONFIG="$<CONFIG>"
-    # MSBuild that CMake already selected: no runtime lookup needed
-    IVX_MSBUILD="${CMAKE_MAKE_PROGRAM}")
-
-# ---- script module (VXScripts.dll) ----
-# Scripts live outside src/ on purpose: they are a separate DLL that is rebuilt
-# and hot reloaded on its own, without touching the editor binary.
-file(GLOB_RECURSE VXSCRIPT_SOURCES CONFIGURE_DEPENDS
-    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*.h"
-    "${CMAKE_CURRENT_SOURCE_DIR}/scripts/*.cpp")
-
-add_library(VXScripts SHARED ${VXSCRIPT_SOURCES})
-
-# Header-only dependency on the engine: NO target_link_libraries(VXScripts IVX),
-# otherwise the static engine would be compiled into the module and every engine
-# singleton (Application, logger, ...) would exist twice.
-target_link_libraries(VXScripts PRIVATE IVXHeaders)
-
-set_target_properties(VXScripts PROPERTIES
-    PREFIX ""
-    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/VXEdit/$<CONFIG>"
-    ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/VXEdit/$<CONFIG>")
+    VCVARS_PATH="${VX_VCVARS}")
