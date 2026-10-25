@@ -1,9 +1,10 @@
 #pragma once
 
-#include "ivxpch.h"
 #include "ivx/core/base.h"
 #include "ivx/core/ref.hpp"
 #include "ivx/core/ref_counted.hpp"
+#include <functional>
+#include <string>
 
 namespace ivx {
 
@@ -41,9 +42,9 @@ class Window : public RefCounted {
         return nullptr;
     }
 
-    // Raw platform event hook: backends with an event queue (SDL3) forward every
-    // native event here so ImGui can consume it, while callback based backends
-    // (GLFW) leave it unused.
+    // Raw platform event hook: backends with an event queue (SDL3) forward
+    // every native event here so ImGui can consume it, while callback based
+    // backends (GLFW) leave it unused.
     using NativeEventCallbackFn = std::function<void(const void *)>;
     virtual void set_native_event_callback(NativeEventCallbackFn) {
     }

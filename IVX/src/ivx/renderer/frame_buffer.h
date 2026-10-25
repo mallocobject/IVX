@@ -4,10 +4,10 @@
 #include <cstdint>
 namespace ivx {
 struct FrameBufferSpecification {
-    uint32_t width;
-    uint32_t height;
-    uint32_t num_samples = 1;
-    bool swap_chain_target = false;
+    uint32_t width{0};
+    uint32_t height{0};
+    uint32_t num_samples{1};
+    bool swap_chain_target{false};
 };
 
 class FrameBuffer : public RefCounted {

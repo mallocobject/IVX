@@ -1,6 +1,6 @@
 #include "ivxpch.h"
-#include "ivx/core/application.h"
 #include "ivx/core/input.h"
+#include "ivx/core/application.h"
 #include <cstdint>
 
 #if defined(IVX_WINDOW_SDL3)
@@ -176,7 +176,7 @@ bool Input::is_mouse_button_pressed(MouseCode button) {
     return (SDL_GetMouseState(&x, &y) & mask) != 0;
 }
 
-std::pair<float, float> Input::get_mouse_pos() {
+glm::vec2 Input::get_mouse_pos() {
     float x = 0.0f, y = 0.0f;
     SDL_GetMouseState(&x, &y);
     return {x, y};
@@ -196,7 +196,7 @@ bool Input::is_mouse_button_pressed(MouseCode button) {
     return state == GLFW_PRESS;
 }
 
-std::pair<float, float> Input::get_mouse_pos() {
+glm::vec2 Input::get_mouse_pos() {
     auto window = reinterpret_cast<GLFWwindow *>(
         Application::get().get_window().get_native_window());
     double xpos, ypos;

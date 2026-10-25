@@ -14,16 +14,16 @@ void Controller::on_update(float dt) {
     float rotation = 0.f;
 
     glm::vec2 movement{0.f};
-    if (Input::is_key_pressed(IVX_KEY_W)) {
+    if (Input::is_key_pressed(KeyCode::W)) {
         movement.y++;
     }
-    if (Input::is_key_pressed(IVX_KEY_S)) {
+    if (Input::is_key_pressed(KeyCode::S)) {
         movement.y--;
     }
-    if (Input::is_key_pressed(IVX_KEY_A)) {
+    if (Input::is_key_pressed(KeyCode::A)) {
         movement.x--;
     }
-    if (Input::is_key_pressed(IVX_KEY_D)) {
+    if (Input::is_key_pressed(KeyCode::D)) {
         movement.x++;
     }
 
@@ -35,10 +35,10 @@ void Controller::on_update(float dt) {
         translation.y += glm::normalize(movement).y * speed * dt;
     }
 
-    if (Input::is_key_pressed(IVX_KEY_Q)) {
+    if (Input::is_key_pressed(KeyCode::Q)) {
         rotation += delta * dt;
     }
-    if (Input::is_key_pressed(IVX_KEY_E)) {
+    if (Input::is_key_pressed(KeyCode::E)) {
         rotation -= delta * dt;
     }
 

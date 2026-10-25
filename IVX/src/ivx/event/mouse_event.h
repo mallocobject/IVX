@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/core/input.h"
+#include "ivx/core/mouse_codes.h"
 #include "ivx/event/event.h"
 
 namespace ivx {

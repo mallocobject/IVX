@@ -97,6 +97,8 @@ void Renderer2D::init() {
     data.white_texture = Texture2D::create(1, 1);
     uint32_t white_texture_data = -1; // 0xffffffff
     data.white_texture->set_data(&white_texture_data, sizeof(uint32_t));
+
+    // set first texture slot to 0
     data.tex_slots[0] = data.white_texture;
 
     int32_t samplers[Renderer2DData::max_num_tex_slots];

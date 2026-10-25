@@ -54,16 +54,3 @@ struct std::formatter<ivx::MouseCode> : std::formatter<std::string_view> {
         return formatter<string_view>::format(ivx::to_string(code), ctx);
     }
 };
-
-#define IVX_MOUSE_BUTTON_0 ::ivx::MouseCode::Button0
-#define IVX_MOUSE_BUTTON_1 ::ivx::MouseCode::Button1
-#define IVX_MOUSE_BUTTON_2 ::ivx::MouseCode::Button2
-#define IVX_MOUSE_BUTTON_3 ::ivx::MouseCode::Button3
-#define IVX_MOUSE_BUTTON_4 ::ivx::MouseCode::Button4
-#define IVX_MOUSE_BUTTON_5 ::ivx::MouseCode::Button5
-#define IVX_MOUSE_BUTTON_6 ::ivx::MouseCode::Button6
-#define IVX_MOUSE_BUTTON_7 ::ivx::MouseCode::Button7
-#define IVX_MOUSE_BUTTON_LAST ::ivx::MouseCode::ButtonLast
-#define IVX_MOUSE_BUTTON_LEFT ::ivx::MouseCode::ButtonLeft
-#define IVX_MOUSE_BUTTON_RIGHT ::ivx::MouseCode::ButtonRight
-#define IVX_MOUSE_BUTTON_MIDDLE ::ivx::MouseCode::ButtonMiddle

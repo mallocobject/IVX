@@ -23,8 +23,7 @@ inline void log_opengl_info() {
                   reinterpret_cast<const char *>(
                       glGetString(GL_SHADING_LANGUAGE_VERSION)));
 
-    if (GLVersion.major < 4 ||
-        (GLVersion.major == 4 && GLVersion.minor < 5)) {
+    if (GLVersion.major < 4 || (GLVersion.major == 4 && GLVersion.minor < 5)) {
         IVX_CORE_FATAL("OpenGL 4.5+ is required, but the context is {}.{}. "
                        "Update your graphics driver or lower the requirement.",
                        GLVersion.major,
@@ -129,8 +128,8 @@ class OpenGLContext<SDL_Window> : public GraphicsContext {
         IVX_PROFILE_FUNCTION();
 
         gl_context_ = SDL_GL_CreateContext(window_);
-        IVX_CORE_ASSERT(gl_context_, "SDL_GL_CreateContext failed: {}",
-                        SDL_GetError());
+        IVX_CORE_ASSERT(
+            gl_context_, "SDL_GL_CreateContext failed: {}", SDL_GetError());
         SDL_GL_MakeCurrent(window_, gl_context_);
         int status = gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress);
         IVX_CORE_ASSERT(status, "Failed to initialize Glad!");

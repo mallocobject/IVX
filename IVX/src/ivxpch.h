@@ -20,6 +20,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "ivx/core/base.h"
 #include "ivx/core/logger.h"
 #include "ivx/debug/instrumentor.h"
 
