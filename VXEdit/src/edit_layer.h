@@ -43,6 +43,6 @@ class EditLayer : public Layer {
     ImVec2 viewport_size_{0.f, 0.f};
 
     PanelManager panels_;
-    SceneHierarchyPanel *scene_hierarchy_panel_{nullptr};
+    Ref<SceneHierarchyPanel> scene_hierarchy_panel_;
 };
 } // namespace ivx

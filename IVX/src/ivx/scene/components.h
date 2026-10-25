@@ -14,6 +14,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace ivx {
 
@@ -43,12 +44,19 @@ struct TransformComponent {
     }
 };
 
+// Parent/child links for the scene hierarchy. Kept separate from
+// TransformComponent so moving an entity never touches the tree structure (and
+// vice versa). Both directions are maintained by Scene::set_parent().
+struct RelationshipComponent {
+    entt::entity parent{entt::null};
+    std::vector<entt::entity> children;
+};
+
 struct SpriteRendererComponent {
     Ref<Texture2D> texture;
     Ref<SubTexture2D> sub_texture;
     float tiling_factor{1.f};
     glm::vec4 color{1.f};
-
     SpriteRendererComponent() = default;
     SpriteRendererComponent(const Ref<Texture2D> &texture,
                             float tiling_factor = 1.f,

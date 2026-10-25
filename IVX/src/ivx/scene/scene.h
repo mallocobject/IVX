@@ -4,6 +4,7 @@
 #include "ivx/scene/components.h"
 #include <entt.hpp>
 #include <string>
+#include <vector>
 
 namespace ivx {
 
@@ -15,8 +16,19 @@ class Scene : public RefCounted {
     ~Scene();
 
     Entity create_entity(const std::string &name = "Entity");
+    // Same as create_entity(), then attaches the new entity under `parent`.
+    Entity create_child(Entity parent, const std::string &name = "Entity");
 
+    // Destroys the entity and, recursively, everything below it.
     void destroy_entity(Entity entity);
+
+    // ---- hierarchy ----
+    // Reparents `child`. Passing an invalid `parent` makes it a root node.
+    // Rejects self-parenting and anything that would create a cycle.
+    void set_parent(Entity child, Entity parent);
+    std::vector<Entity> get_root_entities();
+    std::vector<Entity> get_children(Entity entity);
+    bool is_descendant_of(Entity entity, Entity ancestor);
 
     void on_update(float dt);
     // Draws every entity that has a TransformComponent +

@@ -75,10 +75,9 @@ void LambdaPanel::on_after_draw(bool visible) {
 // ---------------------------------------------------------------------------
 // PanelManager
 // ---------------------------------------------------------------------------
-Panel *PanelManager::add(std::unique_ptr<Panel> panel) {
-    Panel *raw = panel.get();
+Ref<Panel> PanelManager::add(Ref<Panel> panel) {
     panels_.push_back(std::move(panel));
-    return raw;
+    return panels_.back();
 }
 
 void PanelManager::on_render() {

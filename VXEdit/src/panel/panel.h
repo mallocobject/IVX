@@ -1,7 +1,6 @@
 #pragma once
 
 #include <functional>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -9,6 +8,9 @@
 #include <vector>
 
 #include <imgui.h>
+
+#include "ivx/core/ref.hpp"
+#include "ivx/core/ref_counted.hpp"
 
 namespace ivx {
 
@@ -18,8 +20,11 @@ namespace ivx {
 // A subclass only implements on_imgui(), which runs between Begin()/End().
 // The pairing is owned by the base class because ImGui requires End() to be
 // called even when Begin() returns false (collapsed window).
+//
+// RefCounted so panels can be shared with the rest of the editor through
+// ivx::Ref, like Layer/Texture/Shader/Scene.
 // ---------------------------------------------------------------------------
-class Panel {
+class Panel : public RefCounted {
   public:
     explicit Panel(std::string_view name, bool default_open = true);
     virtual ~Panel() = default;
@@ -110,35 +115,36 @@ class LambdaPanel : public Panel {
 // ---------------------------------------------------------------------------
 // PanelManager: owns the panels, draws them in registration order and provides
 // the View menu that toggles their visibility.
+//
+// Panels are held through ivx::Ref, so handing one out (to EditorContext, to
+// another panel, ...) never leaves a dangling pointer.
 // ---------------------------------------------------------------------------
 class PanelManager {
   public:
     template <typename T, typename... Args>
         requires std::is_base_of_v<Panel, T>
-    T &add(Args &&...args) {
-        auto panel = std::make_unique<T>(std::forward<Args>(args)...);
-        T &ref = *panel;
-        panels_.push_back(std::move(panel));
-        return ref;
+    Ref<T> add(Args &&...args) {
+        Ref<T> panel = make_ref<T>(std::forward<Args>(args)...);
+        panels_.push_back(panel); // Ref<T> -> Ref<Panel>
+        return panel;
     }
 
-    Panel *add(std::unique_ptr<Panel> panel);
+    Ref<Panel> add(Ref<Panel> panel);
 
     void on_render();
 
     // Must be called from inside a menu bar.
     void draw_view_menu(const char *menu_name = "View");
 
-    template <typename T>
-    T *find() {
+    template <typename T> Ref<T> find() {
         if constexpr (std::is_base_of_v<Panel, T>) {
             for (auto &panel : panels_) {
                 if (auto *typed = dynamic_cast<T *>(panel.get())) {
-                    return typed;
+                    return Ref<T>{typed};
                 }
             }
         }
-        return nullptr;
+        return {};
     }
 
     std::size_t size() const {
@@ -149,12 +155,12 @@ class PanelManager {
         panels_.clear();
     }
 
-    std::vector<std::unique_ptr<Panel>> &panels() {
+    std::vector<Ref<Panel>> &panels() {
         return panels_;
     }
 
   private:
-    std::vector<std::unique_ptr<Panel>> panels_;
+    std::vector<Ref<Panel>> panels_;
 };
 
 } // namespace ivx

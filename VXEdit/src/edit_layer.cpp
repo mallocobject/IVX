@@ -101,14 +101,16 @@ void EditLayer::on_update(float dt) {
     }
 
     // update
-    if (viewport_focused_) {
-        camera_entity_.get_component<NativeScriptComponent>().enabled = true;
-    } else {
-        camera_entity_.get_component<NativeScriptComponent>().enabled = false;
+    if (auto *script = camera_entity_.try_get_component<NativeScriptComponent>()) {
+        script->enabled = viewport_focused_;
     }
 
     scene_->on_update(dt);
-    square_entity_.get_component<SpriteRendererComponent>().color = color_;
+
+    if (auto *sprite =
+            square_entity_.try_get_component<SpriteRendererComponent>()) {
+        sprite->color = color_;
+    }
 
     // render
     Renderer2D::reset_stats();
@@ -144,24 +146,22 @@ void EditLayer::setup_panels() {
 
     // Content panels first (they only emit widgets), then the hierarchy panel
     // so the draw order is deterministic: Hierarchy -> Viewport -> Settings.
-    scene_hierarchy_panel_ = &panels_.add<SceneHierarchyPanel>();
+    scene_hierarchy_panel_ = panels_.add<SceneHierarchyPanel>();
     scene_hierarchy_panel_->set_scene_context(scene_);
 
-    auto &viewport = panels_.add<LambdaPanel>(
+    auto viewport = panels_.add<LambdaPanel>(
         "Viewport", [this]() { draw_viewport_content(); });
-    viewport.set_pre_begin([]() {
+    viewport->set_pre_begin([]() {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.f, 0.f});
-    });
-    viewport.set_post_end([]() { ImGui::PopStyleVar(); });
-    viewport.set_on_hidden([this]() {
+    }).set_post_end([]() { ImGui::PopStyleVar(); }).set_on_hidden([this]() {
         visible_ = false;
         viewport_focused_ = false;
         viewport_hovered_ = false;
         Application::get().imgui_layer()->block_event(true);
     });
 
-    panels_.add<LambdaPanel>(
-        "Settings", [this]() { draw_settings_content(); });
+    panels_.add<LambdaPanel>("Settings",
+                             [this]() { draw_settings_content(); });
 }
 
 void EditLayer::on_render() {
@@ -193,11 +193,11 @@ void EditLayer::draw_settings_content() {
     ImGui::Text("Vertices: %d", stats.get_total_vertex_count());
     ImGui::Text("Indices: %d", stats.get_total_index_count());
 
-    if (square_entity_) {
+    // Entities can be deleted from the hierarchy panel at any time, so every
+    // access goes through try_get_component().
+    if (auto *tag = square_entity_.try_get_component<TagComponent>()) {
         ImGui::Separator();
-        auto &tag = square_entity_.get_component<TagComponent>().tag;
-        ImGui::Text("%s", tag.c_str());
-
+        ImGui::Text("%s", tag->tag.c_str());
         ImGui::ColorEdit4("Square Color", glm::value_ptr(color_));
         ImGui::Separator();
     }
@@ -205,30 +205,25 @@ void EditLayer::draw_settings_content() {
     static float zoom_level = 1.f;
     ImGui::DragFloat("Zoom", &zoom_level, 0.1f, 0.5f, 3.0f);
 
-    if (primary_camera_) {
-        ImGui::DragFloat2(
-            "Camera Translation",
-            glm::value_ptr(camera_entity_.get_component<TransformComponent>()
-                               .translation));
-
-        camera_entity_.get_component<CameraComponent>().camera.set_zoom_level(
-            zoom_level);
-    } else {
-        ImGui::DragFloat2(
-            "Camera Translation",
-            glm::value_ptr(
-                second_camera_entity_.get_component<TransformComponent>()
-                    .translation));
-
-        second_camera_entity_.get_component<CameraComponent>()
-            .camera.set_zoom_level(zoom_level);
+    Entity camera_entity = primary_camera_ ? camera_entity_ : second_camera_entity_;
+    if (camera_entity) {
+        if (auto *transform = camera_entity.try_get_component<TransformComponent>()) {
+            ImGui::DragFloat2("Camera Translation",
+                              glm::value_ptr(transform->translation));
+        }
+        if (auto *camera = camera_entity.try_get_component<CameraComponent>()) {
+            camera->camera.set_zoom_level(zoom_level);
+        }
     }
 
     if (ImGui::Checkbox("Camera A", &primary_camera_)) {
-        camera_entity_.get_component<CameraComponent>().primary =
-            primary_camera_;
-        second_camera_entity_.get_component<CameraComponent>().primary =
-            !primary_camera_;
+        if (auto *camera = camera_entity_.try_get_component<CameraComponent>()) {
+            camera->primary = primary_camera_;
+        }
+        if (auto *second =
+                second_camera_entity_.try_get_component<CameraComponent>()) {
+            second->primary = !primary_camera_;
+        }
     }
 }
 

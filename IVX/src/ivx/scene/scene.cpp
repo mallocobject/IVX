@@ -8,28 +8,154 @@
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scriptable_entity.h"
+#include <algorithm>
 #include <cstdint>
+#include <vector>
 
 namespace ivx {
+namespace {
+// Calls on_destroy() and releases the script instance, if there is one.
+void release_script(entt::registry &registry, entt::entity handle) {
+    auto *script = registry.try_get<NativeScriptComponent>(handle);
+    if (script == nullptr) {
+        return;
+    }
+    if (script->instance != nullptr) {
+        script->instance->on_destroy();
+    }
+    if (script->destroy != nullptr) {
+        script->destroy(script);
+    }
+}
+} // namespace
+
 Scene::~Scene() {
+    // Scripts are owned by the entities, so they have to be released before the
+    // registry (which only destroys the components) goes away.
+    for (auto [handle, script] : registry_.view<NativeScriptComponent>().each()) {
+        release_script(registry_, handle);
+    }
     registry_.clear();
 }
 
 Entity Scene::create_entity(const std::string &name) {
     Entity entity{registry_.create(), this};
     entity.add_component<TransformComponent>();
+    entity.add_component<RelationshipComponent>();
     entity.add_component<TagComponent>(name);
     return entity;
 }
 
+Entity Scene::create_child(Entity parent, const std::string &name) {
+    Entity child = create_entity(name);
+    set_parent(child, parent);
+    return child;
+}
+
 void Scene::destroy_entity(Entity entity) {
-    if (auto *script = entity.try_get_component<NativeScriptComponent>()) {
-        if (script->instance && script->destroy) {
-            script->instance->on_destroy();
-            script->destroy(script);
+    if (!entity || !registry_.valid(entity.handle())) {
+        return;
+    }
+
+    // Children first: their handles have to be captured before the parent (and
+    // therefore its RelationshipComponent) is destroyed.
+    if (auto *rel = entity.try_get_component<RelationshipComponent>()) {
+        auto children = rel->children;
+        for (auto child_handle : children) {
+            if (registry_.valid(child_handle)) {
+                destroy_entity(Entity{child_handle, this});
+            }
         }
     }
+
+    // Detach from the parent so its children list does not keep a stale handle.
+    if (auto *rel = entity.try_get_component<RelationshipComponent>();
+        rel != nullptr && rel->parent != entt::null) {
+        if (auto *parent_rel = registry_.try_get<RelationshipComponent>(rel->parent);
+            parent_rel != nullptr) {
+            auto &siblings = parent_rel->children;
+            std::erase(siblings, entity.handle());
+        }
+    }
+
+    release_script(registry_, entity.handle());
     registry_.destroy(entity.handle());
+}
+
+void Scene::set_parent(Entity child, Entity parent) {
+    if (!child || child == parent) {
+        return;
+    }
+    if (parent && is_descendant_of(parent, child)) {
+        return; // would create a cycle
+    }
+
+    auto *child_rel = child.try_get_component<RelationshipComponent>();
+    if (child_rel == nullptr) {
+        child_rel = &child.add_component<RelationshipComponent>();
+    }
+
+    // Detach from the current parent.
+    if (child_rel->parent != entt::null) {
+        if (auto *old_rel = registry_.try_get<RelationshipComponent>(
+                child_rel->parent);
+            old_rel != nullptr) {
+            std::erase(old_rel->children, child.handle());
+        }
+    }
+
+    child_rel->parent = parent ? parent.handle() : entt::null;
+
+    if (parent) {
+        auto *parent_rel = parent.try_get_component<RelationshipComponent>();
+        if (parent_rel == nullptr) {
+            parent_rel = &parent.add_component<RelationshipComponent>();
+        }
+        if (std::ranges::find(parent_rel->children, child.handle()) ==
+            parent_rel->children.end()) {
+            parent_rel->children.push_back(child.handle());
+        }
+    }
+}
+
+std::vector<Entity> Scene::get_root_entities() {
+    std::vector<Entity> roots;
+    for (auto [handle, rel] : registry_.view<RelationshipComponent>().each()) {
+        if (rel.parent == entt::null) {
+            roots.emplace_back(handle, this);
+        }
+    }
+    return roots;
+}
+
+std::vector<Entity> Scene::get_children(Entity entity) {
+    std::vector<Entity> children;
+    if (!entity) {
+        return children;
+    }
+    if (const auto *rel = entity.try_get_component<RelationshipComponent>()) {
+        children.reserve(rel->children.size());
+        for (auto handle : rel->children) {
+            if (registry_.valid(handle)) {
+                children.emplace_back(handle, this);
+            }
+        }
+    }
+    return children;
+}
+
+bool Scene::is_descendant_of(Entity entity, Entity ancestor) {
+    if (!entity || !ancestor) {
+        return false;
+    }
+    const auto *rel = entity.try_get_component<RelationshipComponent>();
+    while (rel != nullptr && rel->parent != entt::null) {
+        if (rel->parent == ancestor.handle()) {
+            return true;
+        }
+        rel = registry_.try_get<RelationshipComponent>(rel->parent);
+    }
+    return false;
 }
 
 void Scene::on_update(float dt) {
