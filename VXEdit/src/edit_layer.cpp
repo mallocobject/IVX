@@ -78,14 +78,27 @@ void EditLayer::on_attach() {
         glm::vec2{400.f, 200.f});
 
     camera_entity_ = scene_->create_entity("Camera Entity");
-
-    camera_entity_.add_component<CameraComponent>(
-        static_cast<float>(HEIGHT), -1.f, 1.f, 1.f, true, false);
+    {
+        auto &camera = camera_entity_.add_component<CameraComponent>();
+        camera.camera.set_orthographic(static_cast<float>(HEIGHT), -1.f, 1.f);
+        camera.camera.set_projection_type(
+            SceneCamera::ProjectionType::Orthographic);
+        camera.primary = true;
+    }
     camera_entity_.add_component<NativeScriptComponent>().bind<Controller>();
 
     second_camera_entity_ = scene_->create_entity("CameraB Entity");
-    second_camera_entity_.add_component<CameraComponent>(
-        static_cast<float>(HEIGHT) / 2.f, -1.f, 1.f, 1.f, false, true);
+    {
+        auto &camera = second_camera_entity_.add_component<CameraComponent>();
+        // Half the height, fixed aspect: acts as a "close-up" camera.
+        camera.camera.set_orthographic(static_cast<float>(HEIGHT) / 2.f,
+                                       -1.f,
+                                       1.f);
+        camera.camera.set_projection_type(
+            SceneCamera::ProjectionType::Orthographic);
+        camera.primary = false;
+        camera.fixed_aspect_ratio = true;
+    }
 
     setup_panels();
 }
@@ -114,11 +127,6 @@ void EditLayer::on_update(float dt) {
     }
 
     scene_->on_update(dt);
-
-    if (auto *sprite =
-            square_entity_.try_get_component<SpriteRendererComponent>()) {
-        sprite->color = color_;
-    }
 
     // render
     Renderer2D::reset_stats();
@@ -154,7 +162,7 @@ void EditLayer::setup_panels() {
 
     register_all_components();
 
-    // Deterministic draw order: Hierarchy -> Viewport -> Inspector -> Settings.
+    // Deterministic draw order: Hierarchy -> Viewport -> Inspector -> Camera.
     scene_hierarchy_panel_ = panels_.add<SceneHierarchyPanel>(context_);
 
     auto viewport = panels_.add<LambdaPanel>(
@@ -169,9 +177,7 @@ void EditLayer::setup_panels() {
     });
 
     inspector_panel_ = panels_.add<InspectorPanel>(context_);
-
-    panels_.add<LambdaPanel>("Settings",
-                             [this]() { draw_settings_content(); });
+    camera_panel_ = panels_.add<CameraPanel>(context_);
 }
 
 void EditLayer::on_render() {
@@ -208,48 +214,6 @@ void EditLayer::on_render() {
     }
 
     panels_.on_render();
-}
-
-void EditLayer::draw_settings_content() {
-    auto stats = Renderer2D::get_stats();
-    ImGui::Text("Renderer2D Stats:");
-    ImGui::Text("Draw Calls: %d", stats.num_draw_calls);
-    ImGui::Text("Quads: %d", stats.num_quads);
-    ImGui::Text("Vertices: %d", stats.get_total_vertex_count());
-    ImGui::Text("Indices: %d", stats.get_total_index_count());
-
-    // Entities can be deleted from the hierarchy panel at any time, so every
-    // access goes through try_get_component().
-    if (auto *tag = square_entity_.try_get_component<TagComponent>()) {
-        ImGui::Separator();
-        ImGui::Text("%s", tag->tag.c_str());
-        ImGui::ColorEdit4("Square Color", glm::value_ptr(color_));
-        ImGui::Separator();
-    }
-
-    static float zoom_level = 1.f;
-    ImGui::DragFloat("Zoom", &zoom_level, 0.1f, 0.5f, 3.0f);
-
-    Entity camera_entity = primary_camera_ ? camera_entity_ : second_camera_entity_;
-    if (camera_entity) {
-        if (auto *transform = camera_entity.try_get_component<TransformComponent>()) {
-            ImGui::DragFloat2("Camera Translation",
-                              glm::value_ptr(transform->translation));
-        }
-        if (auto *camera = camera_entity.try_get_component<CameraComponent>()) {
-            camera->camera.set_zoom_level(zoom_level);
-        }
-    }
-
-    if (ImGui::Checkbox("Camera A", &primary_camera_)) {
-        if (auto *camera = camera_entity_.try_get_component<CameraComponent>()) {
-            camera->primary = primary_camera_;
-        }
-        if (auto *second =
-                second_camera_entity_.try_get_component<CameraComponent>()) {
-            second->primary = !primary_camera_;
-        }
-    }
 }
 
 void EditLayer::draw_viewport_content() {

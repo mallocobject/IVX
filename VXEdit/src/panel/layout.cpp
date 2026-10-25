@@ -22,12 +22,12 @@ void setup_default_layout(ImGuiID dockspace_id) {
     const ImGuiID right = ImGui::DockBuilderSplitNode(
         center, ImGuiDir_Right, 0.30f, nullptr, &center);
     const ImGuiID bottom = ImGui::DockBuilderSplitNode(
-        center, ImGuiDir_Down, 0.28f, nullptr, &center);
+        center, ImGuiDir_Down, 0.30f, nullptr, &center);
 
     ImGui::DockBuilderDockWindow("Scene Hierarchy", left);
     ImGui::DockBuilderDockWindow("Inspector", right);
     ImGui::DockBuilderDockWindow("Viewport", center);
-    ImGui::DockBuilderDockWindow("Settings", bottom);
+    ImGui::DockBuilderDockWindow("Camera", bottom);
 
     ImGui::DockBuilderFinish(dockspace_id);
 }

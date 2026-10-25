@@ -84,33 +84,13 @@ struct SpriteRendererComponent {
     }
 };
 
-// HACK
+// Projection parameters live in SceneCamera, the component only adds the
+// scene-level flags. Default constructible on purpose: the editor can then add
+// it like any other component.
 struct CameraComponent {
     SceneCamera camera;
     bool primary{true};
     bool fixed_aspect_ratio{false};
-    bool perspective{false};
-    // false: orthogonal
-    // true: perspective
-
-    CameraComponent(float size,
-                    float n,
-                    float f,
-                    float zoom_level,
-                    bool primary = true,
-                    bool fix_aspect_ratio = false)
-        : camera(size, n, f, zoom_level), primary(primary),
-          fixed_aspect_ratio(fix_aspect_ratio) {
-    }
-
-    CameraComponent(float fov,
-                    float n,
-                    float f,
-                    bool primary = true,
-                    bool fix_aspect_ratio = false)
-        : camera(fov, n, f), primary(primary),
-          fixed_aspect_ratio(fix_aspect_ratio) {
-    }
 };
 
 struct NativeScriptComponent;

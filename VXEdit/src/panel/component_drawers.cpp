@@ -69,40 +69,49 @@ void draw_sprite(SpriteRendererComponent &sprite, EditorContext & /*context*/) {
 void draw_camera(CameraComponent &camera, EditorContext & /*context*/) {
     SceneCamera &scene_camera = camera.camera;
 
-    int mode = scene_camera.get_mode() == SceneCamera::Mode::Orthogonal ? 0 : 1;
-    const char *modes[] = {"Orthogonal", "Perspective"};
-    if (ImGui::Combo("Mode", &mode, modes, IM_ARRAYSIZE(modes))) {
-        scene_camera.set_mode(mode == 0 ? SceneCamera::Mode::Orthogonal
-                                        : SceneCamera::Mode::Perspective);
+    // Hazel-style: one projection switch, each type keeps its own parameters.
+    const char *types[] = {"Perspective", "Orthographic"};
+    int type = static_cast<int>(scene_camera.get_projection_type());
+    if (ImGui::Combo("Projection", &type, types, IM_ARRAYSIZE(types))) {
+        scene_camera.set_projection_type(
+            static_cast<SceneCamera::ProjectionType>(type));
     }
 
-    if (scene_camera.get_mode() == SceneCamera::Mode::Orthogonal) {
-        float size = scene_camera.get_size();
-        if (ImGui::DragFloat("Size", &size, 1.f, 1.f, 20000.f)) {
-            scene_camera.set_size(size);
+    if (scene_camera.get_projection_type() ==
+        SceneCamera::ProjectionType::Orthographic) {
+        float size = scene_camera.get_orthographic_size();
+        if (ImGui::DragFloat("Size", &size, 1.f, 0.01f, 100000.f)) {
+            scene_camera.set_orthographic_size(size);
         }
-        float zoom = scene_camera.get_zoom_level();
-        if (ImGui::DragFloat("Zoom", &zoom, 0.05f, 0.05f, 20.f)) {
-            scene_camera.set_zoom_level(zoom);
+        float near_clip = scene_camera.get_orthographic_near();
+        if (ImGui::DragFloat("Near", &near_clip, 0.01f, -10000.f, 10000.f)) {
+            scene_camera.set_orthographic_near(near_clip);
+        }
+        float far_clip = scene_camera.get_orthographic_far();
+        if (ImGui::DragFloat("Far", &far_clip, 0.01f, -10000.f, 10000.f)) {
+            scene_camera.set_orthographic_far(far_clip);
         }
     } else {
-        float fov = glm::degrees(scene_camera.get_fov());
-        if (ImGui::DragFloat("FOV", &fov, 0.5f, 1.f, 179.f)) {
-            scene_camera.set_fov(glm::radians(fov));
+        float fov = glm::degrees(scene_camera.get_perspective_vertical_fov());
+        if (ImGui::SliderFloat("FOV", &fov, 1.f, 179.f, "%.1f deg")) {
+            scene_camera.set_perspective_vertical_fov(glm::radians(fov));
+        }
+        float near_clip = scene_camera.get_perspective_near();
+        if (ImGui::DragFloat("Near", &near_clip, 0.01f, 0.001f, 10000.f)) {
+            scene_camera.set_perspective_near(near_clip);
+        }
+        float far_clip = scene_camera.get_perspective_far();
+        if (ImGui::DragFloat("Far", &far_clip, 1.f, 0.01f, 100000.f)) {
+            scene_camera.set_perspective_far(far_clip);
         }
     }
 
-    float near_plane = scene_camera.get_near();
-    if (ImGui::DragFloat("Near", &near_plane, 0.01f, -10000.f, 10000.f)) {
-        scene_camera.set_near(near_plane);
-    }
-    float far_plane = scene_camera.get_far();
-    if (ImGui::DragFloat("Far", &far_plane, 0.01f, -10000.f, 10000.f)) {
-        scene_camera.set_far(far_plane);
-    }
+    ImGui::TextDisabled("Aspect %.3f (from viewport)", scene_camera.get_aspect_ratio());
+    ImGui::Checkbox("Fixed Aspect Ratio", &camera.fixed_aspect_ratio);
+
+    ImGui::Separator();
 
     ImGui::Checkbox("Primary", &camera.primary);
-    ImGui::Checkbox("Fixed Aspect Ratio", &camera.fixed_aspect_ratio);
 }
 
 void draw_script(NativeScriptComponent &script, EditorContext & /*context*/) {
@@ -126,20 +135,8 @@ void register_all_components() {
     registry.add<TransformComponent>(
         "Transform", draw_transform, /*removable*/ false);
     registry.add<SpriteRendererComponent>("Sprite Renderer", draw_sprite);
-    registry.add<CameraComponent>(
-        "Camera",
-        draw_camera,
-        /*removable*/ true,
-        // CameraComponent has no default constructor; six arguments select the
-        // orthogonal overload unambiguously.
-        [](Entity entity) {
-            entity.add_component<CameraComponent>(720.f, // size
-                                                  -1.f,  // near
-                                                  1.f,   // far
-                                                  1.f,   // zoom
-                                                  false, // primary
-                                                  false); // fixed aspect
-        });
+    // CameraComponent is default constructible again, so no custom add is needed.
+    registry.add<CameraComponent>("Camera", draw_camera);
     registry.add<NativeScriptComponent>(
         "Native Script", draw_script, /*removable*/ false);
 

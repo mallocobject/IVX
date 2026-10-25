@@ -60,6 +60,17 @@ class ComponentRegistry {
         return entries_;
     }
 
+    // Lets other panels reuse a component's editor UI (CameraPanel does this for
+    // CameraComponent).
+    const ComponentEntry *find(std::string_view name) const {
+        for (const auto &entry : entries_) {
+            if (entry.name == name) {
+                return &entry;
+            }
+        }
+        return nullptr;
+    }
+
     void clear() {
         entries_.clear();
     }

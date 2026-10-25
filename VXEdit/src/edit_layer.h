@@ -1,6 +1,7 @@
 #pragma once
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
+#include "panel/camera_panel.h"
 #include "panel/editor_context.h"
 #include "panel/inspector_panel.h"
 #include "panel/panel.h"
@@ -22,12 +23,10 @@ class EditLayer : public Layer {
   private:
     // Panel content. The window itself (Begin/End, padding, visibility) is
     // owned by Panel, these functions only emit widgets.
-    void draw_settings_content();
     void draw_viewport_content();
 
     void setup_panels();
 
-    glm::vec4 color_{1.f};
     Ref<Texture2D> texture_;
     Ref<SubTexture2D> sub_texture_;
     Ref<FrameBuffer> frame_buffer_;
@@ -41,8 +40,6 @@ class EditLayer : public Layer {
     Entity camera_entity_;
     Entity second_camera_entity_;
 
-    bool primary_camera_{true};
-
     bool viewport_focused_{false};
     bool viewport_hovered_{false};
     bool visible_{false};
@@ -54,5 +51,6 @@ class EditLayer : public Layer {
     PanelManager panels_;
     Ref<SceneHierarchyPanel> scene_hierarchy_panel_;
     Ref<InspectorPanel> inspector_panel_;
+    Ref<CameraPanel> camera_panel_;
 };
 } // namespace ivx
