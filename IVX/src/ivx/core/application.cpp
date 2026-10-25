@@ -20,12 +20,14 @@ Application::~Application() {
     Renderer::shutdown();
 }
 
-Application::Application(const std::string &title) {
+Application::Application(const std::string &title,
+                         uint32_t width,
+                         uint32_t height) {
     IVX_PROFILE_FUNCTION();
 
     IVX_CORE_ASSERT(!instance_, "Application already exists!");
     instance_ = this;
-    window_ = Window::create(WindowProps{title});
+    window_ = Window::create(WindowProps{title, width, height});
     window_->set_event_callback(IVX_BIND_FN(on_event));
 
     Renderer::init();

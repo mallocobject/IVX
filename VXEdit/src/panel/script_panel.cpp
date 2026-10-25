@@ -102,6 +102,14 @@ void ScriptPanel::on_imgui() {
     }
     was_building_ = host_.is_building();
 
+    // Opening a script should also bring this panel's dock tab to the front: while
+    // editing code the viewport is not needed, and stealing the focus from it also
+    // stops the camera keys from driving the scene.
+    if (request_dock_focus_) {
+        request_dock_focus_ = false;
+        ImGui::SetWindowFocus();
+    }
+
     draw_status();
 
     if (!ImGui::BeginTabBar("##script_tabs")) {
@@ -404,6 +412,7 @@ void ScriptPanel::open_script(const std::string &name) {
     saved_text_ = editor_.GetText();
     open_script_ = name;
     focus_editor_tab_ = true;
+    request_dock_focus_ = true;
     status_.clear();
     status_is_error_ = false;
 }

@@ -5,6 +5,19 @@
 
 namespace ivx {
 
+// Default dock layout. Two rules drive it:
+//   * the viewport gets as much room as possible, so the panels around it stay
+//     narrow and the bottom strip is short;
+//   * panels are grouped by what they are about: scene contents on the left,
+//     properties of the selection on the right, running output at the bottom.
+//
+//   +----------------+----------------------------+----------------+
+//   | Scene          | Viewport / Scripts         | Inspector      |
+//   | Hierarchy      |                            | Camera         |
+//   |                |                            |                |
+//   +----------------+----------------------------+----------------+
+//   | Console / Stats                                             |
+//   +-------------------------------------------------------------+
 void setup_default_layout(ImGuiID dockspace_id) {
     if (dockspace_id == 0) {
         return;
@@ -20,19 +33,29 @@ void setup_default_layout(ImGuiID dockspace_id) {
     const ImGuiID left = ImGui::DockBuilderSplitNode(
         center, ImGuiDir_Left, 0.22f, nullptr, &center);
     const ImGuiID right = ImGui::DockBuilderSplitNode(
-        center, ImGuiDir_Right, 0.30f, nullptr, &center);
+        center, ImGuiDir_Right, 0.28f, nullptr, &center);
+    // Shorter than before (0.30): the viewport needs the height far more than a
+    // console tab strip does.
     const ImGuiID bottom = ImGui::DockBuilderSplitNode(
-        center, ImGuiDir_Down, 0.30f, nullptr, &center);
+        center, ImGuiDir_Down, 0.24f, nullptr, &center);
 
+    // Tab order inside a node: the last window docked is the one shown on startup,
+    // so the viewport is docked after the Scripts panel.
     ImGui::DockBuilderDockWindow("Scene Hierarchy", left);
-    ImGui::DockBuilderDockWindow("Inspector", right);
-    ImGui::DockBuilderDockWindow("Viewport", center);
-    // Scripts sit next to the viewport as a tab, Godot style.
+
+    // Scripts share the centre as a tab, Godot style: a script editor and the
+    // scene view are alternatives, not neighbours.
     ImGui::DockBuilderDockWindow("Scripts", center);
-    // Bottom strip as tabs: the console gets the full width when selected.
-    ImGui::DockBuilderDockWindow("Console", bottom);
-    ImGui::DockBuilderDockWindow("Camera", bottom);
+    ImGui::DockBuilderDockWindow("Viewport", center);
+
+    // The camera panel is about the scene, not about the selection, but it is a
+    // property sheet like the inspector, so it belongs in the same column instead
+    // of taking a slot in the short bottom strip.
+    ImGui::DockBuilderDockWindow("Camera", right);
+    ImGui::DockBuilderDockWindow("Inspector", right);
+
     ImGui::DockBuilderDockWindow("Stats", bottom);
+    ImGui::DockBuilderDockWindow("Console", bottom);
 
     ImGui::DockBuilderFinish(dockspace_id);
 }

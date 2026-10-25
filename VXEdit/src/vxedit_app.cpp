@@ -7,7 +7,7 @@
 namespace ivx {
 class VEXEdit : public Application {
   public:
-    VEXEdit() : Application("VEXEdit") {
+    VEXEdit() : Application("VEXEdit", 1600, 900) {
         push_layer(new EditLayer);
     }
 

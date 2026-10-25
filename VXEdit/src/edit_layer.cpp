@@ -15,6 +15,8 @@
 #include "panel/layout.h"
 #include <algorithm>
 #include <chrono>
+#include <imgui.h>
+#include <imgui_internal.h> // FindWindowByName (viewport focus after a layout reset)
 #include <filesystem>
 #include <cstdint>
 #include <imgui.h>
@@ -291,6 +293,10 @@ void EditLayer::on_render() {
         setup_default_layout(dockspace_id);
         layout_initialized_ = true;
         reset_layout_requested_ = false;
+        // The dock builder leaves the last docked window selected; the viewport is
+        // what you want to see on startup. Applied once the panels exist, i.e. on
+        // the next frame (see below).
+        pending_viewport_focus_ = true;
     }
 
     if (ImGui::BeginMainMenuBar()) {
@@ -320,6 +326,17 @@ void EditLayer::on_render() {
     const auto ui_start = std::chrono::steady_clock::now();
 
     panels_.on_render();
+
+    // Bring the viewport tab to the front after a layout build. Doing it here (not
+    // next to setup_default_layout) means the panels were submitted at least once,
+    // so the window exists, and focusing it also makes the camera keys work right
+    // after startup.
+    if (pending_viewport_focus_) {
+        if (ImGui::FindWindowByName("Viewport") != nullptr) {
+            pending_viewport_focus_ = false;
+            ImGui::SetWindowFocus("Viewport");
+        }
+    }
 
     if (stats_panel_) {
         const float ms =

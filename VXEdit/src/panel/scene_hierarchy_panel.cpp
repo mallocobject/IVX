@@ -60,9 +60,14 @@ void SceneHierarchyPanel::draw_toolbar() {
         set_selected(scene.create_entity("Entity"));
     }
     ImGui::SameLine();
-    ImGui::TextDisabled("| %zu root(s), %zu entity(ies)",
-                        scene.get_root_entities().size(),
-                        scene.registry().view<TagComponent>().size());
+    // Kept short on purpose: the hierarchy dock is narrow, and a long label gets
+    // clipped instead of being readable.
+    ImGui::TextDisabled("| %zu", scene.registry().view<TagComponent>().size());
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("%zu root(s), %zu entity(ies)",
+                          scene.get_root_entities().size(),
+                          scene.registry().view<TagComponent>().size());
+    }
 }
 
 void SceneHierarchyPanel::draw_entity_node(Entity entity) {

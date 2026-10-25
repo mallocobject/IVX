@@ -31,6 +31,10 @@ class EditLayer : public Layer {
 
     void setup_panels();
 
+    // Set when the default layout was (re)built: the viewport tab has to be brought
+    // to the front once the panels exist.
+    bool pending_viewport_focus_{false};
+
     // Starts a non-blocking rebuild of VXScripts.dll; poll_scripts() finishes it.
     void reload_scripts();
     // Called every frame: joins a finished build, loads the new module and

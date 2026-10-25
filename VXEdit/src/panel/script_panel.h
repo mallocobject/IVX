@@ -49,6 +49,9 @@ class ScriptPanel : public Panel {
     bool focus_editor_tab_{false};
     // Detects the building -> idle edge so the error markers refresh exactly once.
     bool was_building_{false};
+    // Asks for this panel's dock tab to come to the front on the next frame (the
+    // dock tab is created by the frame that opens the script).
+    bool request_dock_focus_{false};
 
     char new_script_name_[64]{};
     std::string status_;
