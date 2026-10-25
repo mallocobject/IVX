@@ -11,7 +11,7 @@ class EditLayer : public Layer {
     EditLayer();
     virtual void on_attach() override;
     virtual void on_detach() override;
-    virtual void on_update(float delta_time) override;
+    virtual void on_update(float dt) override;
     virtual void on_event(Event &event) override;
     virtual void on_render() override;
 

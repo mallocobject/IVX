@@ -83,7 +83,7 @@ void EditLayer::on_detach() {
     IVX_PROFILE_FUNCTION();
 }
 
-void EditLayer::on_update(float delta_time) {
+void EditLayer::on_update(float dt) {
     IVX_PROFILE_FUNCTION();
 
     if (visible_) {
@@ -102,7 +102,7 @@ void EditLayer::on_update(float delta_time) {
     if (viewport_focused_) {
     }
 
-    scene_->on_update(delta_time);
+    scene_->on_update(dt);
     square_entity_.get_component<SpriteRendererComponent>().color = color_;
 
     // render

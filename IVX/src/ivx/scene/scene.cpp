@@ -31,7 +31,7 @@ void Scene::destroy_entity(Entity entity) {
     registry_.destroy(entity.handle());
 }
 
-void Scene::on_update(float delta_time) {
+void Scene::on_update(float dt) {
     for (auto [handle, nsc] : registry_.view<NativeScriptComponent>().each()) {
         if (nsc.instance == nullptr) {
             nsc.instance = nsc.instantiate();
@@ -41,7 +41,7 @@ void Scene::on_update(float delta_time) {
     }
 
     for (auto [handle, nsc] : registry_.view<NativeScriptComponent>().each()) {
-        nsc.instance->on_update(delta_time);
+        nsc.instance->on_update(dt);
     }
 }
 

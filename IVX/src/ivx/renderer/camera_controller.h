@@ -13,7 +13,7 @@ class OrthoGraphicCameraController : public RefCounted {
                                  float zoom_level = 1.f,
                                  bool enable_rotation = false);
 
-    void on_update(float delta_time);
+    void on_update(float dt);
     void on_event(Event &event);
 
     void resize(uint32_t width, uint32_t height);
@@ -42,7 +42,7 @@ class PerspectiveCameraController : public RefCounted {
                                 float n,
                                 float f);
 
-    void on_update(float delta_time);
+    void on_update(float dt);
     void on_event(Event &event);
 
     Ref<PerspectiveCamera> get_camera() const {

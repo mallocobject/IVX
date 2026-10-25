@@ -14,7 +14,7 @@ class Layer : public RefCounted {
     }
     virtual void on_detach() {
     }
-    virtual void on_update(float delta_time) {
+    virtual void on_update(float dt) {
     }
     virtual void on_event(Event &event) {
     }

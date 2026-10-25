@@ -18,7 +18,7 @@ class ScriptableEntity {
 
     virtual void on_create() {
     }
-    virtual void on_update(float /*delta_time*/) {
+    virtual void on_update(float /*dt*/) {
     }
     virtual void on_destroy() {
     }

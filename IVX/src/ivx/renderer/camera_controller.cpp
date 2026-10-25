@@ -21,7 +21,7 @@ OrthoGraphicCameraController::OrthoGraphicCameraController(int width,
                                            zoom_level * height / 2);
 }
 
-void OrthoGraphicCameraController::on_update(float delta_time) {
+void OrthoGraphicCameraController::on_update(float dt) {
     IVX_PROFILE_FUNCTION();
 
     static glm::vec3 postion{0.f};
@@ -29,7 +29,7 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
     static constexpr float speed = 500.f;
     static constexpr float delta = 180.f;
 
-    // IVX_INFO("delta time: {}", delta_time);
+    // IVX_INFO("delta time: {}", dt);
 
     glm::vec2 movement{0.f};
     if (Input::is_key_pressed(IVX_KEY_W)) {
@@ -46,16 +46,16 @@ void OrthoGraphicCameraController::on_update(float delta_time) {
     }
 
     if (movement.x != 0 || movement.y != 0) {
-        postion.x += glm::normalize(movement).x * speed * delta_time;
-        postion.y += glm::normalize(movement).y * speed * delta_time;
+        postion.x += glm::normalize(movement).x * speed * dt;
+        postion.y += glm::normalize(movement).y * speed * dt;
     }
 
     if (enable_rotation_) {
         if (Input::is_key_pressed(IVX_KEY_Q)) {
-            rotation += delta * delta_time;
+            rotation += delta * dt;
         }
         if (Input::is_key_pressed(IVX_KEY_E)) {
-            rotation -= delta * delta_time;
+            rotation -= delta * dt;
         }
     }
 

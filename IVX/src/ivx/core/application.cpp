@@ -42,12 +42,12 @@ void Application::run() {
 
         // update
         if (!minimized_) {
-            float delta_time = FrameTimer::tick();
+            float dt = FrameTimer::tick();
             {
                 IVX_PROFILE_SCOPE("LayerStack::on_update");
 
                 for (auto &&layer : layer_stack_) {
-                    layer->on_update(delta_time);
+                    layer->on_update(dt);
                 }
             }
         }
