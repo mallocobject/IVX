@@ -79,7 +79,7 @@ void EditLayer::on_attach() {
     second_camera_entity_.add_component<CameraComponent>(
         static_cast<float>(HEIGHT) / 2.f, -1.f, 1.f, 1.f, false, true);
 
-    scene_hierarchy_panel_.set_scene_context(scene_);
+    setup_panels();
 }
 
 void EditLayer::on_detach() {
@@ -139,6 +139,31 @@ void EditLayer::on_event(Event &event) {
     }
 }
 
+void EditLayer::setup_panels() {
+    IVX_PROFILE_FUNCTION();
+
+    // Content panels first (they only emit widgets), then the hierarchy panel
+    // so the draw order is deterministic: Hierarchy -> Viewport -> Settings.
+    scene_hierarchy_panel_ = &panels_.add<SceneHierarchyPanel>();
+    scene_hierarchy_panel_->set_scene_context(scene_);
+
+    auto &viewport = panels_.add<LambdaPanel>(
+        "Viewport", [this]() { draw_viewport_content(); });
+    viewport.set_pre_begin([]() {
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.f, 0.f});
+    });
+    viewport.set_post_end([]() { ImGui::PopStyleVar(); });
+    viewport.set_on_hidden([this]() {
+        visible_ = false;
+        viewport_focused_ = false;
+        viewport_hovered_ = false;
+        Application::get().imgui_layer()->block_event(true);
+    });
+
+    panels_.add<LambdaPanel>(
+        "Settings", [this]() { draw_settings_content(); });
+}
+
 void EditLayer::on_render() {
     IVX_PROFILE_FUNCTION();
 
@@ -153,18 +178,14 @@ void EditLayer::on_render() {
             }
             ImGui::EndMenu();
         }
+        panels_.draw_view_menu();
         ImGui::EndMainMenuBar();
     }
 
-    draw_settings_panel();
-    scene_hierarchy_panel_.on_render();
-
-    draw_viewport();
+    panels_.on_render();
 }
 
-void EditLayer::draw_settings_panel() {
-    ImGui::Begin("Settings");
-
+void EditLayer::draw_settings_content() {
     auto stats = Renderer2D::get_stats();
     ImGui::Text("Renderer2D Stats:");
     ImGui::Text("Draw Calls: %d", stats.num_draw_calls);
@@ -177,8 +198,6 @@ void EditLayer::draw_settings_panel() {
         auto &tag = square_entity_.get_component<TagComponent>().tag;
         ImGui::Text("%s", tag.c_str());
 
-        auto &squareColor =
-            square_entity_.get_component<SpriteRendererComponent>().color;
         ImGui::ColorEdit4("Square Color", glm::value_ptr(color_));
         ImGui::Separator();
     }
@@ -194,7 +213,6 @@ void EditLayer::draw_settings_panel() {
 
         camera_entity_.get_component<CameraComponent>().camera.set_zoom_level(
             zoom_level);
-
     } else {
         ImGui::DragFloat2(
             "Camera Translation",
@@ -212,33 +230,26 @@ void EditLayer::draw_settings_panel() {
         second_camera_entity_.get_component<CameraComponent>().primary =
             !primary_camera_;
     }
-
-    ImGui::End();
 }
-void EditLayer::draw_viewport() {
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0.f, 0.f});
-    ImGui::Begin("Viewport");
+
+void EditLayer::draw_viewport_content() {
     viewport_focused_ = ImGui::IsWindowFocused();
     viewport_hovered_ = ImGui::IsWindowHovered();
     Application::get().imgui_layer()->block_event(!viewport_focused_ ||
                                                   !viewport_hovered_);
 
-    visible_ = ImGui::IsWindowCollapsed() == false;
-    if (visible_) {
-        ImVec2 viewport_size = ImGui::GetContentRegionAvail();
-        float w = std::max(viewport_size.x, 1.f);
-        float h = std::max(viewport_size.y, 1.f);
+    visible_ = true;
 
-        viewport_size_ = {w, h};
+    ImVec2 viewport_size = ImGui::GetContentRegionAvail();
+    float w = std::max(viewport_size.x, 1.f);
+    float h = std::max(viewport_size.y, 1.f);
 
-        ImGui::Image(
-            static_cast<ImTextureID>(frame_buffer_->get_color_attachment()),
-            viewport_size_,
-            ImVec2{0.0f, 1.0f},
-            ImVec2{1.0f, 0.0f});
-    }
+    viewport_size_ = {w, h};
 
-    ImGui::End();
-    ImGui::PopStyleVar();
+    ImGui::Image(
+        static_cast<ImTextureID>(frame_buffer_->get_color_attachment()),
+        viewport_size_,
+        ImVec2{0.0f, 1.0f},
+        ImVec2{1.0f, 0.0f});
 }
 } // namespace ivx

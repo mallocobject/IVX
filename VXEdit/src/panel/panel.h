@@ -1,0 +1,160 @@
+#pragma once
+
+#include <functional>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <type_traits>
+#include <utility>
+#include <vector>
+
+#include <imgui.h>
+
+namespace ivx {
+
+// ---------------------------------------------------------------------------
+// Panel: one editor window.
+//
+// A subclass only implements on_imgui(), which runs between Begin()/End().
+// The pairing is owned by the base class because ImGui requires End() to be
+// called even when Begin() returns false (collapsed window).
+// ---------------------------------------------------------------------------
+class Panel {
+  public:
+    explicit Panel(std::string_view name, bool default_open = true);
+    virtual ~Panel() = default;
+
+    Panel(const Panel &) = delete;
+    Panel &operator=(const Panel &) = delete;
+
+    void on_render();
+
+    bool &visible_flag() {
+        return opened_;
+    }
+    std::string_view name() const {
+        return name_;
+    }
+    bool is_open() const {
+        return opened_;
+    }
+    void set_open(bool open) {
+        opened_ = open;
+    }
+    bool visible_this_frame() const {
+        return visible_this_frame_;
+    }
+
+  protected:
+    virtual void on_imgui() = 0;
+
+    // Called once, right before the first draw.
+    virtual void on_first_open() {
+    }
+
+    // Called every frame; `visible` is false when the panel is closed or
+    // collapsed. Panels that publish state (e.g. viewport size) reset it here.
+    virtual void on_after_draw(bool /*visible*/) {
+    }
+
+    // Overridable so panels can push style vars around the window itself.
+    virtual bool begin_window();
+    virtual void end_window();
+
+    std::string name_;
+    bool opened_{true};
+
+  private:
+    bool first_open_done_{false};
+    bool visible_this_frame_{false};
+};
+
+using PanelContent = std::function<void()>;
+
+// ---------------------------------------------------------------------------
+// LambdaPanel: adapter for panels that are still a plain block of ImGui calls.
+// Lets existing inline editor windows move into the manager without a rewrite.
+// ---------------------------------------------------------------------------
+class LambdaPanel : public Panel {
+  public:
+    LambdaPanel(std::string_view name,
+                PanelContent content,
+                bool default_open = true);
+
+    LambdaPanel &set_pre_begin(PanelContent fn) {
+        pre_begin_ = std::move(fn);
+        return *this;
+    }
+    LambdaPanel &set_post_end(PanelContent fn) {
+        post_end_ = std::move(fn);
+        return *this;
+    }
+    LambdaPanel &set_on_hidden(PanelContent fn) {
+        on_hidden_ = std::move(fn);
+        return *this;
+    }
+
+  protected:
+    bool begin_window() override;
+    void end_window() override;
+    void on_imgui() override;
+    void on_after_draw(bool visible) override;
+
+  private:
+    PanelContent content_;
+    PanelContent pre_begin_;
+    PanelContent post_end_;
+    PanelContent on_hidden_;
+};
+
+// ---------------------------------------------------------------------------
+// PanelManager: owns the panels, draws them in registration order and provides
+// the View menu that toggles their visibility.
+// ---------------------------------------------------------------------------
+class PanelManager {
+  public:
+    template <typename T, typename... Args>
+        requires std::is_base_of_v<Panel, T>
+    T &add(Args &&...args) {
+        auto panel = std::make_unique<T>(std::forward<Args>(args)...);
+        T &ref = *panel;
+        panels_.push_back(std::move(panel));
+        return ref;
+    }
+
+    Panel *add(std::unique_ptr<Panel> panel);
+
+    void on_render();
+
+    // Must be called from inside a menu bar.
+    void draw_view_menu(const char *menu_name = "View");
+
+    template <typename T>
+    T *find() {
+        if constexpr (std::is_base_of_v<Panel, T>) {
+            for (auto &panel : panels_) {
+                if (auto *typed = dynamic_cast<T *>(panel.get())) {
+                    return typed;
+                }
+            }
+        }
+        return nullptr;
+    }
+
+    std::size_t size() const {
+        return panels_.size();
+    }
+
+    void clear() {
+        panels_.clear();
+    }
+
+    std::vector<std::unique_ptr<Panel>> &panels() {
+        return panels_;
+    }
+
+  private:
+    std::vector<std::unique_ptr<Panel>> panels_;
+};
+
+} // namespace ivx

@@ -4,23 +4,26 @@
 #include <imgui.h>
 
 namespace ivx {
+SceneHierarchyPanel::SceneHierarchyPanel() : Panel("Scene Hierarchy") {
+}
+
 SceneHierarchyPanel::SceneHierarchyPanel(const Ref<Scene> &scene)
-    : scene_(scene) {
+    : Panel("Scene Hierarchy"), scene_(scene) {
 }
 
 void SceneHierarchyPanel::set_scene_context(const Ref<Scene> &scene) {
     scene_ = scene;
 }
 
-void SceneHierarchyPanel::on_render() {
-    ImGui::Begin("Scene Hierarchy");
+void SceneHierarchyPanel::on_imgui() {
+    if (!scene_) {
+        return;
+    }
 
     for (auto [handle, tag] : scene_->registry().view<TagComponent>().each()) {
         Entity entity{handle, scene_.get()};
         draw_entity_node(entity);
     }
-
-    ImGui::End();
 }
 
 void SceneHierarchyPanel::draw_entity_node(Entity entity) {

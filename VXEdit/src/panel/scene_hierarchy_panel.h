@@ -3,15 +3,19 @@
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
+#include "panel.h"
 #include <ivx.h>
 
 namespace ivx {
-class SceneHierarchyPanel {
+class SceneHierarchyPanel : public Panel {
   public:
-    SceneHierarchyPanel() = default;
-    SceneHierarchyPanel(const Ref<Scene> &scene);
+    SceneHierarchyPanel();
+    explicit SceneHierarchyPanel(const Ref<Scene> &scene);
+
     void set_scene_context(const Ref<Scene> &scene);
-    void on_render();
+
+  protected:
+    void on_imgui() override;
 
   private:
     void draw_entity_node(Entity entity);
