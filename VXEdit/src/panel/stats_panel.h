@@ -16,6 +16,9 @@ class StatsPanel : public Panel {
   public:
     StatsPanel();
 
+    // 60 Hz budget; the graph and the headline are coloured against it.
+    static constexpr float kBudgetMs = 16.7f;
+
     // Called once per frame with the frame delta; finalizes the previous frame's
     // measurements and pushes the new sample into the history.
     void begin_frame(float delta_time);
@@ -36,8 +39,6 @@ class StatsPanel : public Panel {
     void draw_graph_column();
 
     static constexpr int kHistorySize = 240;
-    // 60 Hz budget; the graph and the headline are coloured against it.
-    static constexpr float kBudgetMs = 16.7f;
 
     std::vector<Phase> current_;
     std::vector<Phase> reported_;

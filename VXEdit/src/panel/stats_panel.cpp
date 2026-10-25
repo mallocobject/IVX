@@ -111,38 +111,37 @@ void StatsPanel::draw_info_column() {
     ImGui::TextDisabled("budget %.1f ms  |  %.0f%% used", kBudgetMs,
                         smoothed_ms_ > 0.f ? smoothed_ms_ / kBudgetMs * 100.f
                                            : 0.f);
-    ImGui::TextDisabled("last %.2f  avg %.2f  min %.2f  max %.2f", frame_ms_,
-                        avg_ms_, min_ms_, max_ms_);
+    ImGui::TextDisabled("last %.2f  avg %.2f", frame_ms_, avg_ms_);
+    ImGui::TextDisabled("min %.2f  max %.2f", min_ms_, max_ms_);
 
     // ---- phases ----
     ImGui::SeparatorText("Phases");
 
     float measured = 0.f;
-    if (ImGui::BeginTable("##phases", 3,
+    if (ImGui::BeginTable("##phases", 2,
                           ImGuiTableFlags_SizingStretchProp |
                               ImGuiTableFlags_NoSavedSettings)) {
-        ImGui::TableSetupColumn("phase", ImGuiTableColumnFlags_WidthFixed, 58.f);
-        ImGui::TableSetupColumn("ms", ImGuiTableColumnFlags_WidthFixed, 54.f);
+        ImGui::TableSetupColumn("phase", ImGuiTableColumnFlags_WidthFixed, 62.f);
         ImGui::TableSetupColumn("%", ImGuiTableColumnFlags_WidthStretch);
 
         auto row = [this](const char *name, float ms, ImU32 color) {
             const float share = frame_ms_ > 0.f ? ms / frame_ms_ * 100.f : 0.f;
-            ImGui::TableNextRow();
+            char label[48] = {};
+            // The phase name already owns the first column, so the bar only
+            // carries the numbers.
+            std::snprintf(label, sizeof(label), "%.2f ms   %.1f%%", ms, share);
 
+            ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::TextUnformatted(name);
 
             ImGui::TableSetColumnIndex(1);
-            ImGui::TextDisabled("%.2f", ms);
-
-            ImGui::TableSetColumnIndex(2);
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, color);
             ImGui::ProgressBar(std::clamp(share / 100.f, 0.f, 1.f),
                                ImVec2{-FLT_MIN, 0.f},
-                               "");
+                               label); // phase name is the first column, so
+                                       // repeat only the numbers here
             ImGui::PopStyleColor();
-            ImGui::SameLine(ImGui::GetContentRegionMax().x - 44.f);
-            ImGui::TextDisabled("%.1f%%", share);
         };
 
         for (const Phase &phase : reported_) {
