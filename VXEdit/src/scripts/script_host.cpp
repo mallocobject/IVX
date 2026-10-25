@@ -114,6 +114,15 @@ ScriptHost::~ScriptHost() {
     if (worker_.joinable()) {
         worker_.join();
     }
+
+    // Belt and braces: the instances live in the module, so they have to be
+    // gone before `library_` drops it. The editor already does this in
+    // on_detach().
+    unbind_all();
+}
+
+void ScriptHost::release_all_scripts() {
+    unbind_all();
 }
 
 bool ScriptHost::load_initial(std::string &error) {

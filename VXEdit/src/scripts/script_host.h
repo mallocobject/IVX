@@ -33,6 +33,10 @@ class ScriptHost {
 
     bool load_initial(std::string &error);
 
+    // Destroys every script instance while the module is still loaded. Must run
+    // before the DLL is unloaded: on_destroy() executes code that lives in it.
+    void release_all_scripts();
+
     // Starts a build. Instances are unbound and the module unloaded first,
     // because the linker cannot overwrite a DLL that is still mapped in.
     // Returns false when a build is already running.

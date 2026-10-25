@@ -28,6 +28,11 @@ void for_each_enabled_script(entt::registry &registry, Fn &&fn) {
 } // namespace
 namespace {
 // Calls on_destroy() and releases the script instance, if there is one.
+//
+// Ownership note: the instance, its vtable and `destroy` all live in the script
+// module (a DLL). Whoever unloads that module has to release every instance
+// first, otherwise this jumps into freed code. ScriptHost does exactly that in
+// on_detach() and in its destructor.
 void release_script(entt::registry &registry, entt::entity handle) {
     auto *script = registry.try_get<NativeScriptComponent>(handle);
     if (script == nullptr) {

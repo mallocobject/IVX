@@ -17,6 +17,12 @@ namespace ivx {
 Application::~Application() {
     IVX_PROFILE_FUNCTION();
 
+    // Tear the layers down while the window and the GL context still exist:
+    // their destructors release GPU objects, and the editor also owns script
+    // instances whose code lives in a DLL that must not be unloaded before they
+    // are destroyed.
+    layer_stack_.clear();
+
     Renderer::shutdown();
 }
 

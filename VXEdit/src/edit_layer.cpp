@@ -169,6 +169,13 @@ void EditLayer::bind_default_camera_script() {
 void EditLayer::on_detach() {
     IVX_PROFILE_FUNCTION();
 
+    // Script instances live inside VXScripts.dll: their vtable and their code
+    // are gone once the module is unloaded. Scene::~Scene() calls on_destroy()
+    // on whatever is still bound, and ~Scene runs *after* this layer's
+    // ScriptHost member, so the instances have to be released here, while the
+    // module is still mapped.
+    scripts_.release_all_scripts();
+
     // Leave the global gate open for whatever runs after the editor layer.
     Input::set_enabled(true);
 }

@@ -33,4 +33,14 @@ void LayerStack::pop_overlay(Layer *overlay) {
     }
 }
 
+void LayerStack::clear() {
+    // Reverse order: overlays were pushed last and may rely on layers below
+    // them.
+    for (auto it = layers_.rbegin(); it != layers_.rend(); ++it) {
+        (*it)->on_detach();
+    }
+    layers_.clear();
+    layer_insert_idx_ = 0;
+}
+
 } // namespace ivx
