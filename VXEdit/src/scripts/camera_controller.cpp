@@ -1,13 +1,13 @@
-#include "controller.h"
+#include "camera_controller.h"
 #include "ivx/core/logger.h"
 
 namespace ivx {
-void Controller::on_create() {
-    IVX_CORE_DEBUG("Controller attached to '{}'",
-                   get_component<TagComponent>().tag);
+void CameraController::on_create() {
+    IVX_INFO("CameraController attached to '{}'",
+             get_component<TagComponent>().tag);
 }
 
-void Controller::on_update(float dt) {
+void CameraController::on_update(float dt) {
     static constexpr float speed = 500.f;
     static constexpr float delta = 180.f;
     glm::vec3 translation{0.f};
@@ -47,6 +47,8 @@ void Controller::on_update(float dt) {
     tf.rotation += rotation;
 }
 
-void Controller::on_destroy() {
+void CameraController::on_destroy() {
+    IVX_INFO("CameraController detached from '{}'",
+             get_component<TagComponent>().tag);
 }
 } // namespace ivx

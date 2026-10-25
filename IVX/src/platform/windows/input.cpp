@@ -10,6 +10,20 @@
 #endif
 
 namespace ivx {
+namespace {
+// Global gate: editor code disables polling while the viewport does not have
+// focus, so typing in a text field cannot drive the game camera.
+bool g_input_enabled = true;
+} // namespace
+
+void Input::set_enabled(bool enabled) {
+    g_input_enabled = enabled;
+}
+
+bool Input::is_enabled() {
+    return g_input_enabled;
+}
+
 #if defined(IVX_WINDOW_SDL3)
 namespace {
 // ivx::KeyCode uses the GLFW numbering; polling needs the reverse mapping back
@@ -153,6 +167,10 @@ SDL_MouseButtonFlags mask_from_mouse_code(MouseCode button) {
 } // namespace
 
 bool Input::is_key_pressed(KeyCode key) {
+    if (!g_input_enabled) {
+        return false;
+    }
+
     const SDL_Scancode scancode = scancode_from_key(key);
     if (scancode == SDL_SCANCODE_UNKNOWN) {
         return false;
@@ -167,6 +185,10 @@ bool Input::is_key_pressed(KeyCode key) {
 }
 
 bool Input::is_mouse_button_pressed(MouseCode button) {
+    if (!g_input_enabled) {
+        return false;
+    }
+
     const SDL_MouseButtonFlags mask = mask_from_mouse_code(button);
     if (mask == 0) {
         return false;
@@ -183,6 +205,10 @@ glm::vec2 Input::get_mouse_pos() {
 }
 #else
 bool Input::is_key_pressed(KeyCode key) {
+    if (!g_input_enabled) {
+        return false;
+    }
+
     auto window = reinterpret_cast<GLFWwindow *>(
         Application::get().get_window().get_native_window());
     auto state = glfwGetKey(window, static_cast<int32_t>(key));
@@ -190,6 +216,10 @@ bool Input::is_key_pressed(KeyCode key) {
 }
 
 bool Input::is_mouse_button_pressed(MouseCode button) {
+    if (!g_input_enabled) {
+        return false;
+    }
+
     auto window = reinterpret_cast<GLFWwindow *>(
         Application::get().get_window().get_native_window());
     auto state = glfwGetMouseButton(window, static_cast<int32_t>(button));

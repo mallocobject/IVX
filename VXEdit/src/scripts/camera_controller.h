@@ -3,7 +3,10 @@
 #include <ivx.h>
 
 namespace ivx {
-class Controller : public ScriptableEntity {
+
+// Moves its own entity with WASD (Q/E rotate). Registered as an available
+// script; no entity has it bound by default, the editor binds it manually.
+class CameraController : public ScriptableEntity {
   public:
     virtual void on_create() override;
     virtual void on_update(float dt) override;

@@ -9,12 +9,24 @@
 
 namespace ivx {
 
+// Per-type editor policy.
+struct ComponentFlags {
+    bool removable{true};
+    // Whether the type shows up in "Add Component". Singleton-ish components
+    // (Camera) are created through their own panel instead: bolting a camera
+    // onto a sprite entity is almost always a mistake.
+    bool addable{true};
+    // Whether the type gets its own section in the inspector. Tag is edited by
+    // the inspector header instead, so it must not be drawn twice.
+    bool draw_in_inspector{true};
+};
+
 // One row of the inspector: how to query/add/remove a component type and how to
 // draw its widgets. Everything is type erased here so the inspector itself does
 // not have to know about the component types.
 struct ComponentEntry {
     std::string name;
-    bool removable{true};
+    ComponentFlags flags;
     std::function<bool(Entity)> has;
     std::function<void(Entity)> add;
     std::function<void(Entity)> remove;
@@ -25,18 +37,15 @@ class ComponentRegistry {
   public:
     static ComponentRegistry &get();
 
-    // `add`/`custom_add` default to plain add_component<T>() / remove_component<T>().
-    // Types without a default constructor (CameraComponent) pass a custom add.
-    // The draw callback also receives the entity, so a drawer can inspect the
-    // other components (e.g. Transform locking its Z for cameras).
+    // `custom_add` defaults to plain add_component<T>().
     template <typename T>
     void add(std::string name,
              std::function<void(Entity, T &, EditorContext &)> draw,
-             bool removable = true,
+             ComponentFlags flags = {},
              std::function<void(Entity)> custom_add = {}) {
         ComponentEntry entry;
         entry.name = std::move(name);
-        entry.removable = removable;
+        entry.flags = flags;
         entry.has = [](Entity entity) { return entity.has_component<T>(); };
         entry.remove = [](Entity entity) { entity.remove_component<T>(); };
         if (custom_add) {

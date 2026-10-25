@@ -49,12 +49,14 @@ void InspectorPanel::draw_entity_header(Entity entity) {
                       tag->tag.c_str());
     }
 
-    ImGui::TextDisabled("Entity %u", static_cast<uint32_t>(
-                                         static_cast<entt::id_type>(
-                                             entity.handle())));
+    // The one and only name editor: TagComponent has no section of its own.
+    ImGui::TextDisabled("Entity %u",
+                        static_cast<uint32_t>(
+                            static_cast<entt::id_type>(entity.handle())));
+
     ImGui::SetNextItemWidth(-FLT_MIN);
-    if (ImGui::InputText("##name", name_buffer_, sizeof(name_buffer_),
-                         ImGuiInputTextFlags_EnterReturnsTrue)) {
+    // Live editing (no EnterReturnsTrue): the hierarchy renames as you type.
+    if (ImGui::InputText("##name", name_buffer_, sizeof(name_buffer_))) {
         if (auto *editable = entity.try_get_component<TagComponent>()) {
             editable->tag = name_buffer_;
         }
@@ -65,6 +67,10 @@ void InspectorPanel::draw_components(Entity entity) {
     const auto &entries = ComponentRegistry::get().entries();
 
     for (const ComponentEntry &entry : entries) {
+        // Tag is edited by the header above, so it must not be drawn twice.
+        if (!entry.flags.draw_in_inspector) {
+            continue;
+        }
         if (!entry.has || !entry.has(entity)) {
             continue;
         }
@@ -77,7 +83,7 @@ void InspectorPanel::draw_components(Entity entity) {
         // Right-click on the header: destructive actions (context menus are
         // more reliable than popups anchored to a button, and they cannot be
         // clipped by the window edge).
-        if (entry.removable && ImGui::BeginPopupContextItem("##entry_ctx")) {
+        if (entry.flags.removable && ImGui::BeginPopupContextItem("##entry_ctx")) {
             if (ImGui::MenuItem("Remove Component")) {
                 pending_remove_.push_back(entry.name);
             }
@@ -101,8 +107,13 @@ void InspectorPanel::draw_add_component_menu(Entity entity) {
 
     bool any_available = false;
     for (const ComponentEntry &entry : entries) {
+        // Not addable (e.g. Camera: created as an entity from the Camera panel)
+        // or already present -> nothing to offer here.
+        if (!entry.flags.addable) {
+            continue;
+        }
         if (entry.has && entry.has(entity)) {
-            continue; // already present
+            continue;
         }
         any_available = true;
         if (ImGui::Selectable(("+ " + entry.name).c_str())) {
@@ -110,7 +121,7 @@ void InspectorPanel::draw_add_component_menu(Entity entity) {
         }
     }
     if (!any_available) {
-        ImGui::TextDisabled("Every known component is already present");
+        ImGui::TextDisabled("Nothing left to add");
     }
 }
 

@@ -44,6 +44,28 @@ void CameraPanel::set_primary_camera(Entity entity) {
     }
 }
 
+void CameraPanel::create_camera() {
+    if (!context_.scene) {
+        return;
+    }
+
+    Scene &scene = *context_.scene;
+    Entity camera_entity = scene.create_entity("Camera");
+    auto &camera = camera_entity.add_component<CameraComponent>();
+    camera.camera.set_orthographic_size(720.f);
+    camera.camera.set_projection_type(
+        SceneCamera::ProjectionType::Orthographic);
+
+    // Start one unit in front of the sprite plane (z = 0) so the view is valid
+    // for both projections; near/far are distances and already cover it.
+    camera_entity.get_component<TransformComponent>().translation =
+        glm::vec3{0.f, 0.f, 1.f};
+
+    // Only take over rendering when nothing is primary yet.
+    camera.primary = !static_cast<bool>(primary_camera());
+    selected_camera_ = camera_entity.handle();
+}
+
 void CameraPanel::on_imgui() {
     if (!context_.scene) {
         ImGui::TextUnformatted("No scene");
@@ -74,6 +96,10 @@ void CameraPanel::on_imgui() {
 void CameraPanel::draw_camera_list() {
     // Renderer picks the first primary camera; make that visible in the UI.
     ImGui::TextDisabled("Scene cameras (radio = primary)");
+    ImGui::SameLine(ImGui::GetContentRegionMax().x - 96.f);
+    if (ImGui::SmallButton("+ New Camera")) {
+        create_camera();
+    }
 
     for (auto [handle, camera] :
          context_.scene->registry().view<CameraComponent>().each()) {

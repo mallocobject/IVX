@@ -3,6 +3,7 @@
 #include "ivx/core/logger.h"
 #include "ivx/scene/components.h"
 #include "ivx/scene/scriptable_entity.h"
+#include "scripts/script_registry.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
@@ -14,14 +15,6 @@ namespace {
 // Small helper: a DragFloat row with a reset button on the right.
 void drag_vec2(const char *label, glm::vec2 &value, float speed) {
     ImGui::DragFloat2(label, glm::value_ptr(value), speed);
-}
-
-void draw_tag(Entity /*entity*/, TagComponent &tag, EditorContext & /*context*/) {
-    char buffer[256];
-    std::snprintf(buffer, sizeof(buffer), "%s", tag.tag.c_str());
-    if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
-        tag.tag = buffer;
-    }
 }
 
 void draw_transform(Entity /*entity*/,
@@ -120,15 +113,48 @@ void draw_camera(Entity /*entity*/,
     ImGui::Checkbox("Primary", &camera.primary);
 }
 
-void draw_script(Entity /*entity*/,
+void draw_script(Entity entity,
                  NativeScriptComponent &script,
                  EditorContext & /*context*/) {
-    if (script.instantiate != nullptr) {
-        ImGui::TextDisabled("Script bound");
+    const ScriptRegistry &scripts = ScriptRegistry::get();
+
+    const char *bound_name = scripts.name_of(script.instantiate);
+
+    if (script.is_bound()) {
+        ImGui::Text("Script: %s", bound_name != nullptr ? bound_name : "<unknown>");
     } else {
         ImGui::TextDisabled("No script bound");
     }
+
+    // Picking a script binds it (and destroys the previous instance).
+    if (ImGui::BeginCombo("##script",
+                          script.is_bound() ? (bound_name != nullptr ? bound_name
+                                                                    : "<unknown>")
+                                            : "Select script...")) {
+        for (const ScriptEntry &entry : scripts.entries()) {
+            const bool selected =
+                bound_name != nullptr && entry.name == bound_name;
+            if (ImGui::Selectable(entry.name.c_str(), selected)) {
+                scripts.bind_by_name(entry.name, entity);
+            }
+        }
+        ImGui::EndCombo();
+    }
+
+    // An unbound script cannot run, so its toggle would only be misleading.
+    ImGui::BeginDisabled(!script.is_bound());
     ImGui::Checkbox("Enabled", &script.enabled);
+    ImGui::EndDisabled();
+
+    if (script.is_bound()) {
+        ImGui::SameLine();
+        if (ImGui::Button("Unbind")) {
+            const auto *tag = entity.try_get_component<TagComponent>();
+            IVX_INFO("Unbound script from '{}'",
+                     tag != nullptr ? tag->tag : "<unnamed>");
+            script.unbind();
+        }
+    }
 }
 
 } // namespace
@@ -139,14 +165,23 @@ void register_all_components() {
         return; // already registered
     }
 
-    registry.add<TagComponent>("Tag", draw_tag, /*removable*/ false);
+    // Tag is edited by the inspector header (the entity name), so it has no
+    // section of its own and cannot be added/removed.
+    registry.add<TagComponent>("Tag",
+                               /*draw*/ {},
+                               {.removable = false,
+                                .addable = false,
+                                .draw_in_inspector = false});
     registry.add<TransformComponent>(
-        "Transform", draw_transform, /*removable*/ false);
+        "Transform", draw_transform, {.removable = false});
     registry.add<SpriteRendererComponent>("Sprite Renderer", draw_sprite);
-    // CameraComponent is default constructible again, so no custom add is needed.
-    registry.add<CameraComponent>("Camera", draw_camera);
+    // Cameras are entities, not something you bolt onto a sprite: they are
+    // created from the Camera panel. Still editable/removable when present.
+    registry.add<CameraComponent>("Camera",
+                                  draw_camera,
+                                  {.addable = false});
     registry.add<NativeScriptComponent>(
-        "Native Script", draw_script, /*removable*/ false);
+        "Native Script", draw_script, {.removable = false});
 
     IVX_CORE_DEBUG("Registered {} component type(s)", registry.entries().size());
 }

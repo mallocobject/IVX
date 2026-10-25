@@ -30,6 +30,7 @@ void setup_default_layout(ImGuiID dockspace_id) {
     // Bottom strip as tabs: the console gets the full width when selected.
     ImGui::DockBuilderDockWindow("Console", bottom);
     ImGui::DockBuilderDockWindow("Camera", bottom);
+    ImGui::DockBuilderDockWindow("Stats", bottom);
 
     ImGui::DockBuilderFinish(dockspace_id);
 }

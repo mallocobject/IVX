@@ -159,8 +159,11 @@ bool Scene::is_descendant_of(Entity entity, Entity ancestor) {
 }
 
 void Scene::on_update(float dt) {
+    // Unbound entries are legal (the editor creates them and the user picks a
+    // script later), so `instantiate` must be checked before being called -- a
+    // null function pointer is an instant crash, not an exception.
     for (auto [handle, nsc] : registry_.view<NativeScriptComponent>().each()) {
-        if (nsc.instance == nullptr) {
+        if (nsc.instance == nullptr && nsc.instantiate != nullptr) {
             nsc.instance = nsc.instantiate();
             nsc.instance->entity_ = Entity{handle, this};
             nsc.instance->on_create();
@@ -168,7 +171,7 @@ void Scene::on_update(float dt) {
     }
 
     for (auto [handle, nsc] : registry_.view<NativeScriptComponent>().each()) {
-        if (nsc.enabled) {
+        if (nsc.enabled && nsc.instance != nullptr) {
             nsc.instance->on_update(dt);
         }
     }

@@ -34,6 +34,12 @@ struct NativeScriptComponent {
     void (*destroy)(NativeScriptComponent *){nullptr};
     bool enabled{false};
 
+    // An unbound component is valid: the editor creates it first and the user
+    // picks a script afterwards. Scene::on_update() skips unbound entries.
+    bool is_bound() const {
+        return instantiate != nullptr;
+    }
+
     template <typename T>
     void bind() {
         instantiate = []() -> ScriptableEntity * { return new T(); };
@@ -41,6 +47,19 @@ struct NativeScriptComponent {
             delete nsc->instance;
             nsc->instance = nullptr;
         };
+    }
+
+    // Drops the binding together with the live instance.
+    void unbind() {
+        if (instance != nullptr) {
+            instance->on_destroy();
+        }
+        if (destroy != nullptr) {
+            destroy(this);
+        }
+        instantiate = nullptr;
+        destroy = nullptr;
+        enabled = false;
     }
 };
 } // namespace ivx

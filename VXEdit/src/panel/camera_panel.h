@@ -26,6 +26,9 @@ class CameraPanel : public Panel {
 
     Entity primary_camera() const;
     void set_primary_camera(Entity entity);
+    // Cameras are entities: "Add Component" deliberately does not offer the
+    // Camera component, this button is the supported way to make one.
+    void create_camera();
     // Moves the camera onto the selection (and frames it when orthographic).
     void focus_selection(Entity camera_entity, bool also_frame);
 

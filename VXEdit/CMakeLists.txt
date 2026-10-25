@@ -5,6 +5,10 @@ file(GLOB_RECURSE SANDBOX_SOURCES CONFIGURE_DEPENDS
 
 add_executable(VXEdit ${SANDBOX_SOURCES})
 
+# Lets sources include each other as "panel/..." and "scripts/..." regardless of
+# where the including file lives.
+target_include_directories(VXEdit PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
+
 target_link_libraries(VXEdit PRIVATE IVX)
 
 target_compile_definitions(VXEdit PRIVATE

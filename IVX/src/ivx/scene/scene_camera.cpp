@@ -11,7 +11,7 @@ namespace {
 // near -> depth 1, far -> depth 0, matching glClipControl(GL_ZERO_TO_ONE) plus
 // glDepthFunc(GL_GREATER).
 //
-// `z_near`/`z_far` are view-space z values here, i.e. negative distances.
+// `n`/`f` are positive distances; the near plane lands at view z = -n.
 static glm::mat4 ortho_rh_reverse_z(float left,
                                     float right,
                                     float bottom,

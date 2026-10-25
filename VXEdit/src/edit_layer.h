@@ -7,6 +7,7 @@
 #include "panel/inspector_panel.h"
 #include "panel/panel.h"
 #include "panel/scene_hierarchy_panel.h"
+#include "panel/stats_panel.h"
 #include <imgui.h>
 #include <ivx.h>
 #include <vector>
@@ -43,6 +44,9 @@ class EditLayer : public Layer {
 
     bool viewport_focused_{false};
     bool viewport_hovered_{false};
+    // Set while the viewport panel draws; the input gate is cleared when a frame
+    // passes without it (closed/collapsed viewport).
+    bool viewport_sampled_{false};
     bool visible_{false};
     ImVec2 viewport_size_{0.f, 0.f};
 
@@ -54,5 +58,6 @@ class EditLayer : public Layer {
     Ref<InspectorPanel> inspector_panel_;
     Ref<CameraPanel> camera_panel_;
     Ref<ConsolePanel> console_panel_;
+    Ref<StatsPanel> stats_panel_;
 };
 } // namespace ivx

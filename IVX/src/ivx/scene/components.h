@@ -85,11 +85,11 @@ struct SpriteRendererComponent {
 };
 
 // Projection parameters live in SceneCamera, the component only adds the
-// scene-level flags. Default constructible on purpose: the editor can then add
-// it like any other component.
+// scene-level flags. Default constructible; `primary` defaults to false so that
+// merely adding a camera never takes over rendering.
 struct CameraComponent {
     SceneCamera camera;
-    bool primary{true};
+    bool primary{false};
     bool fixed_aspect_ratio{false};
 };
 

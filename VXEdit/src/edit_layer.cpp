@@ -4,15 +4,17 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/application.h"
+#include "ivx/core/input.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/event.h"
 #include "ivx/renderer/render_command.h"
 #include "ivx/scene/scene.h"
 #include "ivx/scene/scriptable_entity.h"
 #include "panel/component_registry.h"
+#include "scripts/script_registry.h"
 #include "panel/layout.h"
-#include "scripts/controller.h"
 #include <algorithm>
+#include <chrono>
 #include <filesystem>
 #include <cstdint>
 #include <imgui.h>
@@ -97,7 +99,9 @@ void EditLayer::on_attach() {
         camera_entity_.get_component<TransformComponent>().translation =
             glm::vec3{0.f, 0.f, 1.f};
     }
-    camera_entity_.add_component<NativeScriptComponent>().bind<Controller>();
+    // No entity gets a script by default: CameraController (and anything else
+    // registered later) is only *available*. Select an entity, Add Component ->
+    // Native Script, then pick the script in the inspector.
 
     second_camera_entity_ = scene_->create_entity("CameraB Entity");
     {
@@ -117,10 +121,20 @@ void EditLayer::on_attach() {
 
 void EditLayer::on_detach() {
     IVX_PROFILE_FUNCTION();
+
+    // Leave the global gate open for whatever runs after the editor layer.
+    Input::set_enabled(true);
 }
 
 void EditLayer::on_update(float dt) {
     IVX_PROFILE_FUNCTION();
+
+    const auto update_start = std::chrono::steady_clock::now();
+
+    // Finalize the previous frame's measurements and start a new sample.
+    if (stats_panel_) {
+        stats_panel_->begin_frame(dt);
+    }
 
     // Keeps collecting log output even when the Console panel is closed.
     if (console_panel_) {
@@ -138,10 +152,11 @@ void EditLayer::on_update(float dt) {
         }
     }
 
-    // update
-    if (auto *script = camera_entity_.try_get_component<NativeScriptComponent>()) {
-        script->enabled = viewport_focused_;
-    }
+    // Gate input, not script state: overwriting NativeScriptComponent::enabled
+    // here used to silently undo the inspector's "Enabled" checkbox and made
+    // "Unbind" look broken. Whether a script runs is the user's choice; whether
+    // keyboard polling happens depends on viewport focus (set while drawing the
+    // viewport panel, see draw_viewport_content()).
 
     scene_->on_update(dt);
 
@@ -165,6 +180,14 @@ void EditLayer::on_update(float dt) {
     }
 
     frame_buffer_->unbind();
+
+    if (stats_panel_) {
+        const auto update_end = std::chrono::steady_clock::now();
+        const float ms =
+            std::chrono::duration<float, std::milli>(update_end - update_start)
+                .count();
+        stats_panel_->submit("update", ms);
+    }
 }
 
 void EditLayer::on_event(Event &event) {
@@ -178,6 +201,7 @@ void EditLayer::setup_panels() {
     IVX_PROFILE_FUNCTION();
 
     register_all_components();
+    register_all_scripts();
 
     // Deterministic draw order: Hierarchy -> Viewport -> Inspector -> Camera.
     scene_hierarchy_panel_ = panels_.add<SceneHierarchyPanel>(context_);
@@ -196,6 +220,7 @@ void EditLayer::setup_panels() {
     inspector_panel_ = panels_.add<InspectorPanel>(context_);
     camera_panel_ = panels_.add<CameraPanel>(context_);
     console_panel_ = panels_.add<ConsolePanel>();
+    stats_panel_ = panels_.add<StatsPanel>();
 }
 
 void EditLayer::on_render() {
@@ -231,12 +256,40 @@ void EditLayer::on_render() {
         ImGui::EndMainMenuBar();
     }
 
+    // --- UI / ImGui submission ---
+    const auto ui_start = std::chrono::steady_clock::now();
+
     panels_.on_render();
+
+    if (stats_panel_) {
+        const float ms =
+            std::chrono::duration<float, std::milli>(
+                std::chrono::steady_clock::now() - ui_start)
+                .count();
+        stats_panel_->submit("ui", ms);
+    }
+
+    // The input gate is driven by the viewport focus sampled while drawing the
+    // panel. If the panel did not draw this frame (closed, collapsed, or the
+    // window hidden) nobody owns the keyboard, and a stale `true` here would
+    // leave input flowing into game scripts.
+    if (!viewport_sampled_) {
+        viewport_focused_ = false;
+        viewport_hovered_ = false;
+        Input::set_enabled(false);
+    }
+    viewport_sampled_ = false;
 }
 
 void EditLayer::draw_viewport_content() {
     viewport_focused_ = ImGui::IsWindowFocused();
     viewport_hovered_ = ImGui::IsWindowHovered();
+    viewport_sampled_ = true;
+
+    // Set here rather than in on_update(): this is the exact frame the focus
+    // changed, so the next update sees the right value instead of a stale flag.
+    Input::set_enabled(viewport_focused_);
+
     Application::get().imgui_layer()->block_event(!viewport_focused_ ||
                                                   !viewport_hovered_);
 
