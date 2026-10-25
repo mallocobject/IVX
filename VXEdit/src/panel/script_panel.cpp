@@ -102,45 +102,37 @@ void ScriptPanel::on_imgui() {
     }
     was_building_ = host_.is_building();
 
-    // Opening a script should also bring this panel's dock tab to the front: while
-    // editing code the viewport is not needed, and stealing the focus from it also
-    // stops the camera keys from driving the scene.
-    if (request_dock_focus_) {
-        request_dock_focus_ = false;
-        ImGui::SetWindowFocus();
-    }
-
     draw_status();
+    ImGui::Separator();
 
-    if (!ImGui::BeginTabBar("##script_tabs")) {
-        return;
+    // Side by side instead of tabs: while editing you still see the library, and the
+    // list is what you pick the next script from. Squeezing the list into a tab (or
+    // the editor into a dock column) made one of the two unusable.
+    const float available = ImGui::GetContentRegionAvail().x;
+    const float library_width =
+        std::clamp(available * 0.34f, 300.f, 460.f);
+
+    if (ImGui::BeginChild("##library",
+                          ImVec2{library_width, 0.f},
+                          ImGuiChildFlags_None)) {
+        draw_library_pane();
     }
+    ImGui::EndChild();
 
-    if (ImGui::BeginTabItem("Library")) {
-        draw_library_tab();
-        ImGui::EndTabItem();
+    ImGui::SameLine();
+
+    // A slightly lighter background than the code editor's own: the empty pane has to
+    // read as "nothing open yet", not as a broken view.
+    ImGui::PushStyleColor(ImGuiCol_ChildBg,
+                          ImVec4{0.121f, 0.121f, 0.133f, 1.f});
+    if (ImGui::BeginChild("##editor", ImVec2{0.f, 0.f}, ImGuiChildFlags_None)) {
+        draw_editor_pane();
     }
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
 
-    if (!open_script_.empty()) {
-        const bool dirty = is_dirty();
-        const std::string title = open_script_ + ".cpp" + (dirty ? " *" : "") +
-                                  "###script_editor";
-        ImGuiTabItemFlags flags = ImGuiTabItemFlags_None;
-        if (focus_editor_tab_) {
-            flags |= ImGuiTabItemFlags_SetSelected;
-            focus_editor_tab_ = false;
-        }
-        if (ImGui::BeginTabItem(title.c_str(), nullptr, flags)) {
-            draw_editor_tab();
-            ImGui::EndTabItem();
-        }
-    }
-
-    ImGui::EndTabBar();
-
-    // Panel-level shortcuts, so they work from either tab. Ctrl+S writes the file
-    // only, Ctrl+B saves and rebuilds the module; keeping them apart matters
-    // because the build is the slow half.
+    // Panel-level shortcuts: Ctrl+S writes the file only, Ctrl+B saves and rebuilds
+    // the module; keeping them apart matters because the build is the slow half.
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
         ImGui::GetIO().KeyCtrl) {
         if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
@@ -198,7 +190,7 @@ void ScriptPanel::draw_status() {
     }
 }
 
-void ScriptPanel::draw_library_tab() {
+void ScriptPanel::draw_library_pane() {
     draw_toolbar();
     ImGui::Separator();
     draw_new_script_form();
@@ -223,25 +215,31 @@ void ScriptPanel::draw_toolbar() {
     }
 
     ImGui::SameLine();
-    if (ImGui::Button("Open Folder")) {
+    if (ImGui::Button("Folder")) {
         reveal_in_explorer(host_.scripts_dir());
     }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Show %s in Explorer",
+                          host_.scripts_dir().string().c_str());
+    }
 
-    ImGui::SameLine();
-    ImGui::TextDisabled("module: %s | %s",
-                        host_.is_loaded() ? "loaded" : "not loaded",
-                        host_.scripts_dir().filename().string().c_str());
+    // On its own line: the left pane is narrow, and the module state is secondary
+    // information that can be truncated without losing anything useful.
+    ImGui::TextDisabled("module: %s", host_.is_loaded() ? "loaded" : "missing");
 }
 
 void ScriptPanel::draw_new_script_form() {
-    ImGui::TextDisabled("New script (generates scripts/<Name>.h/.cpp)");
-
-    ImGui::SetNextItemWidth(220.f);
+    ImGui::TextDisabled("New script");
+    // Requested by the empty editor state's "New script" button.
+    if (focus_new_script_) {
+        ImGui::SetKeyboardFocusHere();
+        focus_new_script_ = false;
+    }
+    ImGui::SetNextItemWidth(-FLT_MIN);
     ImGui::InputTextWithHint("##new_script", "MyScript", new_script_name_,
                              sizeof(new_script_name_));
-    ImGui::SameLine();
     ImGui::BeginDisabled(host_.is_building());
-    if (ImGui::Button("Create + Build")) {
+    if (ImGui::Button("Create + Build", ImVec2{-FLT_MIN, 0.f})) {
         std::filesystem::path header_path;
         std::filesystem::path source_path;
         std::string error;
@@ -258,6 +256,10 @@ void ScriptPanel::draw_new_script_form() {
         }
     }
     ImGui::EndDisabled();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Writes scripts/<Name>.h/.cpp from the template and\n"
+                          "compiles the module.");
+    }
 }
 
 void ScriptPanel::draw_script_list() {
@@ -269,7 +271,11 @@ void ScriptPanel::draw_script_list() {
         return;
     }
 
-    if (!ImGui::BeginChild("##script_list", ImVec2{0.f, 120.f},
+    // Same split as the pane itself: the list grows, the build output keeps a fixed
+    // slot at the bottom.
+    constexpr float kBuildOutputHeight = 150.f;
+    if (!ImGui::BeginChild("##script_list",
+                           ImVec2{0.f, -kBuildOutputHeight},
                            ImGuiChildFlags_None)) {
         ImGui::EndChild();
         return;
@@ -277,30 +283,30 @@ void ScriptPanel::draw_script_list() {
 
     // Two columns instead of a full-width Selectable with SameLine buttons: the
     // Selectable used to cover the whole row and swallow every click meant for the
-    // buttons, so "Open" only selected the row.
+    // buttons. A single click opens the script, the way a file gets opened in an
+    // editor's explorer.
     const ImGuiTableFlags flags =
         ImGuiTableFlags_SizingFixedFit | ImGuiTableFlags_NoSavedSettings;
     if (ImGui::BeginTable("##scripts", 2, flags)) {
         ImGui::TableSetupColumn("name", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("actions", ImGuiTableColumnFlags_WidthFixed,
-                                128.f);
+                                64.f);
 
         for (const ScriptEntry &entry : entries) {
             ImGui::PushID(entry.name.c_str());
             ImGui::TableNextRow();
 
             ImGui::TableNextColumn();
-            ImGui::Selectable(entry.name.c_str(), open_script_ == entry.name,
-                              ImGuiSelectableFlags_AllowDoubleClick);
-            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0)) {
+            if (ImGui::Selectable(entry.name.c_str(),
+                                  open_script_ == entry.name,
+                                  ImGuiSelectableFlags_AllowDoubleClick)) {
                 open_script(entry.name);
+            }
+            if (ImGui::IsItemHovered()) {
+                ImGui::SetTooltip("%s", host_.script_path(entry.name).string().c_str());
             }
 
             ImGui::TableNextColumn();
-            if (ImGui::SmallButton("Open")) {
-                open_script(entry.name);
-            }
-            ImGui::SameLine();
             if (ImGui::SmallButton("Folder")) {
                 reveal_in_explorer(host_.script_path(entry.name));
             }
@@ -314,9 +320,75 @@ void ScriptPanel::draw_script_list() {
     ImGui::EndChild();
 }
 
-void ScriptPanel::draw_editor_tab() {
-    if (!editor_ready_) {
-        ImGui::TextDisabled("Open a script from the Library tab.");
+void ScriptPanel::draw_empty_editor() {
+    // Centred "what to do next" block instead of an empty black column: the pane is
+    // useless without a file, so it should explain itself and offer the two things a
+    // user can reasonably do from here.
+    const ImVec2 available = ImGui::GetContentRegionAvail();
+    ImGuiStyle &style = ImGui::GetStyle();
+
+    const float glyph_size = style.FontSizeBase * 2.6f;
+    const float line_height = ImGui::GetTextLineHeightWithSpacing();
+    const float button_height = ImGui::GetFrameHeight();
+
+    const char *title = "No script open";
+    const char *hint = "Pick one in the library on the left, or create a new one";
+    const char *shortcuts = "Ctrl+S  save        Ctrl+B  save & build";
+
+    auto centered_text = [&available](const char *text, ImVec4 color) {
+        const float width = ImGui::CalcTextSize(text).x;
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                             std::max(0.f, (available.x - width) * 0.5f));
+        ImGui::TextColored(color, "%s", text);
+    };
+
+    auto button_width = [&style](const char *label) {
+        return ImGui::CalcTextSize(label).x + style.FramePadding.x * 2.f;
+    };
+    const float new_width = button_width("New script");
+    const float build_width = button_width("Build & Reload");
+    const float row_width = new_width + style.ItemSpacing.x + build_width;
+
+    // Total height, used to centre the block vertically.
+    const float block_height = glyph_size + line_height * 2.f + button_height +
+                               ImGui::GetTextLineHeight() + style.ItemSpacing.y * 4.f;
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() +
+                         std::max(0.f, (available.y - block_height) * 0.5f));
+
+    // Big dim braces: reads as "code goes here" without an icon font.
+    ImGui::PushFont(nullptr, glyph_size);
+    const float glyph_width = ImGui::CalcTextSize("{ }").x;
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                         std::max(0.f, (available.x - glyph_width) * 0.5f));
+    ImGui::TextColored(ImVec4{0.34f, 0.36f, 0.42f, 1.f}, "{ }");
+    ImGui::PopFont();
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + style.ItemSpacing.y);
+    centered_text(title, ImGui::GetStyleColorVec4(ImGuiCol_Text));
+    centered_text(hint, ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + style.ItemSpacing.y);
+    ImGui::SetCursorPosX(ImGui::GetCursorPosX() +
+                         std::max(0.f, (available.x - row_width) * 0.5f));
+    if (ImGui::Button("New script", ImVec2{new_width, 0.f})) {
+        // The name field lives in the left pane, which is drawn before this one, so
+        // the request is picked up on the next frame.
+        focus_new_script_ = true;
+    }
+    ImGui::SameLine();
+    ImGui::BeginDisabled(host_.is_building());
+    if (ImGui::Button("Build & Reload", ImVec2{build_width, 0.f})) {
+        start_build();
+    }
+    ImGui::EndDisabled();
+
+    ImGui::SetCursorPosY(ImGui::GetCursorPosY() + style.ItemSpacing.y);
+    centered_text(shortcuts, ImVec4{0.45f, 0.45f, 0.48f, 1.f});
+}
+
+void ScriptPanel::draw_editor_pane() {
+    if (!editor_ready_ || open_script_.empty()) {
+        draw_empty_editor();
         return;
     }
 
@@ -411,8 +483,6 @@ void ScriptPanel::open_script(const std::string &name) {
     // look modified right after opening.
     saved_text_ = editor_.GetText();
     open_script_ = name;
-    focus_editor_tab_ = true;
-    request_dock_focus_ = true;
     status_.clear();
     status_is_error_ = false;
 }

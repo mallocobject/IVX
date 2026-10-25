@@ -1,6 +1,9 @@
 #include "stats_panel.h"
 
+#include <imgui_internal.h> // FindWindowByName: the overlay hangs off the viewport
+
 #include "ivx/core/application.h"
+#include "ivx/core/logger.h"
 #include "ivx/core/window.h"
 #include "ivx/renderer/renderer2d.h"
 
@@ -36,7 +39,61 @@ void format_count(char *buffer, std::size_t size, float value) {
 } // namespace
 
 StatsPanel::StatsPanel() : Panel("Stats") {
-    set_default_size(ImVec2{560.f, 300.f});
+    set_default_size(ImVec2{560.f, 360.f});
+    // Floating overlay: it must never take a dock slot, and it should not steal the
+    // focus when it appears or when the layout is rebuilt.
+    set_window_flags(ImGuiWindowFlags_NoDocking |
+                     ImGuiWindowFlags_NoFocusOnAppearing |
+                     ImGuiWindowFlags_NoNav);
+}
+
+bool StatsPanel::begin_window() {
+    // Anchored inside the viewport's top-right corner rather than the window's: the
+    // right column belongs to the inspector, and covering it would hide the panel
+    // the overlay is supposed to complement.
+    ImVec2 anchor;
+    if (const ImGuiWindow *viewport_window = ImGui::FindWindowByName("Viewport")) {
+        // +32 skips the viewport's own tab bar, so the overlay starts below it.
+        anchor = ImVec2{viewport_window->Pos.x + viewport_window->Size.x - 18.f,
+                        viewport_window->Pos.y + 32.f};
+    } else {
+        const ImGuiViewport *viewport = ImGui::GetMainViewport();
+        anchor = ImVec2{viewport->WorkPos.x + viewport->WorkSize.x - 18.f,
+                        viewport->WorkPos.y + 18.f};
+    }
+
+    // Pivot (1, 0) pins the right edge, so the overlay stays in the corner when its
+    // size changes (e.g. the phase list grows).
+    //
+    // The position is forced until the anchor looks sane: the dock layout is built
+    // over the first frames, and committing FirstUseEver to an anchor measured before
+    // the viewport got its rect would pin the overlay off-screen for the rest of the
+    // session.
+    if (!placed_) {
+        ImGui::SetNextWindowPos(anchor, ImGuiCond_Always, ImVec2{1.f, 0.f});
+        const ImGuiViewport *main = ImGui::GetMainViewport();
+        const bool inside_work_area =
+            anchor.x > main->WorkPos.x + 120.f &&
+            anchor.x < main->WorkPos.x + main->WorkSize.x - 10.f &&
+            anchor.y > main->WorkPos.y &&
+            anchor.y < main->WorkPos.y + main->WorkSize.y - 120.f;
+        if (inside_work_area && ImGui::GetFrameCount() > 2) {
+            placed_ = true;
+        }
+    }
+    // Slightly transparent so the scene behind it stays visible.
+    ImGui::SetNextWindowBgAlpha(0.88f);
+    return Panel::begin_window();
+}
+
+void StatsPanel::end_window() {
+    Panel::end_window();
+
+    // The overlay floats on top of the viewport, so clicking the viewport would bury
+    // it: keep it at the front of the window stack while it is open.
+    if (ImGuiWindow *window = ImGui::FindWindowByName(name_.c_str())) {
+        ImGui::BringWindowToDisplayFront(window);
+    }
 }
 
 void StatsPanel::begin_frame(float delta_time) {

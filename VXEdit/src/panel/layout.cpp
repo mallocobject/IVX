@@ -37,7 +37,7 @@ void setup_default_layout(ImGuiID dockspace_id) {
     // Shorter than before (0.30): the viewport needs the height far more than a
     // console tab strip does.
     const ImGuiID bottom = ImGui::DockBuilderSplitNode(
-        center, ImGuiDir_Down, 0.24f, nullptr, &center);
+        center, ImGuiDir_Down, 0.20f, nullptr, &center);
 
     // Tab order inside a node: the last window docked is the one shown on startup,
     // so the viewport is docked after the Scripts panel.
@@ -54,7 +54,10 @@ void setup_default_layout(ImGuiID dockspace_id) {
     ImGui::DockBuilderDockWindow("Camera", right);
     ImGui::DockBuilderDockWindow("Inspector", right);
 
-    ImGui::DockBuilderDockWindow("Stats", bottom);
+    // Only the console occupies the bottom strip. "Stats" is a floating overlay in
+    // the top-right corner (StatsPanel::begin_window) and the status bar sits on the
+    // main viewport's bottom edge (EditLayer::draw_status_bar), so neither of them
+    // competes for a dock slot.
     ImGui::DockBuilderDockWindow("Console", bottom);
 
     ImGui::DockBuilderFinish(dockspace_id);

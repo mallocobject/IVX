@@ -10,7 +10,9 @@ Panel::Panel(std::string_view name, bool default_open)
 }
 
 void Panel::on_render() {
-    if (!opened_) { // closed through the title bar or the View menu
+    // should_draw() covers both "closed through the title bar or the View menu" and
+    // panels that hide themselves contextually.
+    if (!should_draw()) {
         on_after_draw(false);
         return;
     }
@@ -34,7 +36,7 @@ bool Panel::begin_window() {
     if (default_size_.x > 0.f && default_size_.y > 0.f) {
         ImGui::SetNextWindowSize(default_size_, ImGuiCond_FirstUseEver);
     }
-    return ImGui::Begin(name_.c_str(), &opened_);
+    return ImGui::Begin(name_.c_str(), &opened_, window_flags_);
 }
 
 void Panel::end_window() {

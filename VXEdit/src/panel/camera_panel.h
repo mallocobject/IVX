@@ -23,6 +23,7 @@ class CameraPanel : public Panel {
     void draw_camera_list();
     void draw_camera_details(Entity entity);
     void draw_view_helpers(Entity entity);
+    void draw_controller_row(Entity entity);
 
     Entity primary_camera() const;
     void set_primary_camera(Entity entity);

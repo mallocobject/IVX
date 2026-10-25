@@ -31,15 +31,25 @@ class EditLayer : public Layer {
 
     void setup_panels();
 
+    // Main menu bar (own viewport row) and the bottom status bar.
+    void draw_menu_bar();
+    void draw_status_bar();
+
     // Set when the default layout was (re)built: the viewport tab has to be brought
     // to the front once the panels exist.
-    bool pending_viewport_focus_{false};
+    // Starts true: the viewport is the tab you want on startup, no matter which tab
+    // the saved layout.ini restored.
+    bool pending_viewport_focus_{true};
 
     // Starts a non-blocking rebuild of VXScripts.dll; poll_scripts() finishes it.
     void reload_scripts();
     // Called every frame: joins a finished build, loads the new module and
     // re-binds the scripts by name so a code change goes live without restarting.
     void poll_scripts();
+
+    // Binds CameraController to the primary camera once per session (see the
+    // comment in the implementation).
+    void bind_default_camera_script();
 
     Ref<Texture2D> texture_;
     Ref<SubTexture2D> sub_texture_;
@@ -64,6 +74,9 @@ class EditLayer : public Layer {
 
     bool layout_initialized_{false};
     bool reset_layout_requested_{false};
+    // Set once the default camera controller has been bound (or found already
+    // bound), so unbinding it in the inspector sticks.
+    bool default_script_bound_{false};
 
     PanelManager panels_;
     Ref<SceneHierarchyPanel> scene_hierarchy_panel_;
@@ -72,6 +85,9 @@ class EditLayer : public Layer {
     Ref<ConsolePanel> console_panel_;
     Ref<StatsPanel> stats_panel_;
     Ref<ScriptPanel> script_panel_;
+    // The viewport is a LambdaPanel; kept so the stats overlay can tell whether the
+    // viewport tab is the one currently on screen.
+    Ref<Panel> viewport_panel_;
 
     ScriptHost scripts_;
 };

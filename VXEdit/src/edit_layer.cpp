@@ -118,10 +118,9 @@ void EditLayer::on_attach() {
         camera_entity_.get_component<TransformComponent>().translation =
             glm::vec3{0.f, 0.f, 1.f};
     }
-    // No entity gets a script by default: CameraController (and anything else
-    // registered later) is only *available*. Select an entity, Add Component ->
-    // Native Script, then pick the script in the inspector.
-
+    // No entity gets a script by default, except the primary camera: without a
+    // controller the WASD/wheel handling does nothing and the editor looks broken.
+    // See bind_default_camera_script().
     second_camera_entity_ = scene_->create_entity("CameraB Entity");
     {
         auto &camera = second_camera_entity_.add_component<CameraComponent>();
@@ -137,8 +136,46 @@ void EditLayer::on_attach() {
 
     // The script host needs the scene to re-bind scripts after a hot reload.
     scripts_.set_scene(scene_.get());
+    bind_default_camera_script();
 
     setup_panels();
+}
+
+void EditLayer::bind_default_camera_script() {
+    // The scene is rebuilt from code on every start, so a hand-made binding in the
+    // inspector does not survive a restart. Give the primary camera its controller
+    // automatically, otherwise WASD/wheel silently do nothing.
+    //
+    // Only once per session and only when nothing is bound: unbinding it in the
+    // inspector has to stick.
+    if (default_script_bound_ || !camera_entity_) {
+        return;
+    }
+
+    auto *existing = camera_entity_.try_get_component<NativeScriptComponent>();
+    if (existing != nullptr && existing->is_bound()) {
+        default_script_bound_ = true;
+        return;
+    }
+
+    const bool available = std::any_of(
+        ScriptRegistry::get().entries().begin(),
+        ScriptRegistry::get().entries().end(),
+        [](const ScriptEntry &entry) { return entry.name == "CameraController"; });
+    if (!available) {
+        // The module is still being built (fresh tree) or the script was removed;
+        // poll_scripts() tries again once the build has finished.
+        return;
+    }
+
+    if (existing == nullptr) {
+        camera_entity_.add_component<NativeScriptComponent>();
+    }
+    if (ScriptRegistry::get().bind_by_name("CameraController", camera_entity_)) {
+        IVX_INFO("Camera Entity: bound CameraController (WASD move, Q/E rotate, "
+                 "wheel zoom)");
+        default_script_bound_ = true;
+    }
 }
 
 void EditLayer::on_detach() {
@@ -236,6 +273,10 @@ void EditLayer::poll_scripts() {
         return; // still compiling
     }
 
+    // A fresh tree has no DLL at startup, so the default camera binding could not
+    // happen yet: retry now that the module is loaded.
+    bind_default_camera_script();
+
     if (!scripts_.build_log().empty()) {
         IVX_INFO("Script build output:\n{}", scripts_.build_log());
     }
@@ -271,6 +312,7 @@ void EditLayer::setup_panels() {
         viewport_hovered_ = false;
         Application::get().imgui_layer()->block_event(true);
     });
+    viewport_panel_ = viewport;
 
     inspector_panel_ = panels_.add<InspectorPanel>(context_);
     camera_panel_ = panels_.add<CameraPanel>(context_);
@@ -279,8 +321,142 @@ void EditLayer::setup_panels() {
     script_panel_ = panels_.add<ScriptPanel>(scripts_);
 }
 
+void EditLayer::draw_menu_bar() {
+    if (!ImGui::BeginMainMenuBar()) {
+        return;
+    }
+
+    if (ImGui::BeginMenu("File")) {
+        if (ImGui::MenuItem("Exit")) {
+            Application::get().close();
+        }
+        ImGui::EndMenu();
+    }
+    panels_.draw_view_menu();
+    if (ImGui::BeginMenu("Scripts")) {
+        if (ImGui::MenuItem("Rebuild & Reload")) {
+            reload_scripts();
+        }
+        ImGui::EndMenu();
+    }
+    if (ImGui::BeginMenu("Layout")) {
+        if (ImGui::MenuItem("Reset Layout")) {
+            reset_layout_requested_ = true;
+        }
+        ImGui::EndMenu();
+    }
+
+    ImGui::EndMainMenuBar();
+}
+
+void EditLayer::draw_status_bar() {
+    // A thin strip on the bottom edge of the main viewport. BeginViewportSideBar
+    // reports its size back into the viewport's work area, which is why the
+    // dockspace above it never overlaps.
+    ImGuiViewport *viewport = ImGui::GetMainViewport();
+    const float height = ImGui::GetFrameHeight() + 2.f;
+
+    ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4{0.105f, 0.105f, 0.105f, 1.f});
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.62f, 0.62f, 0.62f, 1.f});
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{10.f, 3.f});
+
+    if (ImGui::BeginViewportSideBar("##status_bar",
+                                    viewport,
+                                    ImGuiDir_Down,
+                                    height,
+                                    ImGuiWindowFlags_NoScrollbar |
+                                        ImGuiWindowFlags_NoSavedSettings)) {
+        // --- left: what is selected, then how big the scene is
+        if (context_.has_selection()) {
+            const Entity selected = context_.selected_entity();
+            if (const auto *tag = selected.try_get_component<TagComponent>()) {
+                ImGui::TextUnformatted(tag->tag.c_str());
+            } else {
+                ImGui::TextUnformatted("(no tag)");
+            }
+        } else {
+            ImGui::TextDisabled("No selection");
+        }
+
+        ImGui::SameLine();
+        ImGui::TextDisabled("|");
+        ImGui::SameLine();
+        ImGui::Text("%zu object(s)",
+                    scene_->registry().view<TagComponent>().size());
+
+        ImGui::SameLine();
+        ImGui::TextDisabled("|");
+        ImGui::SameLine();
+        ImGui::Text("%.0fx%.0f viewport",
+                    viewport_size_.x,
+                    viewport_size_.y);
+
+        // --- right: script module state, then frame timing
+        char scripts_text[128];
+        if (scripts_.is_building()) {
+            std::snprintf(scripts_text,
+                          sizeof(scripts_text),
+                          "Scripts: building... %.1f s",
+                          scripts_.build_seconds());
+        } else if (!scripts_.is_loaded()) {
+            std::snprintf(scripts_text, sizeof(scripts_text), "Scripts: none");
+        } else if (!scripts_.build_log().empty() && !scripts_.last_build_ok()) {
+            std::snprintf(scripts_text,
+                          sizeof(scripts_text),
+                          "Scripts: build failed");
+        } else {
+            std::snprintf(scripts_text,
+                          sizeof(scripts_text),
+                          "Scripts: %zu",
+                          ScriptRegistry::get().entries().size());
+        }
+
+        const ImGuiIO &io = ImGui::GetIO();
+        char fps_text[64];
+        std::snprintf(fps_text,
+                      sizeof(fps_text),
+                      "%.0f FPS  %.2f ms",
+                      io.Framerate,
+                      io.Framerate > 0.f ? 1000.f / io.Framerate : 0.f);
+
+        const float right_width =
+            ImGui::CalcTextSize(scripts_text).x +
+            ImGui::CalcTextSize(fps_text).x +
+            ImGui::CalcTextSize("  |  ").x + 2.f;
+        const float right_x = ImGui::GetWindowWidth() - right_width - 10.f;
+        if (right_x > ImGui::GetCursorPosX() + 8.f) {
+            ImGui::SameLine(right_x);
+        } else {
+            ImGui::SameLine();
+        }
+
+        if (scripts_.is_building()) {
+            ImGui::TextColored(ImVec4{0.95f, 0.78f, 0.35f, 1.f}, "%s", scripts_text);
+        } else if (!scripts_.is_loaded()) {
+            ImGui::TextColored(ImVec4{0.90f, 0.45f, 0.45f, 1.f}, "%s", scripts_text);
+        } else {
+            ImGui::TextUnformatted(scripts_text);
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("|");
+        ImGui::SameLine();
+        ImGui::TextUnformatted(fps_text);
+    }
+    ImGui::End();
+
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
+}
+
 void EditLayer::on_render() {
     IVX_PROFILE_FUNCTION();
+
+    // Top: the menu bar reserves its own height in the main viewport's work area
+    // (and it owns the "Reset Layout" flag, so it runs before the dockspace).
+    draw_menu_bar();
+
+    // Bottom: same trick, so the dockspace below stops above the status bar.
+    draw_status_bar();
 
     // replace fullscreen host window + DockSpace
     const ImGuiID dockspace_id =
@@ -299,31 +475,15 @@ void EditLayer::on_render() {
         pending_viewport_focus_ = true;
     }
 
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Exit")) {
-                Application::get().close();
-            }
-            ImGui::EndMenu();
-        }
-        panels_.draw_view_menu();
-        if (ImGui::BeginMenu("Scripts")) {
-            if (ImGui::MenuItem("Rebuild & Reload")) {
-                reload_scripts();
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Layout")) {
-            if (ImGui::MenuItem("Reset Layout")) {
-                reset_layout_requested_ = true;
-            }
-            ImGui::EndMenu();
-        }
-        ImGui::EndMainMenuBar();
-    }
-
     // --- UI / ImGui submission ---
     const auto ui_start = std::chrono::steady_clock::now();
+
+    // The stats overlay is anchored to the viewport: hide it while the viewport tab
+    // is not the visible one (writing a script, for instance), otherwise it covers
+    // the code. One frame of lag, which is invisible in practice.
+    if (stats_panel_ && viewport_panel_) {
+        stats_panel_->set_host_visible(viewport_panel_->visible_this_frame());
+    }
 
     panels_.on_render();
 
@@ -363,9 +523,13 @@ void EditLayer::draw_viewport_content() {
     viewport_hovered_ = ImGui::IsWindowHovered();
     viewport_sampled_ = true;
 
-    // Set here rather than in on_update(): this is the exact frame the focus
-    // changed, so the next update sees the right value instead of a stale flag.
-    Input::set_enabled(viewport_focused_);
+    // Keyboard ownership is "focused" OR "hovered while no text field is active",
+    // the way Unity's game view behaves. Focus-only was too strict: clicking the
+    // console, the inspector or a script silently killed WASD until the viewport was
+    // clicked again, which reads as "the keyboard does not work".
+    const bool hover_owns_keyboard =
+        viewport_hovered_ && !ImGui::GetIO().WantTextInput;
+    Input::set_enabled(viewport_focused_ || hover_owns_keyboard);
 
     Application::get().imgui_layer()->block_event(!viewport_focused_ ||
                                                   !viewport_hovered_);

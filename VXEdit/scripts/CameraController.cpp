@@ -1,7 +1,7 @@
 #include "CameraController.h"
 
-#include "ivx/script/script_module.h"
 #include "ivx/scene/components.h"
+#include "ivx/script/script_module.h"
 
 #include <glm/glm.hpp>
 #include <string>
@@ -51,8 +51,8 @@ void CameraController::on_update(float dt) {
 }
 
 void CameraController::on_destroy() {
-    log("CameraController detached from '" +
-        get_component<TagComponent>().tag + "'");
+    log("CameraController detached from '" + get_component<TagComponent>().tag +
+        "'");
 }
 
 void CameraController::on_key_pressed(KeyCode key, bool repeat) {
@@ -76,6 +76,10 @@ void CameraController::on_key_pressed(KeyCode key, bool repeat) {
 void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
     // Wheel zooms by scaling the orthographic size. The setters are inline, so
     // this works from inside the module without linking the engine.
+    if (!has_component<CameraComponent>()) {
+        return;
+    }
+
     auto &camera = get_component<CameraComponent>();
     if (camera.camera.get_projection_type() !=
         SceneCamera::ProjectionType::Orthographic) {
@@ -86,21 +90,9 @@ void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
     const float factor = y_offset > 0.f ? 0.9f : 1.1f;
     const float next = glm::clamp(size * factor, 20.f, 20000.f);
     camera.camera.set_orthographic_size(next);
-    log("CameraController: zoom -> " + std::to_string(next));
+    // log("CameraController: zoom -> " + std::to_string(next));
 }
 // Stays inside namespace ivx: IVX_REGISTER_SCRIPT pastes the type name into an
 // identifier, so the type has to be unqualified.
 IVX_REGISTER_SCRIPT(CameraController)
 } // namespace ivx
-
-
-
-
-
-
-
-
-
-
-
-

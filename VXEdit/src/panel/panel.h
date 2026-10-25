@@ -57,6 +57,13 @@ class Panel : public RefCounted {
         return *this;
     }
 
+    // Extra flags for the window itself, e.g. ImGuiWindowFlags_NoDocking for
+    // panels that float instead of taking a dock slot (the stats overlay).
+    Panel &set_window_flags(ImGuiWindowFlags flags) {
+        window_flags_ = flags;
+        return *this;
+    }
+
   protected:
     virtual void on_imgui() = 0;
 
@@ -73,9 +80,17 @@ class Panel : public RefCounted {
     virtual bool begin_window();
     virtual void end_window();
 
+    // Panels that should disappear without being "closed" (the stats overlay only
+    // makes sense while the viewport is on screen) override this. Returning false
+    // skips Begin/End entirely for the frame.
+    virtual bool should_draw() const {
+        return opened_;
+    }
+
     std::string name_;
     bool opened_{true};
     ImVec2 default_size_{0.f, 0.f};
+    ImGuiWindowFlags window_flags_{0};
 
   private:
     bool first_open_done_{false};

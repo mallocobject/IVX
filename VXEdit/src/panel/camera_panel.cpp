@@ -2,9 +2,12 @@
 
 #include "component_registry.h"
 #include "ivx/scene/components.h"
+#include "ivx/scene/scriptable_entity.h"
+#include "scripts/script_registry.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
+#include <algorithm>
 #include <string>
 
 namespace ivx {
@@ -139,6 +142,9 @@ void CameraPanel::draw_camera_details(Entity entity) {
         ImGui::TextColored(ImVec4{0.4f, 0.8f, 0.4f, 1.f}, "[primary]");
     }
 
+    // ---- input controller ----
+    draw_controller_row(entity);
+
     // ---- view helpers ----
     draw_view_helpers(entity);
 
@@ -168,6 +174,52 @@ void CameraPanel::draw_camera_details(Entity entity) {
         ImGui::Text("m00 %.6f   m11 %.6f", projection[0][0], projection[1][1]);
         ImGui::Text("m22 %.6f   m32 %.6f", projection[2][2], projection[3][2]);
         ImGui::TreePop();
+    }
+}
+
+void CameraPanel::draw_controller_row(Entity entity) {
+    // A camera without a controller script simply does not react to the keyboard.
+    // Making that state visible here saves the "why is WASD dead?" round trip.
+    ImGui::TextDisabled("WASD / wheel:");
+
+    auto *script = entity.try_get_component<NativeScriptComponent>();
+    if (script != nullptr && script->is_bound()) {
+        ImGui::SameLine();
+        ImGui::TextColored(ImVec4{0.55f, 0.85f, 0.55f, 1.f},
+                           "%s",
+                           script->script_name.c_str());
+        ImGui::SameLine();
+        if (ImGui::SmallButton("Unbind")) {
+            script->unbind();
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Removes the controller script from this camera.");
+        }
+        return;
+    }
+
+    ImGui::SameLine();
+    ImGui::TextDisabled("none");
+    ImGui::SameLine();
+
+    // Only offer the binding when the module actually exports it.
+    const ScriptEntry *controller = nullptr;
+    for (const ScriptEntry &entry : ScriptRegistry::get().entries()) {
+        if (entry.name == "CameraController") {
+            controller = &entry;
+            break;
+        }
+    }
+    if (controller == nullptr) {
+        ImGui::TextDisabled("(VXScripts.dll not loaded yet)");
+        return;
+    }
+
+    if (ImGui::SmallButton("Attach CameraController")) {
+        if (script == nullptr) {
+            entity.add_component<NativeScriptComponent>();
+        }
+        ScriptRegistry::get().bind_by_name(controller->name, entity);
     }
 }
 

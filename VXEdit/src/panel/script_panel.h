@@ -25,8 +25,10 @@ class ScriptPanel : public Panel {
 
   private:
     void draw_status();
-    void draw_library_tab();
-    void draw_editor_tab();
+    void draw_library_pane();
+    void draw_editor_pane();
+    // Placeholder for the editor column while no script is open.
+    void draw_empty_editor();
     void draw_toolbar();
     void draw_script_list();
     void draw_new_script_form();
@@ -44,14 +46,11 @@ class ScriptPanel : public Panel {
 
     TextEditor editor_;
     bool editor_ready_{false};
-    // Set when a script is opened: the editor tab must become the active one,
-    // otherwise the user keeps looking at the Library tab.
-    bool focus_editor_tab_{false};
     // Detects the building -> idle edge so the error markers refresh exactly once.
     bool was_building_{false};
-    // Asks for this panel's dock tab to come to the front on the next frame (the
-    // dock tab is created by the frame that opens the script).
-    bool request_dock_focus_{false};
+    // Set by the empty state's "New script" button; the name field picks it up on
+    // the next frame (the library column is drawn before the editor column).
+    bool focus_new_script_{false};
 
     char new_script_name_[64]{};
     std::string status_;
