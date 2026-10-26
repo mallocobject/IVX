@@ -138,9 +138,7 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
         return;
     }
 
-    const auto *tag = entity.try_get_component<TagComponent>();
-    const std::string name =
-        tag != nullptr ? tag->value : std::string{"<none>"};
+    const auto &tag = entity.get_component<TagComponent>();
     const auto children = entity.children();
 
     ImGui::PushID(static_cast<int>(static_cast<std::uint32_t>(
@@ -154,7 +152,8 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
         flags |= ImGuiTreeNodeFlags_Leaf;
     }
 
-    const bool open = ImGui::TreeNodeEx("##node", flags, "%s", name.c_str());
+    const bool open =
+        ImGui::TreeNodeEx("##node", flags, "%s", tag.value.c_str());
 
     if (ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen()) {
         context_.selected = entity.handle();
@@ -164,7 +163,7 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
     if (ImGui::BeginDragDropSource()) {
         auto payload = entity.handle();
         ImGui::SetDragDropPayload(kDragPayload, &payload, sizeof(payload));
-        ImGui::TextUnformatted(name.c_str());
+        ImGui::TextUnformatted(tag.value.c_str());
         ImGui::EndDragDropSource();
     }
     if (ImGui::BeginDragDropTarget()) {
@@ -180,6 +179,7 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
         ImGui::EndDragDropTarget();
     }
 
+    // maybe delete children node
     draw_node_context_menu(entity);
 
     if (open) {

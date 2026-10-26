@@ -276,4 +276,12 @@ const Fonts &load_fonts() {
     return fonts;
 }
 
+ImVec4 accent() {
+    return color(kAccent);
+}
+
+ImVec4 text_muted() {
+    return color(kTextDisabled);
+}
+
 } // namespace ivx::ui

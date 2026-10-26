@@ -99,7 +99,7 @@ void EditLayer::on_attach() {
         auto &tf = square_entity.get_component<TransformComponent>();
         tf.translation = glm::vec3{0.f};
         tf.rotation = glm::vec3{0.f};
-        tf.scale = glm::vec2{1.f};
+        tf.scale = glm::vec3{1.f};
 
         auto &sr = square_entity.add_component<SpriteRendererComponent>();
         sr.sub_texture = sub_texture;

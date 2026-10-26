@@ -4,7 +4,10 @@
 #include "ivx/scene/components.h"
 #include "ivx/scene/scriptable_entity.h"
 #include "scripts/script_registry.h"
+#include "ui/theme.h"
 
+#include <algorithm>
+#include <cmath>
 #include <glm/gtc/type_ptr.hpp>
 #include <imgui.h>
 #include <string>
@@ -12,22 +15,122 @@
 namespace ivx {
 namespace {
 
+// ---- shared row layout -----------------------------------------------------
+// Unity-style rows: the label sits in a fixed left column and the widget fills
+// the rest of the row. ImGui draws labels on the right of the widget by
+// default, so each row draws its own label; that also lines up every field edge
+// down the panel.
+
+float label_column() {
+    // Wide enough for the longest row label in use, scaled with the UI.
+    return std::ceil(ImGui::CalcTextSize("Fixed Aspect").x) +
+           14.f * ui::scale();
+}
+
+template <typename Draw>
+void label_row(const char *label, Draw &&draw) {
+    ImGui::AlignTextToFramePadding();
+    ImGui::TextUnformatted(label);
+    ImGui::SameLine(label_column());
+    ImGui::SetNextItemWidth(-FLT_MIN);
+    draw();
+}
+
+// ---- transform -------------------------------------------------------------
+// Translation / Rotation / Scale are three rows of axis fields. Every field is
+// prefixed with an X/Y/Z marker that reads as the field label and doubles as a
+// per-axis reset button, which is the quickest way to fix one axis without
+// touching the others.
+
+// Photoshop style: no saturated fills. The marker is flat (the panel gray shows
+// through), its glyph uses the muted label gray, and it only lights up with the
+// theme accent while the pointer is over it. That keeps the axis identity
+// readable without turning the inspector into a colour chart.
+void axis_marker(const char *glyph, bool *clicked) {
+    const ImGuiStyle &style = ImGui::GetStyle();
+    const ImVec2 size{18.f * ui::scale(), ImGui::GetFrameHeight()};
+
+    // The glyph has to be coloured before the button draws, so the hover test
+    // runs on the rectangle the button is about to occupy.
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    const ImVec2 end{pos.x + size.x, pos.y + size.y};
+    const bool hovered = ImGui::IsMouseHoveringRect(pos, end, /*clip*/ true);
+
+    ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{0.f, 0.f, 0.f, 0.f});
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+                          style.Colors[ImGuiCol_FrameBgHovered]);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+                          style.Colors[ImGuiCol_FrameBgActive]);
+    ImGui::PushStyleColor(ImGuiCol_Text,
+                          hovered ? ui::accent() : ui::text_muted());
+    *clicked = ImGui::Button(glyph, size);
+    ImGui::PopStyleColor(4);
+}
+
+// The three fields of one row:  X[ 0.000 ] Y[ 0.000 ] Z[ 0.000 ]
+void axis_fields(const char *id,
+                 glm::vec3 &value,
+                 float speed,
+                 float reset_value) {
+    constexpr const char *k_axis[] = {"X", "Y", "Z"};
+
+    const float scale = ui::scale();
+    const ImGuiStyle &style = ImGui::GetStyle();
+    const float marker_width = 18.f * scale;
+    // Three markers, three fields and five gaps (marker->field, field->marker,
+    // ...).
+    const float fields_width =
+        (ImGui::GetContentRegionAvail().x - 3.f * marker_width -
+         5.f * style.ItemSpacing.x) /
+        3.f;
+    const float field_width = std::max(24.f * scale, fields_width);
+
+    ImGui::PushID(id);
+    for (int axis = 0; axis < 3; ++axis) {
+        if (axis > 0) {
+            ImGui::SameLine();
+        }
+
+        // Per-axis scope: without it the three "##value" fields below would
+        // collide in one ID scope (ImGui warns and drops two of them).
+        ImGui::PushID(axis);
+
+        bool clicked = false;
+        axis_marker(k_axis[axis], &clicked);
+        if (clicked) {
+            value[axis] = reset_value;
+        }
+        if (ImGui::IsItemHovered()) {
+            ImGui::SetTooltip("Reset %s to %.3g",
+                              k_axis[axis],
+                              static_cast<double>(reset_value));
+        }
+
+        ImGui::SameLine();
+        ImGui::SetNextItemWidth(field_width);
+        // The marker already names the axis, so the drag field needs no visible
+        // label.
+        ImGui::DragFloat("##value", &value[axis], speed, 0.f, 0.f, "%.3f");
+
+        ImGui::PopID();
+    }
+    ImGui::PopID();
+}
+
 void draw_transform(Entity /*entity*/,
                     TransformComponent &transform,
                     EditorContext & /*context*/) {
-    ImGui::DragFloat3("Position", glm::value_ptr(transform.translation), 0.5f);
-    ImGui::DragFloat3("Rotation", glm::value_ptr(transform.rotation), 0.5f);
-    ImGui::DragFloat2("Scale", glm::value_ptr(transform.scale), 0.01f);
-
-    if (ImGui::Button("Reset Transform")) {
-        transform.translation = glm::vec3{0.f};
-        transform.rotation = glm::vec3{0.f};
-        transform.scale = glm::vec2{1.f};
-    }
+    label_row("Translation", [&] {
+        axis_fields("translation", transform.translation, 0.5f, 0.f);
+    });
+    label_row("Rotation",
+              [&] { axis_fields("rotation", transform.rotation, 0.5f, 0.f); });
+    label_row("Scale",
+              [&] { axis_fields("scale", transform.scale, 0.01f, 1.f); });
 
     const glm::mat4 &world = transform.world;
     if (ImGui::TreeNode("World matrix (read-only)")) {
-        ImGui::Text("position: (%.2f, %.2f, %.2f)",
+        ImGui::Text("Position: (%.2f, %.2f, %.2f)",
                     world[3][0],
                     world[3][1],
                     world[3][2]);
@@ -38,9 +141,15 @@ void draw_transform(Entity /*entity*/,
 void draw_sprite(Entity /*entity*/,
                  SpriteRendererComponent &sprite,
                  EditorContext & /*context*/) {
-    ImGui::DragFloat2("Size", glm::value_ptr(sprite.size), 0.5f);
-    ImGui::DragFloat("Tiling", &sprite.tiling_factor, 0.05f, 0.01f, 64.f);
-    ImGui::ColorEdit4("Color", glm::value_ptr(sprite.color));
+    label_row("Size", [&] {
+        ImGui::DragFloat2("##size", glm::value_ptr(sprite.size), 0.5f);
+    });
+    label_row("Tiling", [&] {
+        ImGui::DragFloat("##tiling", &sprite.tiling_factor, 0.05f, 0.01f, 64.f);
+    });
+    label_row("Color", [&] {
+        ImGui::ColorEdit4("##color", glm::value_ptr(sprite.color));
+    });
 
     // No asset browser yet, so the texture is reported read-only.
     if (sprite.sub_texture) {
@@ -106,46 +215,6 @@ void make_primary(EditorContext &context, Entity entity) {
     }
 }
 
-// Points the camera at the selected entity (and frames it when orthographic).
-// void focus_selection(Entity camera_entity,
-//                      EditorContext &context,
-//                      bool also_frame) {
-//     const Entity selection = context.selected_entity();
-//     if (!selection) {
-//         return;
-//     }
-
-//     auto *camera_transform =
-//         camera_entity.try_get_component<TransformComponent>();
-//     const auto *target_transform =
-//         selection.try_get_component<TransformComponent>();
-//     if (camera_transform == nullptr || target_transform == nullptr) {
-//         return;
-//     }
-
-//     // Cameras live in world space, keep the camera's own depth.
-//     camera_transform->translation.x = target_transform->world[3][0];
-//     camera_transform->translation.y = target_transform->world[3][1];
-
-//     if (!also_frame) {
-//         return;
-//     }
-
-//     // Orthographic only: choose a size that leaves a margin around the
-//     sprite. auto *camera =
-//     camera_entity.try_get_component<CameraComponent>(); if (camera == nullptr
-//     || camera->camera.get_projection_type() !=
-//                                  SceneCamera::ProjectionType::Orthographic) {
-//         return;
-//     }
-
-//     const auto *sprite =
-//     selection.try_get_component<SpriteRendererComponent>(); const float
-//     extent =
-//         sprite != nullptr ? glm::max(sprite->size.x, sprite->size.y) : 200.f;
-//     camera->camera.set_orthographic_size(extent * 1.5f);
-// }
-
 // Keeps the "why is WASD dead?" question from happening: the camera only reacts
 // to input while a controller script is attached. When it is attached the row
 // stays a single dim line, because the Native Script section right below owns
@@ -200,85 +269,81 @@ void draw_camera(Entity entity,
     // Hazel-style: one projection switch, each type keeps its own parameters.
     const char *types[] = {"Perspective", "Orthographic"};
     int type = static_cast<int>(scene_camera.get_projection_type());
-    if (ImGui::Combo("Projection", &type, types, IM_ARRAYSIZE(types))) {
-        scene_camera.set_projection_type(
-            static_cast<SceneCamera::ProjectionType>(type));
-    }
+    label_row("Projection", [&] {
+        if (ImGui::Combo("##projection", &type, types, IM_ARRAYSIZE(types))) {
+            scene_camera.set_projection_type(
+                static_cast<SceneCamera::ProjectionType>(type));
+        }
+    });
 
     if (scene_camera.get_projection_type() ==
         SceneCamera::ProjectionType::Orthographic) {
         float size = scene_camera.get_orthographic_size();
-        if (ImGui::DragFloat("Size", &size, 1.f, 0.01f, 100000.f)) {
-            scene_camera.set_orthographic_size(size);
-        }
+        label_row("Size", [&] {
+            if (ImGui::DragFloat("##size", &size, 1.f, 0.01f, 100000.f)) {
+                scene_camera.set_orthographic_size(size);
+            }
+        });
         float near_clip = scene_camera.get_orthographic_near();
-        if (ImGui::DragFloat("Near", &near_clip, 0.01f, 0.001f, 10000.f)) {
-            scene_camera.set_orthographic_near(near_clip);
-        }
+        label_row("Near", [&] {
+            if (ImGui::DragFloat(
+                    "##near", &near_clip, 0.01f, 0.001f, 10000.f)) {
+                scene_camera.set_orthographic_near(near_clip);
+            }
+        });
         float far_clip = scene_camera.get_orthographic_far();
-        if (ImGui::DragFloat("Far", &far_clip, 1.f, 0.01f, 100000.f)) {
-            scene_camera.set_orthographic_far(far_clip);
-        }
+        label_row("Far", [&] {
+            if (ImGui::DragFloat("##far", &far_clip, 1.f, 0.01f, 100000.f)) {
+                scene_camera.set_orthographic_far(far_clip);
+            }
+        });
     } else {
         // FOV is already in degrees (see SceneCamera): no conversion here,
         // otherwise the slider would show 45 as 2578 deg.
         float fov = scene_camera.get_perspective_vertical_fov();
-        if (ImGui::SliderFloat("FOV", &fov, 1.f, 179.f, "%.1f deg")) {
-            scene_camera.set_perspective_vertical_fov(fov);
-        }
+        label_row("FOV", [&] {
+            if (ImGui::SliderFloat("##fov", &fov, 1.f, 179.f, "%.1f deg")) {
+                scene_camera.set_perspective_vertical_fov(fov);
+            }
+        });
         float near_clip = scene_camera.get_perspective_near();
-        if (ImGui::DragFloat("Near", &near_clip, 0.01f, 0.001f, 10000.f)) {
-            scene_camera.set_perspective_near(near_clip);
-        }
+        label_row("Near", [&] {
+            if (ImGui::DragFloat(
+                    "##near", &near_clip, 0.01f, 0.001f, 10000.f)) {
+                scene_camera.set_perspective_near(near_clip);
+            }
+        });
         float far_clip = scene_camera.get_perspective_far();
-        if (ImGui::DragFloat("Far", &far_clip, 1.f, 0.01f, 100000.f)) {
-            scene_camera.set_perspective_far(far_clip);
-        }
+        label_row("Far", [&] {
+            if (ImGui::DragFloat("##far", &far_clip, 1.f, 0.01f, 100000.f)) {
+                scene_camera.set_perspective_far(far_clip);
+            }
+        });
     }
 
-    ImGui::TextDisabled("Aspect %.3f (from viewport)",
-                        scene_camera.get_aspect_ratio());
-    ImGui::Checkbox("Fixed Aspect Ratio", &camera.fixed_aspect_ratio);
+    label_row("Aspect", [&] {
+        ImGui::AlignTextToFramePadding();
+        ImGui::TextDisabled("%.3f (from viewport)",
+                            scene_camera.get_aspect_ratio());
+    });
+    label_row("Fixed Aspect", [&] {
+        ImGui::Checkbox("##fixed_aspect", &camera.fixed_aspect_ratio);
+    });
 
     // The checkbox routes through make_primary() so turning one camera on turns
     // the others off, matching what the renderer expects.
     bool primary = camera.primary;
-    if (ImGui::Checkbox("Primary", &primary)) {
-        if (primary) {
-            make_primary(context, entity);
-        } else {
-            camera.primary = false;
+    label_row("Primary", [&] {
+        if (ImGui::Checkbox("##primary", &primary)) {
+            if (primary) {
+                make_primary(context, entity);
+            } else {
+                camera.primary = false;
+            }
         }
-    }
+    });
 
     ImGui::Separator();
-
-    // // ---- view helpers ----
-    // if (const auto *transform =
-    //         entity.try_get_component<TransformComponent>()) {
-    //     ImGui::TextDisabled("World position: (%.1f, %.1f, %.1f)",
-    //                         transform->world[3][0],
-    //                         transform->world[3][1],
-    //                         transform->world[3][2]);
-    // }
-
-    // const bool has_selection = context.has_selection();
-    // ImGui::BeginDisabled(!has_selection);
-    // if (ImGui::Button("Focus Selection")) {
-    //     focus_selection(entity, context, /*also_frame*/ false);
-    // }
-    // ImGui::SameLine();
-    // if (ImGui::Button("Frame Selection")) {
-    //     focus_selection(entity, context, /*also_frame*/ true);
-    // }
-    // ImGui::EndDisabled();
-    // if (ImGui::IsItemHovered()) {
-    //     ImGui::SetTooltip(
-    //         "Moves the camera onto the selected entity and sizes it to
-    //         fit.");
-    // }
-
-    // ImGui::Separator();
 
     // ---- derived numbers, for when "nothing renders" ----
     if (scene_camera.get_projection_type() ==
@@ -293,8 +358,10 @@ void draw_camera(Entity entity,
 
     if (ImGui::TreeNode("Projection matrix (read-only)")) {
         const glm::mat4 projection = scene_camera.get_proj_matrix();
-        ImGui::Text("m00 %.6f   m11 %.6f", projection[0][0], projection[1][1]);
-        ImGui::Text("m22 %.6f   m32 %.6f", projection[2][2], projection[3][2]);
+        ImGui::Text(
+            "m00: %.6f   m11: %.6f", projection[0][0], projection[1][1]);
+        ImGui::Text(
+            "m22: %.6f   m32: %.6f", projection[2][2], projection[3][2]);
         ImGui::TreePop();
     }
 
@@ -310,43 +377,39 @@ void draw_script(Entity entity,
 
     const char *bound_name = scripts.name_of(script.instantiate);
 
-    if (script.is_bound()) {
-        ImGui::Text("Script: %s",
-                    bound_name != nullptr ? bound_name : "<unknown>");
-    } else {
-        ImGui::TextDisabled("No script bound");
-    }
-
     // Picking a script binds it (and destroys the previous instance).
-    if (ImGui::BeginCombo(
-            "##script",
-            script.is_bound()
-                ? (bound_name != nullptr ? bound_name : "<unknown>")
-                : "Select script...")) {
-        for (const ScriptEntry &entry : scripts.entries()) {
-            const bool selected =
-                bound_name != nullptr && entry.name == bound_name;
-            if (ImGui::Selectable(entry.name.c_str(), selected)) {
-                scripts.bind_by_name(entry.name, entity);
+    label_row("Script", [&] {
+        if (ImGui::BeginCombo(
+                "##script",
+                script.is_bound()
+                    ? (bound_name != nullptr ? bound_name : "<unknown>")
+                    : "Select script...")) {
+            for (const ScriptEntry &entry : scripts.entries()) {
+                const bool selected =
+                    bound_name != nullptr && entry.name == bound_name;
+                if (ImGui::Selectable(entry.name.c_str(), selected)) {
+                    scripts.bind_by_name(entry.name, entity);
+                }
             }
+            ImGui::EndCombo();
         }
-        ImGui::EndCombo();
-    }
+    });
 
     // An unbound script cannot run, so its toggle would only be misleading.
     ImGui::BeginDisabled(!script.is_bound());
-    ImGui::Checkbox("Enabled", &script.enabled);
-    ImGui::EndDisabled();
-
-    if (script.is_bound()) {
-        ImGui::SameLine();
-        if (ImGui::Button("Unbind")) {
-            const auto *tag = entity.try_get_component<TagComponent>();
-            IVX_INFO("Unbound script from '{}'",
-                     tag != nullptr ? tag->value : "<unnamed>");
-            script.unbind();
+    label_row("Enabled", [&] {
+        ImGui::Checkbox("##enabled", &script.enabled);
+        if (script.is_bound()) {
+            ImGui::SameLine();
+            if (ImGui::Button("Unbind")) {
+                const auto *tag = entity.try_get_component<TagComponent>();
+                IVX_INFO("Unbound script from '{}'",
+                         tag != nullptr ? tag->value : "<unnamed>");
+                script.unbind();
+            }
         }
-    }
+    });
+    ImGui::EndDisabled();
 }
 
 // Removing the component has to release the instance first: it lives in the

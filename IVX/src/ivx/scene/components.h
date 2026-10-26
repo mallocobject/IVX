@@ -64,7 +64,7 @@ struct TagComponent {
 struct TransformComponent {
     glm::vec3 translation{0.f};
     glm::vec3 rotation{0.f}; // pitch, yaw, roll
-    glm::vec2 scale{1.f};
+    glm::vec3 scale{1.f};
 
     // Derived state: refreshed once per frame by
     // Scene::update_world_transforms() as world = parent_world * load_matrix().
@@ -75,7 +75,7 @@ struct TransformComponent {
     glm::mat4 load_matrix() const {
         return glm::translate(glm::mat4{1.f}, translation) *
                detail::build_rotation(rotation) *
-               glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
+               glm::scale(glm::mat4{1.f}, scale);
     }
 };
 

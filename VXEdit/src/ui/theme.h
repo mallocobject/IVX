@@ -31,4 +31,11 @@ const Fonts &load_fonts();
 void set_scale(float scale);
 float scale();
 
+// The two colours widgets occasionally need beyond the stock ImGui ones: the
+// single accent (Adobe blue, used for selection/focus everywhere) and the muted
+// label gray. Exposed so panels never hardcode a hex value that drifts from the
+// theme.
+ImVec4 accent();
+ImVec4 text_muted();
+
 } // namespace ivx::ui
