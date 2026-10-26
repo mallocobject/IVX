@@ -34,12 +34,6 @@ class EditLayer : public Layer {
     void draw_menu_bar();
     void draw_status_bar();
 
-    // Set when the default layout was (re)built: the viewport tab has to be
-    // brought to the front once the panels exist. Starts true: the viewport is
-    // the tab you want on startup, no matter which tab the saved layout.ini
-    // restored.
-    bool pending_viewport_focus_{true};
-
     // Starts a non-blocking rebuild of VXScripts.dll; poll_scripts() finishes
     // it.
     void reload_scripts();
@@ -62,6 +56,12 @@ class EditLayer : public Layer {
 
     Ref<Scene> scene_;
     Entity square_entity_;
+
+    // Set when the default layout was (re)built: the viewport tab has to be
+    // brought to the front once the panels exist. Starts true: the viewport is
+    // the tab you want on startup, no matter which tab the saved layout.ini
+    // restored.
+    bool pending_viewport_focus_{true};
 
     bool viewport_focused_{false};
     // True while the viewport owns mouse/keyboard input; latched for

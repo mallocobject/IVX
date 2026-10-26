@@ -136,18 +136,6 @@ void Renderer2D::begin_scene(const glm::mat4 &projection,
     data.tex_slot_index = 1;
 }
 
-void Renderer2D::begin_scene(const Ref<OrthoGraphicCamera> &camera) {
-    IVX_PROFILE_FUNCTION();
-
-    auto vp = camera->get_proj_matrix() * camera->get_view_matrix();
-    data.texture_shader->set("u_VP", vp);
-
-    data.quad_index_count = 0;
-    data.quad_vertex_buffer_ptr = data.quad_vertex_buffer_base;
-
-    data.tex_slot_index = 1;
-}
-
 void Renderer2D::end_scene() {
     IVX_PROFILE_FUNCTION();
 

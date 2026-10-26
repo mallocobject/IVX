@@ -5,7 +5,6 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/ref.hpp"
-#include "ivx/renderer/camera.h"
 #include "ivx/renderer/sub_texture2d.h"
 #include "ivx/renderer/texture.h"
 #include "ivx/scene/scene_camera.h"

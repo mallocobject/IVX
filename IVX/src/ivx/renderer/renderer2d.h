@@ -2,7 +2,6 @@
 
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float4.hpp"
-#include "ivx/renderer/camera.h"
 #include "sub_texture2d.h"
 #include "texture.h"
 #include <cstdint>
@@ -16,8 +15,6 @@ class Renderer2D {
     // `view` is a view matrix (inverse of the camera's world transform), the
     // same convention as the OrthoGraphicCamera overload below.
     static void begin_scene(const glm::mat4 &projection, const glm::mat4 &view);
-    static void
-    begin_scene(const Ref<OrthoGraphicCamera> &camera); // TODO: remove
     static void end_scene();
     static void flush();
 
