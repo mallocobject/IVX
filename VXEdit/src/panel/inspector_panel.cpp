@@ -56,6 +56,8 @@ void InspectorPanel::draw_entity_header(Entity entity) {
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     // Live editing (no EnterReturnsTrue): the hierarchy renames as you type.
+    // The tag is just a display name, so writing it directly is all that is
+    // needed.
     if (ImGui::InputText("##name", name_buffer_, sizeof(name_buffer_))) {
         if (auto *editable = entity.try_get_component<TagComponent>()) {
             editable->value = name_buffer_;

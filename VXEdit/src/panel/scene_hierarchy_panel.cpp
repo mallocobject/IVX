@@ -110,15 +110,10 @@ void SceneHierarchyPanel::draw_toolbar() {
 
 Entity SceneHierarchyPanel::create_default_entity(Scene &scene) {
     // Naming follows the usual "Entity" / "Entity (1)" / "Entity (2)" scheme,
-    // so a new object never shows up as a duplicate of an existing one.
+    // so a new object never shows up as a duplicate of an existing one. Names
+    // are not unique in the scene, so this asks for a free one explicitly.
     std::string name = "Entity";
-    for (int suffix = 1;; ++suffix) {
-        if (!scene.get_used_tags_set().contains(
-                entt::hashed_string::value(name.c_str()))) {
-            break;
-        }
-
-        // name = "Entity (" + std::to_string(suffix) + ")";
+    for (int suffix = 1; scene.find_by_name(name); ++suffix) {
         name = std::format("Entity ({})", suffix);
     }
 

@@ -60,9 +60,6 @@ Entity Scene::create_entity(const std::string &name) {
     entity.add_component<TransformComponent>();
     entity.add_component<RelationshipComponent>();
     entity.add_component<TagComponent>(name);
-
-    used_tags_.insert(entity.get_component<TagComponent>().id);
-
     return entity;
 }
 
@@ -99,10 +96,28 @@ void Scene::destroy_entity(Entity entity) {
         }
     }
 
+    // No tag bookkeeping: the entity handle is the identity, so nothing has to
+    // be removed from a name index here.
     release_script(registry_, entity.handle());
     registry_.destroy(entity.handle());
+}
 
-    used_tags_.erase(entity.get_component<TagComponent>().id);
+Entity Scene::find_by_name(std::string_view name) {
+    for (auto [handle, tag] : registry_.view<TagComponent>().each()) {
+        if (tag.value == name) {
+            return Entity{handle, this};
+        }
+    }
+    return {};
+}
+
+bool Scene::rename_entity(Entity entity, std::string_view name) {
+    auto *tag = entity.try_get_component<TagComponent>();
+    if (tag == nullptr || name.empty()) {
+        return false;
+    }
+    tag->value = name;
+    return true;
 }
 
 void Scene::set_parent(Entity child, Entity parent) {

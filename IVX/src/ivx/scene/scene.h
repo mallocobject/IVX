@@ -4,7 +4,7 @@
 #include "ivx/scene/components.h"
 #include <entt.hpp>
 #include <string>
-#include <unordered_set>
+#include <string_view>
 #include <vector>
 
 namespace ivx {
@@ -23,6 +23,15 @@ class Scene : public RefCounted {
 
     // Destroys the entity and, recursively, everything below it.
     void destroy_entity(Entity entity);
+
+    // Renames the entity. TagComponent::value is only a display name: the
+    // entity handle is the identity, so nothing else has to be kept in sync.
+    // Returns false for an invalid entity or an empty name.
+    bool rename_entity(Entity entity, std::string_view name);
+
+    // First entity whose TagComponent::value equals `name`, or an invalid
+    // Entity. Names are not unique; identity is the handle.
+    Entity find_by_name(std::string_view name);
 
     // ---- hierarchy ----
     // Reparents `child`. Passing an invalid `parent` makes it a root node.
@@ -62,17 +71,12 @@ class Scene : public RefCounted {
         return registry_.view<T...>();
     }
 
-    const std::unordered_set<entt::id_type> &get_used_tags_set() const {
-        return used_tags_;
-    }
-
   private:
     void update_world_recursive(Entity entity,
                                 const glm::mat4 &parent_world,
                                 int depth);
 
     entt::registry registry_;
-    std::unordered_set<entt::id_type> used_tags_;
 };
 } // namespace ivx
 

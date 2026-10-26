@@ -20,17 +20,15 @@ namespace ivx {
 using namespace entt::literals;
 
 struct TagComponent {
-    entt::id_type id{"Entity"_hs};
+    // Display name only. Identity is the entity handle itself: entt::entity is
+    // already unique among live entities, so there is nothing to hash or keep
+    // in sync. Two entities are allowed to share a name; lookups by name go
+    // through Scene::find_by_name().
     std::string value{"Entity"};
 
     TagComponent() = default;
     // avoid TagComponent ... = name
-    explicit TagComponent(std::string_view name)
-        : id(entt::hashed_string(name.data(), name.size())), value(name) {
-    }
-
-    bool operator==(const TagComponent &other) const noexcept {
-        return id == other.id;
+    explicit TagComponent(std::string_view name) : value(name) {
     }
 };
 

@@ -18,6 +18,47 @@
 namespace ivx {
 namespace {
 
+// Folds the newest matching file of an iterator range into
+// `latest`/`latest_path`. Written against std::filesystem iterators so the flat
+// and the recursive scans below share one loop; every step uses a local
+// error_code because a single shared one gets clobbered by the next call.
+template <typename Iterator>
+void fold_newest(Iterator it,
+                 std::initializer_list<std::string_view> extensions,
+                 std::filesystem::file_time_type &latest,
+                 std::filesystem::path &latest_path) {
+    for (; it != Iterator{}; ++it) {
+        std::error_code entry_ec;
+        if (!it->is_regular_file(entry_ec) || entry_ec) {
+            continue;
+        }
+        const std::filesystem::path path = it->path();
+
+        // Extensions are compared as strings: building a path from a literal
+        // just to compare pulls in the narrow<->wide conversion for no gain.
+        const std::string extension = path.extension().string();
+        bool matches = false;
+        for (std::string_view candidate : extensions) {
+            if (extension == candidate) {
+                matches = true;
+                break;
+            }
+        }
+        if (!matches) {
+            continue;
+        }
+
+        const auto time = std::filesystem::last_write_time(path, entry_ec);
+        if (entry_ec) {
+            continue;
+        }
+        if (time > latest) {
+            latest = time;
+            latest_path = path;
+        }
+    }
+}
+
 // Scripts are C++: keep the identifier rules tight, the name becomes a class
 // name and a file name.
 bool is_valid_identifier(const std::string &name) {
@@ -66,15 +107,15 @@ std::string source_template(const std::string &name) {
     return std::format(
         R"(#include "{0}.h"
 
-#include "ivx/script/script_module.h"
 #include "ivx/scene/components.h"
+#include "ivx/script/script_module.h"
 
 #include <string>
 
 namespace ivx {{
 
 void {0}::on_create() {{
-    log("{0} attached to '" + get_component<TagComponent>().tag + "'");
+    log("{0} attached to '" + get_component<TagComponent>().value + "'");
 }}
 
 void {0}::on_update(float dt) {{
@@ -137,43 +178,42 @@ bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
         return false; // no module yet: the caller builds it regardless
     }
 
-    // The script project is flat (sources, headers and its CMakeLists next to
-    // each other), so a plain directory_iterator is enough. iterating with the
-    // range-for keeps the error handling in one place instead of threading a
-    // mutable error_code through increment().
-    std::filesystem::directory_iterator entries{scripts_dir_, ec};
-    if (ec) {
-        return false;
-    }
-
     std::filesystem::file_time_type latest = module_time;
     std::filesystem::path latest_path;
 
-    for (const std::filesystem::directory_entry &entry : entries) {
+    // 1) The script project itself. It is flat (sources, headers and its
+    // CMakeLists next to each other), so a plain directory_iterator is enough.
+    {
+        std::error_code dir_ec;
+        fold_newest(std::filesystem::directory_iterator{scripts_dir_, dir_ec},
+                    {".cpp", ".h", ".hpp"},
+                    latest,
+                    latest_path);
+        // The file list is a glob, so touching CMakeLists also needs a rebuild.
+        const std::filesystem::path cmake_lists =
+            scripts_dir_ / std::filesystem::path{"CMakeLists.txt"};
         std::error_code file_ec;
-        if (!entry.is_regular_file(file_ec) || file_ec) {
-            continue;
-        }
-        const std::filesystem::path path = entry.path();
-
-        // Compare extensions/names as strings: constructing a path from a
-        // literal for operator!= pulls in the narrow<->wide conversion, which
-        // can throw.
-        const std::string extension = path.extension().string();
-        const bool source =
-            extension == ".cpp" || extension == ".h" || extension == ".hpp";
-        if (!source && path.filename().string() != "CMakeLists.txt") {
-            continue;
-        }
-
-        const auto time = std::filesystem::last_write_time(path, file_ec);
-        if (file_ec) {
-            continue;
-        }
-        if (time > latest) {
+        const auto time =
+            std::filesystem::last_write_time(cmake_lists, file_ec);
+        if (!file_ec && time > latest) {
             latest = time;
-            latest_path = path;
+            latest_path = cmake_lists;
         }
+    }
+
+    // 2) The engine headers the module is compiled against. A layout change
+    // there (a component gaining a member, a virtual added to ScriptableEntity,
+    // ...) invalidates the module without touching a single script source,
+    // which is exactly the case that used to surface as a crash instead of a
+    // rebuild.
+    {
+        std::error_code dir_ec;
+        fold_newest(
+            std::filesystem::recursive_directory_iterator{
+                std::filesystem::path{IVX_ROOT_DIR} / "IVX" / "src", dir_ec},
+            {".h", ".hpp"},
+            latest,
+            latest_path);
     }
 
     if (latest <= module_time) {
