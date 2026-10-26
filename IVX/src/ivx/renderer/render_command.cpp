@@ -17,6 +17,9 @@ void RenderCommand::set_viewport(int x, int y, int width, int height) {
 void RenderCommand::set_clear_color(const glm::vec4 &color) {
     renderer_api_->set_clear_color(color);
 }
+void RenderCommand::set_depth_test(bool enabled) {
+    renderer_api_->set_depth_test(enabled);
+}
 
 void RenderCommand::clear() {
     renderer_api_->clear();

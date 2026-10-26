@@ -12,6 +12,7 @@ class RenderCommand {
     static void init();
     static void set_viewport(int x, int y, int width, int height);
     static void set_clear_color(const glm::vec4 &color);
+    static void set_depth_test(bool enabled = true);
     static void clear();
     static void draw(const Ref<VertexArray> &vertex_array);
     static void draw(const Ref<VertexArray> &vertex_array,

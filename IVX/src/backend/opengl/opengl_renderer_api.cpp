@@ -64,6 +64,13 @@ void OpenGLRendererAPI::set_viewport(int x, int y, int width, int height) {
 void OpenGLRendererAPI::set_clear_color(const glm::vec4 &color) {
     glClearColor(color.r, color.g, color.b, color.a);
 }
+void OpenGLRendererAPI::set_depth_test(bool enabled) {
+    if (enabled) {
+        glEnable(GL_DEPTH_TEST);
+    } else {
+        glDisable(GL_DEPTH_TEST);
+    }
+}
 
 void OpenGLRendererAPI::clear() {
     glClearDepth(0.0); // reverse-z

@@ -123,6 +123,8 @@ void Renderer2D::begin_scene(const glm::mat4 &projection,
                              const glm::mat4 &view) {
     IVX_PROFILE_FUNCTION();
 
+    // RenderCommand::set_depth_test(false); // glDisable(GL_DEPTH_TEST)
+
     // `view` is already the inverse of the camera world transform: inverting it
     // here as well would turn the camera transform into a model transform,
     // which is invisible while the camera sits at the origin and completely
@@ -140,6 +142,8 @@ void Renderer2D::end_scene() {
     IVX_PROFILE_FUNCTION();
 
     flush();
+
+    // RenderCommand::set_depth_test(true);
 }
 
 void Renderer2D::flush() {

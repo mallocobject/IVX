@@ -10,6 +10,7 @@ class OpenGLRendererAPI : public RendererAPI {
     virtual void init() override;
     virtual void set_viewport(int x, int y, int width, int height) override;
     virtual void set_clear_color(const glm::vec4 &color) override;
+    virtual void set_depth_test(bool enabled = true) override;
     virtual void clear() override;
     virtual void draw(const Ref<VertexArray> &vertex_array) override;
     virtual void draw(const Ref<VertexArray> &vertex_array,

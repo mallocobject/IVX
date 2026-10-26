@@ -98,7 +98,7 @@ void EditLayer::on_attach() {
         Entity square_entity = scene_->create_entity("Colorful Square");
         auto &tf = square_entity.get_component<TransformComponent>();
         tf.translation = glm::vec3{0.f};
-        tf.rotation = 0.f;
+        tf.rotation = glm::vec3{0.f};
         tf.scale = glm::vec2{1.f};
 
         auto &sr = square_entity.add_component<SpriteRendererComponent>();

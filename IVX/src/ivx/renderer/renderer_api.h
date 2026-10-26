@@ -21,6 +21,7 @@ class RendererAPI : public RefCounted {
     virtual void init() = 0;
     virtual void set_viewport(int x, int y, int width, int height) = 0;
     virtual void set_clear_color(const glm::vec4 &color) = 0;
+    virtual void set_depth_test(bool enabled = true) = 0;
     virtual void clear() = 0;
     virtual void draw(const Ref<VertexArray> &vertex_array) = 0;
     virtual void draw(const Ref<VertexArray> &vertex_array,

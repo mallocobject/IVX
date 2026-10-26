@@ -19,6 +19,35 @@ namespace ivx {
 
 using namespace entt::literals;
 
+namespace detail {
+inline glm::mat4 build_rotation(const glm::vec3 &rotation) {
+    float yaw = rotation.y;
+    float pitch = rotation.x;
+    float roll = rotation.z;
+
+    const float cy = std::cos(yaw), sy = std::sin(yaw);
+    const float cp = std::cos(pitch), sp = std::sin(pitch);
+    const float cr = std::cos(roll), sr = std::sin(roll);
+
+    glm::mat4 R(1.0f);
+
+    // GLM col-main: R[col][row]
+    R[0][0] = cy * cr + sy * sp * sr;
+    R[0][1] = cp * sr;
+    R[0][2] = -sy * cr + cy * sp * sr;
+
+    R[1][0] = -cy * sr + sy * sp * cr;
+    R[1][1] = cp * cr;
+    R[1][2] = sy * sr + cy * sp * cr;
+
+    R[2][0] = sy * cp;
+    R[2][1] = -sp;
+    R[2][2] = cy * cp;
+
+    return R;
+}
+} // namespace detail
+
 struct TagComponent {
     // Display name only. Identity is the entity handle itself: entt::entity is
     // already unique among live entities, so there is nothing to hash or keep
@@ -34,7 +63,7 @@ struct TagComponent {
 
 struct TransformComponent {
     glm::vec3 translation{0.f};
-    float rotation{0.f};
+    glm::vec3 rotation{0.f}; // pitch, yaw, roll
     glm::vec2 scale{1.f};
 
     // Derived state: refreshed once per frame by
@@ -45,9 +74,7 @@ struct TransformComponent {
     // Local matrix (T * R * S) built from the fields above.
     glm::mat4 load_matrix() const {
         return glm::translate(glm::mat4{1.f}, translation) *
-               glm::rotate(glm::mat4{1.f},
-                           glm::radians(rotation),
-                           glm::vec3{0.f, 0.f, 1.f}) *
+               detail::build_rotation(rotation) *
                glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
     }
 };

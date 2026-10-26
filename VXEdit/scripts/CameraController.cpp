@@ -47,7 +47,7 @@ void CameraController::on_update(float dt) {
 
     auto &transform = get_component<TransformComponent>();
     transform.translation += translation;
-    transform.rotation += rotation;
+    transform.rotation.z += rotation;
 }
 
 void CameraController::on_destroy() {
@@ -68,7 +68,7 @@ void CameraController::on_key_pressed(KeyCode key, bool repeat) {
     if (key == KeyCode::R) {
         auto &transform = get_component<TransformComponent>();
         transform.translation = glm::vec3{0.f, 0.f, transform.translation.z};
-        transform.rotation = 0.f;
+        transform.rotation = glm::vec3{0.f};
         log("CameraController: transform reset");
     }
 }

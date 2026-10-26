@@ -12,21 +12,16 @@
 namespace ivx {
 namespace {
 
-// Small helper: a DragFloat row with a reset button on the right.
-void drag_vec2(const char *label, glm::vec2 &value, float speed) {
-    ImGui::DragFloat2(label, glm::value_ptr(value), speed);
-}
-
 void draw_transform(Entity /*entity*/,
                     TransformComponent &transform,
                     EditorContext & /*context*/) {
     ImGui::DragFloat3("Position", glm::value_ptr(transform.translation), 0.5f);
-    ImGui::DragFloat("Rotation", &transform.rotation, 0.5f);
-    drag_vec2("Scale", transform.scale, 0.01f);
+    ImGui::DragFloat3("Rotation", glm::value_ptr(transform.rotation), 0.5f);
+    ImGui::DragFloat2("Scale", glm::value_ptr(transform.scale), 0.01f);
 
     if (ImGui::Button("Reset Transform")) {
         transform.translation = glm::vec3{0.f};
-        transform.rotation = 0.f;
+        transform.rotation = glm::vec3{0.f};
         transform.scale = glm::vec2{1.f};
     }
 
@@ -112,42 +107,44 @@ void make_primary(EditorContext &context, Entity entity) {
 }
 
 // Points the camera at the selected entity (and frames it when orthographic).
-void focus_selection(Entity camera_entity,
-                     EditorContext &context,
-                     bool also_frame) {
-    const Entity selection = context.selected_entity();
-    if (!selection) {
-        return;
-    }
+// void focus_selection(Entity camera_entity,
+//                      EditorContext &context,
+//                      bool also_frame) {
+//     const Entity selection = context.selected_entity();
+//     if (!selection) {
+//         return;
+//     }
 
-    auto *camera_transform =
-        camera_entity.try_get_component<TransformComponent>();
-    const auto *target_transform =
-        selection.try_get_component<TransformComponent>();
-    if (camera_transform == nullptr || target_transform == nullptr) {
-        return;
-    }
+//     auto *camera_transform =
+//         camera_entity.try_get_component<TransformComponent>();
+//     const auto *target_transform =
+//         selection.try_get_component<TransformComponent>();
+//     if (camera_transform == nullptr || target_transform == nullptr) {
+//         return;
+//     }
 
-    // Cameras live in world space, keep the camera's own depth.
-    camera_transform->translation.x = target_transform->world[3][0];
-    camera_transform->translation.y = target_transform->world[3][1];
+//     // Cameras live in world space, keep the camera's own depth.
+//     camera_transform->translation.x = target_transform->world[3][0];
+//     camera_transform->translation.y = target_transform->world[3][1];
 
-    if (!also_frame) {
-        return;
-    }
+//     if (!also_frame) {
+//         return;
+//     }
 
-    // Orthographic only: choose a size that leaves a margin around the sprite.
-    auto *camera = camera_entity.try_get_component<CameraComponent>();
-    if (camera == nullptr || camera->camera.get_projection_type() !=
-                                 SceneCamera::ProjectionType::Orthographic) {
-        return;
-    }
+//     // Orthographic only: choose a size that leaves a margin around the
+//     sprite. auto *camera =
+//     camera_entity.try_get_component<CameraComponent>(); if (camera == nullptr
+//     || camera->camera.get_projection_type() !=
+//                                  SceneCamera::ProjectionType::Orthographic) {
+//         return;
+//     }
 
-    const auto *sprite = selection.try_get_component<SpriteRendererComponent>();
-    const float extent =
-        sprite != nullptr ? glm::max(sprite->size.x, sprite->size.y) : 200.f;
-    camera->camera.set_orthographic_size(extent * 1.5f);
-}
+//     const auto *sprite =
+//     selection.try_get_component<SpriteRendererComponent>(); const float
+//     extent =
+//         sprite != nullptr ? glm::max(sprite->size.x, sprite->size.y) : 200.f;
+//     camera->camera.set_orthographic_size(extent * 1.5f);
+// }
 
 // Keeps the "why is WASD dead?" question from happening: the camera only reacts
 // to input while a controller script is attached. When it is attached the row
@@ -256,31 +253,32 @@ void draw_camera(Entity entity,
 
     ImGui::Separator();
 
-    // ---- view helpers ----
-    if (const auto *transform =
-            entity.try_get_component<TransformComponent>()) {
-        ImGui::TextDisabled("World position: (%.1f, %.1f, %.1f)",
-                            transform->world[3][0],
-                            transform->world[3][1],
-                            transform->world[3][2]);
-    }
+    // // ---- view helpers ----
+    // if (const auto *transform =
+    //         entity.try_get_component<TransformComponent>()) {
+    //     ImGui::TextDisabled("World position: (%.1f, %.1f, %.1f)",
+    //                         transform->world[3][0],
+    //                         transform->world[3][1],
+    //                         transform->world[3][2]);
+    // }
 
-    const bool has_selection = context.has_selection();
-    ImGui::BeginDisabled(!has_selection);
-    if (ImGui::Button("Focus Selection")) {
-        focus_selection(entity, context, /*also_frame*/ false);
-    }
-    ImGui::SameLine();
-    if (ImGui::Button("Frame Selection")) {
-        focus_selection(entity, context, /*also_frame*/ true);
-    }
-    ImGui::EndDisabled();
-    if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip(
-            "Moves the camera onto the selected entity and sizes it to fit.");
-    }
+    // const bool has_selection = context.has_selection();
+    // ImGui::BeginDisabled(!has_selection);
+    // if (ImGui::Button("Focus Selection")) {
+    //     focus_selection(entity, context, /*also_frame*/ false);
+    // }
+    // ImGui::SameLine();
+    // if (ImGui::Button("Frame Selection")) {
+    //     focus_selection(entity, context, /*also_frame*/ true);
+    // }
+    // ImGui::EndDisabled();
+    // if (ImGui::IsItemHovered()) {
+    //     ImGui::SetTooltip(
+    //         "Moves the camera onto the selected entity and sizes it to
+    //         fit.");
+    // }
 
-    ImGui::Separator();
+    // ImGui::Separator();
 
     // ---- derived numbers, for when "nothing renders" ----
     if (scene_camera.get_projection_type() ==
