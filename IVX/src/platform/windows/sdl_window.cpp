@@ -12,10 +12,9 @@ namespace ivx {
 namespace {
 uint8_t g_sdl_initialized = 0;
 
-// ivx::KeyCode mirrors the GLFW key values (uppercase letters, 256+ for the
-// special keys), while SDL reports scancodes / lowercase keycodes. Physical
-// keys are mapped through the scancode so the result does not depend on the
-// layout.
+// ivx::KeyCode uses ASCII for letters and digits and 256+ for the special keys,
+// while SDL reports scancodes / lowercase keycodes. Physical keys are mapped
+// through the scancode so the result does not depend on the keyboard layout.
 KeyCode key_from_scancode(SDL_Scancode sc) {
     using enum KeyCode;
 
@@ -144,7 +143,7 @@ KeyCode key_from_scancode(SDL_Scancode sc) {
 }
 
 // SDL reports mouse buttons as SDL_BUTTON_* (1 = left, 2 = middle, 3 = right),
-// ivx::MouseCode follows GLFW (0 = left, 1 = right, 2 = middle), so middle and
+// ivx::MouseCode is numbered 0 = left, 1 = right, 2 = middle, so middle and
 // right have to be swapped rather than shifted by one.
 MouseCode mouse_code_from_sdl(uint8_t button) {
     using enum MouseCode;

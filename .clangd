@@ -19,8 +19,6 @@ CompileFlags:
     - -D_CRT_SECURE_NO_WARNINGS
     - -DNOMINMAX
     - -DIVX_INTRUSIVE_REF
-    - -DIVX_WINDOW_SDL3
-    - -DGLFW_INCLUDE_NONE
     - -IIVX/src
     - -IIVX/vendor/Glad/include
     - -IIVX/vendor/stb_image
@@ -31,7 +29,6 @@ CompileFlags:
     - -Ideps/glm
     - -Ideps/BqLog/include
     - -Ideps/SDL/include
-    - -Ideps/glfw/include
   # Switches clang-cl does not implement; keeping them would make clangd drop the
   # whole command instead of just ignoring them.
   Remove:

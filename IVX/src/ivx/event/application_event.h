@@ -45,7 +45,6 @@ class AppTickEvent : public Event {
 };
 
 // Emitted when the OS window gains or loses focus (SDL_EVENT_WINDOW_FOCUS_*).
-// The GLFW back end does not emit it yet.
 class WindowFocusEvent : public Event {
   public:
     explicit WindowFocusEvent(bool focused) : focused_(focused) {

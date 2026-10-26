@@ -48,9 +48,8 @@ class Window : public RefCounted {
         return nullptr;
     }
 
-    // Raw platform event hook: backends with an event queue (SDL3) forward
-    // every native event here so ImGui can consume it, while callback based
-    // backends (GLFW) leave it unused.
+    // Raw platform event hook: SDL3 forwards every native event here so ImGui
+    // can consume it (the event queue has to be drained by hand).
     using NativeEventCallbackFn = std::function<void(const void *)>;
     virtual void set_native_event_callback(NativeEventCallbackFn) {
     }

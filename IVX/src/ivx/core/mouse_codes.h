@@ -7,7 +7,8 @@
 
 namespace ivx {
 enum class MouseCode : uint8_t {
-    // From glfw3.h
+    // IVX mouse codes, independent of any windowing library. Button0 is the
+    // left
     Button0 = 0,
     Button1 = 1,
     Button2 = 2,

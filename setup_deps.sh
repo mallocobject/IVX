@@ -41,25 +41,25 @@ clone_if_missing() {
     fi
 }
 
-# 1. GLFW
+# 1. GLM
 echo
-echo "[1/4] Cloning GLFW..."
-clone_if_missing glfw "https://github.com/mallocobject/glfw.git" master || exit 1
-
-# 2. GLM
-echo
-echo "[2/4] Cloning GLM..."
+echo "[1/4] Cloning GLM..."
 clone_if_missing glm "https://github.com/icaven/glm.git" master || exit 1
 
-# 3. ImGui (docking branch)
+# 2. ImGui (docking branch)
 echo
-echo "[3/4] Cloning ImGui (docking branch)..."
+echo "[2/4] Cloning ImGui (docking branch)..."
 clone_if_missing imgui "https://github.com/mallocobject/imgui.git" docking || exit 1
 
-# 4. BqLog
+# 3. BqLog
 echo
-echo "[4/4] Cloning BqLog..."
+echo "[3/4] Cloning BqLog..."
 clone_if_missing BqLog "https://github.com/mallocobject/BqLog.git" || exit 1
+
+# 4. SDL3: the only windowing/input back end
+echo
+echo "[4/4] Cloning SDL3..."
+clone_if_missing SDL "https://github.com/libsdl-org/SDL.git" release-3.4.0 || exit 1
 
 echo
 echo "========================================"

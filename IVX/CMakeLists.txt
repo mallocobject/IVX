@@ -21,16 +21,15 @@ target_precompile_headers(IVX PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src/ivxpch.h"
 target_include_directories(IVX PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/src"
     "${CMAKE_SOURCE_DIR}/deps/imgui"             # <imgui.h>
-    "${CMAKE_SOURCE_DIR}/deps/imgui/backends"    # <backends/imgui_impl_glfw.h>
+    "${CMAKE_SOURCE_DIR}/deps/imgui/backends"    # <backends/imgui_impl_sdl3.h>
     "${CMAKE_SOURCE_DIR}/deps/BqLog/include"     # <bq_log/bq_log.h>
     "${CMAKE_SOURCE_DIR}/deps/SDL/include")      # <SDL3/SDL.h>
 
 target_link_libraries(IVX PUBLIC
-    glfw glad imgui glm stb_image BqLog opengl32 entt)
+    SDL3::SDL3 glad imgui glm stb_image BqLog opengl32 entt)
 
 target_compile_definitions(IVX PUBLIC
     IVX_PLATFORM_WINDOWS
-    GLFW_INCLUDE_NONE
     $<$<CONFIG:Debug>:IVX_CONFIG_DEBUG>
     $<$<CONFIG:Release>:IVX_CONFIG_RELEASE>)
 
@@ -42,16 +41,8 @@ if(IVX_INTRUSIVE_REF)
     target_compile_definitions(IVX PUBLIC IVX_INTRUSIVE_REF)
 endif()
 
-# ---- Window/input back end ----
-# OFF (default): GLFW, the current implementation.
-# ON: SDL3 (SDL_Window + SDL_GLContext + event queue). SDL3 is always compiled
-# as a dependency; this switch only decides which platform layer IVX uses.
-option(IVX_WINDOW_SDL3 "Use SDL3 instead of GLFW for windowing/input" ON)
-
-if(IVX_WINDOW_SDL3)
-    target_compile_definitions(IVX PUBLIC IVX_WINDOW_SDL3)
-    target_link_libraries(IVX PUBLIC SDL3::SDL3)
-endif()
+# SDL3 is the only window/input back end: SDL_Window + SDL_GLContext + event
+# queue. It is linked above, together with the rest of the engine's dependencies.
 # ---- script modules ----
 # Everything a script module needs from the engine is header-only (Entity,
 # components, ScriptableEntity, EnTT). This interface target carries only include

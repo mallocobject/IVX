@@ -14,20 +14,13 @@ endif()
 
 set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
-if (NOT EXISTS "${DEPS_DIR}/glfw" OR
-    NOT EXISTS "${DEPS_DIR}/glm"  OR
+if (NOT EXISTS "${DEPS_DIR}/glm"  OR
     NOT EXISTS "${DEPS_DIR}/imgui" OR
     NOT EXISTS "${DEPS_DIR}/SDL")
     message(FATAL_ERROR
         "Missing dependencies in ${DEPS_DIR}.\n"
         "Please run setup_deps.bat(Windows) or ./setup_deps.sh(Linux/macOS)")
 endif()
-
-# ---- GLFW ----
-set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_TESTS    OFF CACHE BOOL "" FORCE)
-set(GLFW_BUILD_DOCS     OFF CACHE BOOL "" FORCE)
-add_subdirectory("${DEPS_DIR}/glfw" "${CMAKE_BINARY_DIR}/_deps/glfw-build")
 
 # ---- GLM ----
 set(GLM_BUILD_TESTS    OFF CACHE BOOL "" FORCE)

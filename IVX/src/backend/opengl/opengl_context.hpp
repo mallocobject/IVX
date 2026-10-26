@@ -4,7 +4,6 @@
 #include "ivx/core/logger.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/renderer/graphics_context.h"
-#include <GLFW/glfw3.h>
 #include <SDL3/SDL.h>
 #include <glad/glad.h>
 
@@ -30,21 +29,6 @@ inline void log_opengl_info() {
                        GLVersion.minor);
         IVX_CORE_ASSERT(false, "Unsupported OpenGL version!");
     }
-}
-
-inline void log_glfw_info() {
-    int major = 0;
-    int minor = 0;
-    int revision = 0;
-    glfwGetVersion(&major, &minor, &revision);
-
-    IVX_CORE_INFO("{:-^40}", "GLFW Info");
-    IVX_CORE_INFO("    GLFW: {}.{}.{}", major, minor, revision);
-    IVX_CORE_INFO("    Runtime: {}", glfwGetVersionString());
-    IVX_CORE_INFO("    Compiled against: {}.{}.{}",
-                  GLFW_VERSION_MAJOR,
-                  GLFW_VERSION_MINOR,
-                  GLFW_VERSION_REVISION);
 }
 
 inline void log_sdl_info() {
@@ -86,35 +70,6 @@ class OpenGLContext : public GraphicsContext {
                         "OpenGLContext::swap_buffer() not implemented for this "
                         "window type!");
     }
-};
-
-template <>
-class OpenGLContext<GLFWwindow> : public GraphicsContext {
-  public:
-    explicit OpenGLContext(GLFWwindow *window_handle) : window_(window_handle) {
-        IVX_CORE_ASSERT(window_handle, "Window handle is null!");
-    }
-
-    void init() override {
-        IVX_PROFILE_FUNCTION();
-
-        glfwMakeContextCurrent(window_);
-        int status = gladLoadGLLoader(
-            reinterpret_cast<GLADloadproc>(glfwGetProcAddress));
-        IVX_CORE_ASSERT(status, "Failed to initialize Glad!");
-
-        detail::log_glfw_info();
-        detail::log_opengl_info();
-    }
-
-    void swap_buffer() override {
-        IVX_PROFILE_FUNCTION();
-
-        glfwSwapBuffers(window_);
-    }
-
-  private:
-    GLFWwindow *window_{nullptr};
 };
 
 template <>

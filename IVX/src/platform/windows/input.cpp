@@ -1,13 +1,9 @@
 #include "ivxpch.h"
 #include "ivx/core/input.h"
-#include "ivx/core/application.h"
-#include <cstdint>
 
-#if defined(IVX_WINDOW_SDL3)
 #include <SDL3/SDL.h>
-#else
-#include <GLFW/glfw3.h>
-#endif
+
+#include <cstdint>
 
 namespace ivx {
 namespace {
@@ -24,10 +20,9 @@ bool Input::is_enabled() {
     return g_input_enabled;
 }
 
-#if defined(IVX_WINDOW_SDL3)
 namespace {
-// ivx::KeyCode uses the GLFW numbering; polling needs the reverse mapping back
-// to SDL scancodes.
+// KeyCode keeps its historic GLFW-compatible numbering (uppercase letters, 256+
+// for the special keys); polling needs the mapping back to SDL scancodes.
 SDL_Scancode scancode_from_key(KeyCode key) {
     using enum KeyCode;
 
@@ -203,36 +198,4 @@ glm::vec2 Input::get_mouse_pos() {
     SDL_GetMouseState(&x, &y);
     return {x, y};
 }
-#else
-bool Input::is_key_pressed(KeyCode key) {
-    if (!g_input_enabled) {
-        return false;
-    }
-
-    auto window = reinterpret_cast<GLFWwindow *>(
-        Application::get().get_window().get_native_window());
-    auto state = glfwGetKey(window, static_cast<int32_t>(key));
-    return state == GLFW_PRESS || state == GLFW_REPEAT;
-}
-
-bool Input::is_mouse_button_pressed(MouseCode button) {
-    if (!g_input_enabled) {
-        return false;
-    }
-
-    auto window = reinterpret_cast<GLFWwindow *>(
-        Application::get().get_window().get_native_window());
-    auto state = glfwGetMouseButton(window, static_cast<int32_t>(button));
-    return state == GLFW_PRESS;
-}
-
-glm::vec2 Input::get_mouse_pos() {
-    auto window = reinterpret_cast<GLFWwindow *>(
-        Application::get().get_window().get_native_window());
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-
-    return {static_cast<float>(xpos), static_cast<float>(ypos)};
-}
-#endif
 } // namespace ivx

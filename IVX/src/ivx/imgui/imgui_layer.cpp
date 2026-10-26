@@ -7,14 +7,8 @@
 #include "ivx/event/event.h"
 #include <backends/imgui_impl_opengl3.h>
 
-#if defined(IVX_WINDOW_SDL3)
 #include <SDL3/SDL.h>
 #include <backends/imgui_impl_sdl3.h>
-#else
-#include <GLFW/glfw3.h>
-#include <backends/imgui_impl_glfw.h>
-#endif
-
 #include <imgui.h>
 
 namespace ivx {
@@ -63,7 +57,6 @@ void ImGuiLayer::on_attach() {
     }
 
     // Setup Platform/Renderer backends
-#if defined(IVX_WINDOW_SDL3)
     ImGui_ImplSDL3_InitForOpenGL(static_cast<SDL_Window *>(native_window),
                                  app.get_window().get_native_gl_context());
     // SDL3 delivers events through a queue, so every event has to be handed to
@@ -71,10 +64,6 @@ void ImGuiLayer::on_attach() {
     app.get_window().set_native_event_callback([](const void *event) {
         ImGui_ImplSDL3_ProcessEvent(static_cast<const SDL_Event *>(event));
     });
-#else
-    ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow *>(native_window),
-                                 true);
-#endif
     ImGui_ImplOpenGL3_Init(nullptr);
 }
 
@@ -82,11 +71,7 @@ void ImGuiLayer::on_detach() {
     IVX_PROFILE_FUNCTION();
 
     ImGui_ImplOpenGL3_Shutdown();
-#if defined(IVX_WINDOW_SDL3)
     ImGui_ImplSDL3_Shutdown();
-#else
-    ImGui_ImplGlfw_Shutdown();
-#endif
     ImGui::DestroyContext();
 }
 
@@ -126,11 +111,7 @@ void ImGuiLayer::begin() {
                             static_cast<float>(app.get_window().get_height()));
 
     ImGui_ImplOpenGL3_NewFrame();
-#if defined(IVX_WINDOW_SDL3)
     ImGui_ImplSDL3_NewFrame();
-#else
-    ImGui_ImplGlfw_NewFrame();
-#endif
     ImGui::NewFrame();
 }
 
@@ -146,18 +127,11 @@ void ImGuiLayer::end() {
     // (Platform functions may change the current OpenGL context, so we
     // save/restore it to make it easier to paste this code elsewhere.)
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-#if defined(IVX_WINDOW_SDL3)
         SDL_Window *backup_window = SDL_GL_GetCurrentWindow();
         SDL_GLContext backup_context = SDL_GL_GetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
         SDL_GL_MakeCurrent(backup_window, backup_context);
-#else
-        GLFWwindow *backup_current_context = glfwGetCurrentContext();
-        ImGui::UpdatePlatformWindows();
-        ImGui::RenderPlatformWindowsDefault();
-        glfwMakeContextCurrent(backup_current_context);
-#endif
     }
 }
 
