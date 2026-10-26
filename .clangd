@@ -19,6 +19,7 @@ CompileFlags:
     - -D_CRT_SECURE_NO_WARNINGS
     - -DNOMINMAX
     - -DIVX_INTRUSIVE_REF
+    - -DSCRIPTS_PANEL_LAYOUT="${CMAKE_CURRENT_SOURCE_DIR}/assets/scripts_panel.txt"
     - -IIVX/src
     - -IIVX/vendor/Glad/include
     - -IIVX/vendor/stb_image

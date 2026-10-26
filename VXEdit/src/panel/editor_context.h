@@ -21,7 +21,8 @@ struct EditorContext {
         selected = entt::null;
     }
     void select(Entity entity) {
-        selected = entity ? entity.handle() : entt::null;
+        // selected = entity ? entity.handle() : entt::null;
+        selected = entity.handle();
     }
     Entity selected_entity() const {
         if (!has_selection()) {
