@@ -21,7 +21,9 @@ class EditLayer : public Layer {
     virtual void on_detach() override;
     virtual void on_update(float dt) override;
     virtual void on_event(Event &event) override;
-    virtual void on_render() override;
+    // UI phase: menu bar, status bar, dock space and every panel. The scene
+    // itself is rendered into the viewport framebuffer from on_update().
+    virtual void on_imgui() override;
 
   private:
     // Panel content. The window itself (Begin/End, padding, visibility) is

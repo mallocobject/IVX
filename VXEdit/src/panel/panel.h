@@ -21,6 +21,10 @@ namespace ivx {
 // The pairing is owned by the base class because ImGui requires End() to be
 // called even when Begin() returns false (collapsed window).
 //
+// Naming: Panel::on_render() is the "draw this window" wrapper (Begin/End plus
+// the on_imgui() content, called from Layer::on_imgui), it does no GPU work.
+// The GPU pass of the frame happens in EditLayer::on_update.
+//
 // RefCounted so panels can be shared with the rest of the editor through
 // ivx::Ref, like Layer/Texture/Shader/Scene.
 // ---------------------------------------------------------------------------

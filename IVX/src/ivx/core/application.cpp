@@ -64,13 +64,15 @@ void Application::run() {
         ivx::RenderCommand::set_clear_color(glm::vec4{0.1f, 0.1f, 0.1f, 1});
         ivx::RenderCommand::clear();
 
-        // render
+        // UI phase: the layers only build ImGui commands here, the backend
+        // submits them from ImGuiLayer::end() below. Rendering happens in
+        // on_update().
         imgui_layer_->begin();
         {
-            IVX_PROFILE_SCOPE("LayerStack::on_render");
+            IVX_PROFILE_SCOPE("LayerStack::on_imgui");
 
             for (auto &&layer : layer_stack_) {
-                layer->on_render();
+                layer->on_imgui();
             }
         }
         imgui_layer_->end();

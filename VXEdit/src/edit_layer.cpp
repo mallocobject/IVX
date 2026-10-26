@@ -477,7 +477,7 @@ void EditLayer::draw_status_bar() {
     ImGui::PopStyleColor(2);
 }
 
-void EditLayer::on_render() {
+void EditLayer::on_imgui() {
     IVX_PROFILE_FUNCTION();
 
     // Top: the menu bar reserves its own height in the main viewport's work
