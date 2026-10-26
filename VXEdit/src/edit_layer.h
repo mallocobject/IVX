@@ -44,12 +44,18 @@ class EditLayer : public Layer {
     // restarting.
     void poll_scripts();
 
+    // Re-evaluates whether the loaded module is older than its sources. Only a
+    // hint: rebuilding stays the user's call (Ctrl+B). Called at startup, after
+    // every build and periodically so an edit made while the editor runs shows
+    // up too.
+    void refresh_scripts_staleness();
+
     // Binds CameraController to the primary camera once per session (see the
     // comment in the implementation).
     void bind_default_camera_script();
 
-    Ref<Texture2D> texture_;
-    Ref<SubTexture2D> sub_texture_;
+    // Ref<Texture2D> texture_;
+    // Ref<SubTexture2D> sub_texture_;
     Ref<FrameBuffer> frame_buffer_;
 
     // Shared editor state (scene + selection). Panels reference it, so it must
@@ -57,7 +63,6 @@ class EditLayer : public Layer {
     EditorContext context_;
 
     Ref<Scene> scene_;
-    Entity square_entity_;
 
     // Set when the default layout was (re)built: the viewport tab has to be
     // brought to the front once the panels exist. Starts true: the viewport is
@@ -81,6 +86,11 @@ class EditLayer : public Layer {
     // Set once the default camera controller has been bound (or found already
     // bound), so unbinding it in the inspector sticks.
     bool default_script_bound_{false};
+    // True while some script source is newer than the loaded module (shows a
+    // hint in the status bar; never triggers a build on its own).
+    bool scripts_stale_{false};
+    // Frame counter for the periodic staleness re-check (~2 s at 60 fps).
+    int staleness_tick_{0};
 
     PanelManager panels_;
     Ref<SceneHierarchyPanel> scene_hierarchy_panel_;

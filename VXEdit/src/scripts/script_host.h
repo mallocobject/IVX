@@ -33,6 +33,13 @@ class ScriptHost {
 
     bool load_initial(std::string &error);
 
+    // True when a script source (or the script project's CMakeLists) is newer
+    // than the built module. Loading the module in that state silently runs the
+    // previous build and the editor binds scripts against stale code, so the
+    // caller is expected to schedule a rebuild. `newest` receives the offending
+    // file.
+    bool has_newer_sources(std::filesystem::path *newest = nullptr) const;
+
     // Destroys every script instance while the module is still loaded. Must run
     // before the DLL is unloaded: on_destroy() executes code that lives in it.
     void release_all_scripts();

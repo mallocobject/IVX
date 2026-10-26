@@ -46,7 +46,7 @@ void InspectorPanel::draw_entity_header(Entity entity) {
     if (name_buffer_entity_ != entity.handle()) {
         name_buffer_entity_ = entity.handle();
         std::snprintf(
-            name_buffer_, sizeof(name_buffer_), "%s", tag->tag.c_str());
+            name_buffer_, sizeof(name_buffer_), "%s", tag->value.c_str());
     }
 
     // The one and only name editor: TagComponent has no section of its own.
@@ -58,7 +58,7 @@ void InspectorPanel::draw_entity_header(Entity entity) {
     // Live editing (no EnterReturnsTrue): the hierarchy renames as you type.
     if (ImGui::InputText("##name", name_buffer_, sizeof(name_buffer_))) {
         if (auto *editable = entity.try_get_component<TagComponent>()) {
-            editable->tag = name_buffer_;
+            editable->value = name_buffer_;
         }
     }
 }

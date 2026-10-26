@@ -113,18 +113,13 @@ Entity SceneHierarchyPanel::create_default_entity(Scene &scene) {
     // so a new object never shows up as a duplicate of an existing one.
     std::string name = "Entity";
     for (int suffix = 1;; ++suffix) {
-        bool taken = false;
-        for (auto [handle, tag] :
-             scene.registry().view<TagComponent>().each()) {
-            if (tag.tag == name) {
-                taken = true;
-                break;
-            }
-        }
-        if (!taken) {
+        if (!scene.get_used_tags_set().contains(
+                entt::hashed_string::value(name.c_str()))) {
             break;
         }
-        name = "Entity (" + std::to_string(suffix) + ")";
+
+        // name = "Entity (" + std::to_string(suffix) + ")";
+        name = std::format("Entity ({})", suffix);
     }
 
     // Transform: Scene::create_entity() already gives the identity transform
@@ -149,7 +144,8 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
     }
 
     const auto *tag = entity.try_get_component<TagComponent>();
-    const std::string name = tag != nullptr ? tag->tag : std::string{"<none>"};
+    const std::string name =
+        tag != nullptr ? tag->value : std::string{"<none>"};
     const auto children = entity.children();
 
     ImGui::PushID(static_cast<int>(static_cast<std::uint32_t>(
@@ -241,7 +237,8 @@ void SceneHierarchyPanel::draw_empty_context_menu() {
     }
 
     if (ImGui::MenuItem("Create Empty")) {
-        set_selected(context_.scene->create_entity("Entity"));
+        // set_selected(context_.scene->create_entity("Entity"));
+        set_selected(create_default_entity(*context_.scene.get()));
     }
     ImGui::EndPopup();
 }

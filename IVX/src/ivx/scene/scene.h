@@ -4,6 +4,7 @@
 #include "ivx/scene/components.h"
 #include <entt.hpp>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 namespace ivx {
@@ -61,12 +62,17 @@ class Scene : public RefCounted {
         return registry_.view<T...>();
     }
 
+    const std::unordered_set<entt::id_type> &get_used_tags_set() const {
+        return used_tags_;
+    }
+
   private:
     void update_world_recursive(Entity entity,
                                 const glm::mat4 &parent_world,
                                 int depth);
 
     entt::registry registry_;
+    std::unordered_set<entt::id_type> used_tags_;
 };
 } // namespace ivx
 

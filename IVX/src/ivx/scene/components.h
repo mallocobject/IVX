@@ -20,11 +20,17 @@ namespace ivx {
 using namespace entt::literals;
 
 struct TagComponent {
-    std::string tag{"Entity"};
+    entt::id_type id{"Entity"_hs};
+    std::string value{"Entity"};
 
     TagComponent() = default;
     // avoid TagComponent ... = name
-    explicit TagComponent(std::string_view name) : tag(name) {
+    explicit TagComponent(std::string_view name)
+        : id(entt::hashed_string(name.data(), name.size())), value(name) {
+    }
+
+    bool operator==(const TagComponent &other) const noexcept {
+        return id == other.id;
     }
 };
 
@@ -66,21 +72,21 @@ struct SpriteRendererComponent {
     float tiling_factor{1.f};
     glm::vec4 color{1.f};
 
-    SpriteRendererComponent() = default;
-    SpriteRendererComponent(const Ref<Texture2D> &texture,
-                            float tiling_factor = 1.f,
-                            const glm::vec4 &color = glm::vec4{1.f},
-                            const glm::vec2 &size = glm::vec2{1.f})
-        : texture(texture), size(size), tiling_factor(tiling_factor),
-          color(color) {
-    }
-    SpriteRendererComponent(const Ref<SubTexture2D> &sub_texture,
-                            float tiling_factor = 1.f,
-                            const glm::vec4 &color = glm::vec4{1.f},
-                            const glm::vec2 &size = glm::vec2{1.f})
-        : sub_texture(sub_texture), size(size), tiling_factor(tiling_factor),
-          color(color) {
-    }
+    // SpriteRendererComponent() = default;
+    // SpriteRendererComponent(const Ref<Texture2D> &texture,
+    //                         float tiling_factor = 1.f,
+    //                         const glm::vec4 &color = glm::vec4{1.f},
+    //                         const glm::vec2 &size = glm::vec2{1.f})
+    //     : texture(texture), size(size), tiling_factor(tiling_factor),
+    //       color(color) {
+    // }
+    // SpriteRendererComponent(const Ref<SubTexture2D> &sub_texture,
+    //                         float tiling_factor = 1.f,
+    //                         const glm::vec4 &color = glm::vec4{1.f},
+    //                         const glm::vec2 &size = glm::vec2{1.f})
+    //     : sub_texture(sub_texture), size(size), tiling_factor(tiling_factor),
+    //       color(color) {
+    // }
 };
 
 // Projection parameters live in SceneCamera, the component only adds the

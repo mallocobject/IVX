@@ -70,7 +70,7 @@ bool ScriptRegistry::bind_by_name(const std::string &name,
     const auto *tag = entity.try_get_component<TagComponent>();
     IVX_INFO("Bound script '{}' to '{}'",
              found->name,
-             tag != nullptr ? tag->tag : "<unnamed>");
+             tag != nullptr ? tag->value : "<unnamed>");
     return true;
 }
 

@@ -8,7 +8,7 @@
 
 namespace ivx {
 void CameraController::on_create() {
-    log("CameraController attached to '" + get_component<TagComponent>().tag +
+    log("CameraController attached to '" + get_component<TagComponent>().value +
         "'");
 }
 
@@ -51,8 +51,8 @@ void CameraController::on_update(float dt) {
 }
 
 void CameraController::on_destroy() {
-    log("CameraController detached from '" + get_component<TagComponent>().tag +
-        "'");
+    log("CameraController detached from '" +
+        get_component<TagComponent>().value + "'");
 }
 
 void CameraController::on_key_pressed(KeyCode key, bool repeat) {
@@ -63,7 +63,7 @@ void CameraController::on_key_pressed(KeyCode key, bool repeat) {
 
     if (key == KeyCode::Space) {
         log("CameraController: Space pressed on '" +
-            get_component<TagComponent>().tag + "'");
+            get_component<TagComponent>().value + "'");
     }
     if (key == KeyCode::R) {
         auto &transform = get_component<TransformComponent>();
@@ -109,3 +109,5 @@ void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
 // identifier, so the type has to be unqualified.
 IVX_REGISTER_SCRIPT(CameraController)
 } // namespace ivx
+
+

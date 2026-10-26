@@ -345,7 +345,7 @@ void draw_script(Entity entity,
         if (ImGui::Button("Unbind")) {
             const auto *tag = entity.try_get_component<TagComponent>();
             IVX_INFO("Unbound script from '{}'",
-                     tag != nullptr ? tag->tag : "<unnamed>");
+                     tag != nullptr ? tag->value : "<unnamed>");
             script.unbind();
         }
     }

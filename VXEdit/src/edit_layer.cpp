@@ -48,6 +48,24 @@ void EditLayer::on_attach() {
             // no DLL yet. Kick off the first build; poll_scripts() loads it
             // when it is done.
             scripts_.begin_build();
+        } else {
+            // The module loaded, but it may be older than its sources: the
+            // editor would then bind every script (the default CameraController
+            // included) to the previous build, which looks perfectly healthy in
+            // the console. Only warn — rebuilding is the user's call (the
+            // status bar button, Ctrl+B with the Scripts tab focused, or the
+            // Scripts menu), so startup stays fast and nothing is thrown away
+            // unasked.
+            refresh_scripts_staleness();
+            if (scripts_stale_) {
+                IVX_WARN(
+                    "Script sources are newer than {} — the running scripts "
+                    "are "
+                    "the previous build; use Scripts > Rebuild & Reload (or "
+                    "the "
+                    "status bar button) to rebuild them",
+                    std::filesystem::path{SCRIPTS_DLL}.filename().string());
+            }
         }
     }
 
@@ -63,12 +81,9 @@ void EditLayer::on_attach() {
     ui::apply_theme();
     ui::load_fonts();
 
-    // static uint32_t WIDTH = Application::get().get_window().get_width();
-    // static uint32_t HEIGHT = Application::get().get_window().get_height();
-
-    texture_ = Texture2D::create(TEXTURES "tilemap.png");
-    sub_texture_ =
-        SubTexture2D::create(texture_, {2.f, 1.f}, {16.f, 16.f}, {2.f, 1.f});
+    auto texture = Texture2D::create(TEXTURES "tilemap.png");
+    auto sub_texture =
+        SubTexture2D::create(texture, {1.f, 1.f}, {16.f, 16.f}, {1.f, 1.f});
 
     FrameBufferSpecification spec;
     spec.width = WIDTH;
@@ -78,37 +93,25 @@ void EditLayer::on_attach() {
 
     scene_ = make_ref<Scene>();
     context_.scene = scene_;
-    square_entity_ = scene_->create_entity("Colorful Square");
 
-    // auto transform = [](const glm::vec3 &translation = glm::vec3{0.f},
-    //                     float rotation = 0.f,
-    //                     const glm::vec2 &scale = glm::vec2{1.f}) -> glm::mat4
-    //                     {
-    //     return glm::translate(glm::mat4{1.f}, translation) *
-    //            glm::rotate(glm::mat4{1.f},
-    //                        glm::radians(rotation),
-    //                        glm::vec3{0.f, 0.f, 1.f}) *
-    //            glm::scale(glm::mat4{1.f}, glm::vec3{scale, 1.f});
-    // };
+    {
+        Entity square_entity = scene_->create_entity("Colorful Square");
+        auto &tf = square_entity.get_component<TransformComponent>();
+        tf.translation = glm::vec3{0.f};
+        tf.rotation = 0.f;
+        tf.scale = glm::vec2{1.f};
 
-    // Scale stays 1: the quad size lives in SpriteRendererComponent so that
-    // children are not scaled by their parent.
-    square_entity_.get_component<TransformComponent>().translation =
-        glm::vec3{0.f};
-    square_entity_.get_component<TransformComponent>().rotation = 0.f;
-    square_entity_.get_component<TransformComponent>().scale =
-        glm::vec2{1.f, 1.f};
-
-    square_entity_.add_component<SpriteRendererComponent>(
-        sub_texture_,
-        1.f,
-        glm::vec4{1.f, 1.f, 1.f, 1.f},
-        glm::vec2{400.f, 200.f});
+        auto &sr = square_entity.add_component<SpriteRendererComponent>();
+        sr.sub_texture = sub_texture;
+        sr.tiling_factor = 1.f;
+        sr.color = glm::vec4{1.f};
+        sr.size = glm::vec2{400.f};
+    }
 
     // A demo camera entity: nothing special about it, it simply owns a camera
     // component and is marked primary. Any other entity could do the same.
     {
-        Entity camera_entity = scene_->create_entity("Camera Entity");
+        Entity camera_entity = scene_->create_entity("Camera");
         auto &camera = camera_entity.add_component<CameraComponent>();
         camera.camera.set_orthographic_size(static_cast<float>(HEIGHT));
         camera.camera.set_projection_type(
@@ -179,7 +182,7 @@ void EditLayer::bind_default_camera_script() {
         const auto *tag = camera_entity.try_get_component<TagComponent>();
         IVX_INFO("'{}': bound CameraController (WASD move, Q/E rotate, wheel "
                  "zoom)",
-                 tag != nullptr ? tag->tag : "camera");
+                 tag != nullptr ? tag->value : "camera");
         default_script_bound_ = true;
     }
 }
@@ -216,6 +219,14 @@ void EditLayer::on_update(float dt) {
     // Finish a script build that ran on the worker thread this frame: the
     // reload itself must happen here, on the main thread.
     poll_scripts();
+
+    // Pick up a script edited while the editor runs (~once every 2 s at 60
+    // fps). Only a hint: refresh_scripts_staleness() never builds anything
+    // itself.
+    if (++staleness_tick_ >= 120) {
+        staleness_tick_ = 0;
+        refresh_scripts_staleness();
+    }
 
     if (visible_) {
         const auto &spec = frame_buffer_->get_specification();
@@ -266,6 +277,84 @@ void EditLayer::on_update(float dt) {
     }
 }
 
+void EditLayer::on_event(Event &event) {
+    // Scripts see the same events the rest of the app sees, but only while the
+    // viewport owns the input. The rule has to match the polling one exactly:
+    // with focus-only gating here and hover-based gating there, the wheel
+    // (event) died while WASD (polled) kept working.
+    if (input_owned_ && scene_) {
+        scene_->on_event(event);
+    }
+}
+
+void EditLayer::on_imgui() {
+    IVX_PROFILE_FUNCTION();
+
+    // Top: the menu bar reserves its own height in the main viewport's work
+    // area (and it owns the "Reset Layout" flag, so it runs before the
+    // dockspace).
+    draw_menu_bar();
+
+    // Bottom: same trick, so the dockspace below stops above the status bar.
+    draw_status_bar();
+
+    // replace fullscreen host window + DockSpace
+    const ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(
+        0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
+
+    // First frame (or after "Reset Layout") build the default arrangement.
+    if (!layout_initialized_ || reset_layout_requested_) {
+        setup_default_layout(dockspace_id);
+        layout_initialized_ = true;
+        reset_layout_requested_ = false;
+        // The dock builder leaves the last docked window selected; the viewport
+        // is what you want to see on startup. Applied once the panels exist,
+        // i.e. on the next frame (see below).
+        pending_viewport_focus_ = true;
+    }
+
+    // --- UI / ImGui submission ---
+    const auto ui_start = std::chrono::steady_clock::now();
+
+    // The stats overlay is anchored to the viewport: hide it while the viewport
+    // tab is not the visible one (writing a script, for instance), otherwise it
+    // covers the code. One frame of lag, which is invisible in practice.
+    if (stats_panel_ && viewport_panel_) {
+        stats_panel_->set_host_visible(viewport_panel_->visible_this_frame());
+    }
+
+    panels_.on_render();
+
+    // Bring the viewport tab to the front after a layout build. Doing it here
+    // (not next to setup_default_layout) means the panels were submitted at
+    // least once, so the window exists, and focusing it also makes the camera
+    // keys work right after startup.
+    if (pending_viewport_focus_) {
+        if (ImGui::FindWindowByName("Viewport") != nullptr) {
+            pending_viewport_focus_ = false;
+            ImGui::SetWindowFocus("Viewport");
+        }
+    }
+
+    if (stats_panel_) {
+        const float ms = std::chrono::duration<float, std::milli>(
+                             std::chrono::steady_clock::now() - ui_start)
+                             .count();
+        stats_panel_->submit("ui", ms);
+    }
+
+    // The input gate is driven by the viewport focus sampled while drawing the
+    // panel. If the panel did not draw this frame (closed, collapsed, or the
+    // window hidden) nobody owns the keyboard, and a stale `true` here would
+    // leave input flowing into game scripts.
+    if (!viewport_sampled_) {
+        viewport_focused_ = false;
+        viewport_hovered_ = false;
+        Input::set_enabled(false);
+    }
+    viewport_sampled_ = false;
+}
+
 void EditLayer::reload_scripts() {
     IVX_PROFILE_FUNCTION();
 
@@ -296,16 +385,18 @@ void EditLayer::poll_scripts() {
     if (!scripts_.last_build_ok()) {
         IVX_ERROR("Script rebuild failed");
     }
+
+    // The module just changed on disk: the "stale" hint is only true while the
+    // sources are newer than it, so re-evaluate instead of keeping the startup
+    // verdict.
+    refresh_scripts_staleness();
 }
 
-void EditLayer::on_event(Event &event) {
-    // Scripts see the same events the rest of the app sees, but only while the
-    // viewport owns the input. The rule has to match the polling one exactly:
-    // with focus-only gating here and hover-based gating there, the wheel
-    // (event) died while WASD (polled) kept working.
-    if (input_owned_ && scene_) {
-        scene_->on_event(event);
+void EditLayer::refresh_scripts_staleness() {
+    if (scripts_.is_building() || !scripts_.is_loaded()) {
+        return; // nothing to compare against; keep the previous verdict
     }
+    scripts_stale_ = scripts_.has_newer_sources();
 }
 
 void EditLayer::setup_panels() {
@@ -401,7 +492,7 @@ void EditLayer::draw_status_bar() {
         if (context_.has_selection()) {
             const Entity selected = context_.selected_entity();
             if (const auto *tag = selected.try_get_component<TagComponent>()) {
-                ImGui::TextUnformatted(tag->tag.c_str());
+                ImGui::TextUnformatted(tag->value.c_str());
             } else {
                 ImGui::TextUnformatted("(no tag)");
             }
@@ -422,6 +513,7 @@ void EditLayer::draw_status_bar() {
 
         // --- right: script module state, then frame timing
         char scripts_text[128];
+        ImVec4 scripts_color = ImGui::GetStyleColorVec4(ImGuiCol_Text);
         if (scripts_.is_building()) {
             std::snprintf(scripts_text,
                           sizeof(scripts_text),
@@ -432,6 +524,16 @@ void EditLayer::draw_status_bar() {
         } else if (!scripts_.build_log().empty() && !scripts_.last_build_ok()) {
             std::snprintf(
                 scripts_text, sizeof(scripts_text), "Scripts: build failed");
+        } else if (scripts_stale_) {
+            // Sources changed after the module was built, so the running
+            // scripts are the previous build. Nothing is rebuilt automatically;
+            // the hint names the menu entry that triggers it.
+            std::snprintf(scripts_text,
+                          sizeof(scripts_text),
+                          "Scripts: %zu | sources changed (Scripts > Rebuild & "
+                          "Reload)",
+                          ScriptRegistry::get().entries().size());
+            scripts_color = ImVec4{0.95f, 0.78f, 0.35f, 1.f};
         } else {
             std::snprintf(scripts_text,
                           sizeof(scripts_text),
@@ -447,6 +549,10 @@ void EditLayer::draw_status_bar() {
                       io.Framerate,
                       io.Framerate > 0.f ? 1000.f / io.Framerate : 0.f);
 
+        // The hint is informational on purpose: the editor never rebuilds on
+        // its own, and the status bar sits against the window edge where a
+        // button is awkward to hit. The rebuild entry points are the Scripts
+        // menu and Ctrl+B (which needs the Scripts tab focused).
         const float right_width = ImGui::CalcTextSize(scripts_text).x +
                                   ImGui::CalcTextSize(fps_text).x +
                                   ImGui::CalcTextSize("  |  ").x + 2.f;
@@ -457,15 +563,15 @@ void EditLayer::draw_status_bar() {
             ImGui::SameLine();
         }
 
-        if (scripts_.is_building()) {
-            ImGui::TextColored(
-                ImVec4{0.95f, 0.78f, 0.35f, 1.f}, "%s", scripts_text);
-        } else if (!scripts_.is_loaded()) {
+        if (!scripts_.is_loaded()) {
             ImGui::TextColored(
                 ImVec4{0.90f, 0.45f, 0.45f, 1.f}, "%s", scripts_text);
+        } else if (scripts_.is_building() || scripts_stale_) {
+            ImGui::TextColored(scripts_color, "%s", scripts_text);
         } else {
             ImGui::TextUnformatted(scripts_text);
         }
+
         ImGui::SameLine();
         ImGui::TextDisabled("|");
         ImGui::SameLine();
@@ -475,74 +581,6 @@ void EditLayer::draw_status_bar() {
 
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(2);
-}
-
-void EditLayer::on_imgui() {
-    IVX_PROFILE_FUNCTION();
-
-    // Top: the menu bar reserves its own height in the main viewport's work
-    // area (and it owns the "Reset Layout" flag, so it runs before the
-    // dockspace).
-    draw_menu_bar();
-
-    // Bottom: same trick, so the dockspace below stops above the status bar.
-    draw_status_bar();
-
-    // replace fullscreen host window + DockSpace
-    const ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(
-        0, ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
-
-    // First frame (or after "Reset Layout") build the default arrangement.
-    if (!layout_initialized_ || reset_layout_requested_) {
-        setup_default_layout(dockspace_id);
-        layout_initialized_ = true;
-        reset_layout_requested_ = false;
-        // The dock builder leaves the last docked window selected; the viewport
-        // is what you want to see on startup. Applied once the panels exist,
-        // i.e. on the next frame (see below).
-        pending_viewport_focus_ = true;
-    }
-
-    // --- UI / ImGui submission ---
-    const auto ui_start = std::chrono::steady_clock::now();
-
-    // The stats overlay is anchored to the viewport: hide it while the viewport
-    // tab is not the visible one (writing a script, for instance), otherwise it
-    // covers the code. One frame of lag, which is invisible in practice.
-    if (stats_panel_ && viewport_panel_) {
-        stats_panel_->set_host_visible(viewport_panel_->visible_this_frame());
-    }
-
-    panels_.on_render();
-
-    // Bring the viewport tab to the front after a layout build. Doing it here
-    // (not next to setup_default_layout) means the panels were submitted at
-    // least once, so the window exists, and focusing it also makes the camera
-    // keys work right after startup.
-    if (pending_viewport_focus_) {
-        if (ImGui::FindWindowByName("Viewport") != nullptr) {
-            pending_viewport_focus_ = false;
-            ImGui::SetWindowFocus("Viewport");
-        }
-    }
-
-    if (stats_panel_) {
-        const float ms = std::chrono::duration<float, std::milli>(
-                             std::chrono::steady_clock::now() - ui_start)
-                             .count();
-        stats_panel_->submit("ui", ms);
-    }
-
-    // The input gate is driven by the viewport focus sampled while drawing the
-    // panel. If the panel did not draw this frame (closed, collapsed, or the
-    // window hidden) nobody owns the keyboard, and a stale `true` here would
-    // leave input flowing into game scripts.
-    if (!viewport_sampled_) {
-        viewport_focused_ = false;
-        viewport_hovered_ = false;
-        Input::set_enabled(false);
-    }
-    viewport_sampled_ = false;
 }
 
 void EditLayer::draw_viewport_content() {

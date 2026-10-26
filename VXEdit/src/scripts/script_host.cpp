@@ -129,6 +129,52 @@ bool ScriptHost::load_initial(std::string &error) {
     return library_.load(SCRIPTS_DLL, error);
 }
 
+bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
+    std::error_code ec;
+    const auto module_time = std::filesystem::last_write_time(
+        std::filesystem::path{SCRIPTS_DLL}, ec);
+    if (ec) {
+        return false; // no module yet: the caller builds it regardless
+    }
+
+    std::filesystem::file_time_type latest = module_time;
+    std::filesystem::path latest_path;
+    bool stale = false;
+
+    // Only the inputs of the script project matter: its sources, its headers
+    // and its CMakeLists (the file list is a glob, so a new file also needs a
+    // configure pass).
+    for (auto it =
+             std::filesystem::recursive_directory_iterator{scripts_dir_, ec};
+         !ec && it != std::filesystem::recursive_directory_iterator{};
+         it.increment(ec)) {
+        if (!it->is_regular_file(ec)) {
+            continue;
+        }
+        const std::filesystem::path &path = it->path();
+        const std::string extension = path.extension().string();
+        const bool source =
+            extension == ".cpp" || extension == ".h" || extension == ".hpp";
+        if (!source && path.filename() != "CMakeLists.txt") {
+            continue;
+        }
+        const auto time = std::filesystem::last_write_time(path, ec);
+        if (ec) {
+            continue;
+        }
+        if (time > latest) {
+            latest = time;
+            latest_path = path;
+            stale = true;
+        }
+    }
+
+    if (stale && newest != nullptr) {
+        *newest = std::move(latest_path);
+    }
+    return stale;
+}
+
 void ScriptHost::unbind_all() {
     if (scene_ == nullptr) {
         return;

@@ -24,8 +24,7 @@ void for_each_enabled_script(entt::registry &registry, Fn &&fn) {
         }
     }
 }
-} // namespace
-namespace {
+
 // Calls on_destroy() and releases the script instance, if there is one.
 //
 // Ownership note: the instance, its vtable and `destroy` all live in the script
@@ -61,6 +60,9 @@ Entity Scene::create_entity(const std::string &name) {
     entity.add_component<TransformComponent>();
     entity.add_component<RelationshipComponent>();
     entity.add_component<TagComponent>(name);
+
+    used_tags_.insert(entity.get_component<TagComponent>().id);
+
     return entity;
 }
 
@@ -99,6 +101,8 @@ void Scene::destroy_entity(Entity entity) {
 
     release_script(registry_, entity.handle());
     registry_.destroy(entity.handle());
+
+    used_tags_.erase(entity.get_component<TagComponent>().id);
 }
 
 void Scene::set_parent(Entity child, Entity parent) {
