@@ -64,6 +64,9 @@ class EditLayer : public Layer {
     Entity square_entity_;
 
     bool viewport_focused_{false};
+    // True while the viewport owns mouse/keyboard input; latched for
+    // on_event().
+    bool input_owned_{false};
     bool viewport_hovered_{false};
     // Set while the viewport panel draws; the input gate is cleared when a
     // frame passes without it (closed/collapsed viewport).

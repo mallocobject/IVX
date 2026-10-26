@@ -300,9 +300,10 @@ void EditLayer::poll_scripts() {
 
 void EditLayer::on_event(Event &event) {
     // Scripts see the same events the rest of the app sees, but only while the
-    // viewport owns the input (same rule as polling: typing in an inspector
-    // field must not drive a script).
-    if (viewport_focused_ && scene_) {
+    // viewport owns the input. The rule has to match the polling one exactly:
+    // with focus-only gating here and hover-based gating there, the wheel
+    // (event) died while WASD (polled) kept working.
+    if (input_owned_ && scene_) {
         scene_->on_event(event);
     }
 }
@@ -549,17 +550,23 @@ void EditLayer::draw_viewport_content() {
     viewport_hovered_ = ImGui::IsWindowHovered();
     viewport_sampled_ = true;
 
-    // Keyboard ownership is "focused" OR "hovered while no text field is
-    // active", the way Unity's game view behaves. Focus-only was too strict:
+    // The game view owns the input while it is focused OR hovered (and no text
+    // field is active), the way Unity behaves. Focus-only was too strict:
     // clicking the console, the inspector or a script silently killed WASD
-    // until the viewport was clicked again, which reads as "the keyboard does
-    // not work".
-    const bool hover_owns_keyboard =
+    // *and* the wheel until the viewport was clicked again.
+    const bool hover_owns_input =
         viewport_hovered_ && !ImGui::GetIO().WantTextInput;
-    Input::set_enabled(viewport_focused_ || hover_owns_keyboard);
+    const bool owns_input = viewport_focused_ || hover_owns_input;
 
-    Application::get().imgui_layer()->block_event(!viewport_focused_ ||
-                                                  !viewport_hovered_);
+    Input::set_enabled(owns_input);
+    // Latched for on_event(): the event path runs before this frame's UI, so it
+    // has to read the decision from the previous frame.
+    input_owned_ = owns_input;
+
+    // Both routes have to agree: the polling path above and the event path
+    // below. When they disagreed, the wheel (an event, not a polled key) was
+    // swallowed by the editor UI while WASD kept working.
+    Application::get().imgui_layer()->block_event(!owns_input);
 
     visible_ = true;
 

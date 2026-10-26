@@ -74,23 +74,36 @@ void CameraController::on_key_pressed(KeyCode key, bool repeat) {
 }
 
 void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
-    // Wheel zooms by scaling the orthographic size. The setters are inline, so
-    // this works from inside the module without linking the engine.
-    if (!has_component<CameraComponent>()) {
+    if (y_offset == 0.f || !has_component<CameraComponent>()) {
         return;
     }
 
+    // Offsets are not always +-1: a fast wheel sends one event with 2 or 3, and
+    // precision touchpads send fractions. Scaling by the amount keeps "one
+    // notch = one step" true in both cases.
     auto &camera = get_component<CameraComponent>();
-    if (camera.camera.get_projection_type() !=
+
+    const float factor = glm::pow(0.9f, y_offset);
+
+    // Orthographic: zoom by scaling the visible world height.
+    if (camera.camera.get_projection_type() ==
         SceneCamera::ProjectionType::Orthographic) {
+        const float size = camera.camera.get_orthographic_size();
+        const float next = glm::clamp(size * factor, 20.f, 20000.f);
+        camera.camera.set_orthographic_size(next);
         return;
     }
 
-    const float size = camera.camera.get_orthographic_size();
-    const float factor = y_offset > 0.f ? 0.9f : 1.1f;
-    const float next = glm::clamp(size * factor, 20.f, 20000.f);
-    camera.camera.set_orthographic_size(next);
-    // log("CameraController: zoom -> " + std::to_string(next));
+    // Perspective: zoom by narrowing the vertical field of view.
+    //
+    // The angle is in degrees (Unity/Unreal convention);
+    // SceneCamera::get_proj_matrix() converts it to radians for
+    // glm::perspective(). The limits are degrees too: 1..179.
+    constexpr float kMinFov = 1.f;   // 1 degree
+    constexpr float kMaxFov = 179.f; // 179 degrees
+    const float fov = camera.camera.get_perspective_vertical_fov();
+    const float next = glm::clamp(fov * factor, kMinFov, kMaxFov);
+    camera.camera.set_perspective_vertical_fov(next);
 }
 // Stays inside namespace ivx: IVX_REGISTER_SCRIPT pastes the type name into an
 // identifier, so the type has to be unqualified.

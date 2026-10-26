@@ -223,9 +223,11 @@ void draw_camera(Entity entity,
             scene_camera.set_orthographic_far(far_clip);
         }
     } else {
-        float fov = glm::degrees(scene_camera.get_perspective_vertical_fov());
+        // FOV is already in degrees (see SceneCamera): no conversion here,
+        // otherwise the slider would show 45 as 2578 deg.
+        float fov = scene_camera.get_perspective_vertical_fov();
         if (ImGui::SliderFloat("FOV", &fov, 1.f, 179.f, "%.1f deg")) {
-            scene_camera.set_perspective_vertical_fov(glm::radians(fov));
+            scene_camera.set_perspective_vertical_fov(fov);
         }
         float near_clip = scene_camera.get_perspective_near();
         if (ImGui::DragFloat("Near", &near_clip, 0.01f, 0.001f, 10000.f)) {
@@ -288,7 +290,7 @@ void draw_camera(Entity entity,
                     scene_camera.get_orthographic_height());
     } else {
         ImGui::Text("Vertical FOV: %.1f deg",
-                    glm::degrees(scene_camera.get_perspective_vertical_fov()));
+                    scene_camera.get_perspective_vertical_fov());
     }
 
     if (ImGui::TreeNode("Projection matrix (read-only)")) {
