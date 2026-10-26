@@ -1,7 +1,6 @@
 #pragma once
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
-#include "panel/camera_panel.h"
 #include "panel/console_panel.h"
 #include "panel/editor_context.h"
 #include "panel/inspector_panel.h"
@@ -63,7 +62,6 @@ class EditLayer : public Layer {
 
     Ref<Scene> scene_;
     Entity square_entity_;
-    Entity camera_entity_;
 
     bool viewport_focused_{false};
     bool viewport_hovered_{false};
@@ -82,7 +80,6 @@ class EditLayer : public Layer {
     PanelManager panels_;
     Ref<SceneHierarchyPanel> scene_hierarchy_panel_;
     Ref<InspectorPanel> inspector_panel_;
-    Ref<CameraPanel> camera_panel_;
     Ref<ConsolePanel> console_panel_;
     Ref<StatsPanel> stats_panel_;
     Ref<ScriptPanel> script_panel_;

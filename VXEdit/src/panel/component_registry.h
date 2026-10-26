@@ -12,9 +12,7 @@ namespace ivx {
 // Per-type editor policy.
 struct ComponentFlags {
     bool removable{true};
-    // Whether the type shows up in "Add Component". Singleton-ish components
-    // (Camera) are created through their own panel instead: bolting a camera
-    // onto a sprite entity is almost always a mistake.
+    // Whether the type shows up in "Add Component".
     bool addable{true};
     // Whether the type gets its own section in the inspector. Tag is edited by
     // the inspector header instead, so it must not be drawn twice.
@@ -37,17 +35,25 @@ class ComponentRegistry {
   public:
     static ComponentRegistry &get();
 
-    // `custom_add` defaults to plain add_component<T>().
+    // `custom_add` defaults to plain add_component<T>(); `custom_remove`
+    // defaults to remove_component<T>() and exists for components that own
+    // something that has to be released first (a Native Script owns a live
+    // script instance).
     template <typename T>
     void add(std::string name,
              std::function<void(Entity, T &, EditorContext &)> draw,
              ComponentFlags flags = {},
-             std::function<void(Entity)> custom_add = {}) {
+             std::function<void(Entity)> custom_add = {},
+             std::function<void(Entity)> custom_remove = {}) {
         ComponentEntry entry;
         entry.name = std::move(name);
         entry.flags = flags;
         entry.has = [](Entity entity) { return entity.has_component<T>(); };
-        entry.remove = [](Entity entity) { entity.remove_component<T>(); };
+        if (custom_remove) {
+            entry.remove = std::move(custom_remove);
+        } else {
+            entry.remove = [](Entity entity) { entity.remove_component<T>(); };
+        }
         if (custom_add) {
             entry.add = std::move(custom_add);
         } else {
@@ -71,8 +77,8 @@ class ComponentRegistry {
         return entries_;
     }
 
-    // Lets other panels reuse a component's editor UI (CameraPanel does this
-    // for CameraComponent).
+    // Look a component's editor UI up by name (used by tests/tools that need
+    // the drawer without going through the inspector).
     const ComponentEntry *find(std::string_view name) const {
         for (const auto &entry : entries_) {
             if (entry.name == name) {

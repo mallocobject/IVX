@@ -48,10 +48,8 @@ void setup_default_layout(ImGuiID dockspace_id) {
     ImGui::DockBuilderDockWindow("Scripts", center);
     ImGui::DockBuilderDockWindow("Viewport", center);
 
-    // The camera panel is about the scene, not about the selection, but it is a
-    // property sheet like the inspector, so it belongs in the same column
-    // instead of taking a slot in the short bottom strip.
-    ImGui::DockBuilderDockWindow("Camera", right);
+    // The inspector owns the right column on its own: a camera is edited there
+    // like any other component, so there is no camera panel to sit next to it.
     ImGui::DockBuilderDockWindow("Inspector", right);
 
     // Only the console occupies the bottom strip. "Stats" is a floating overlay

@@ -55,9 +55,12 @@ void SceneHierarchyPanel::on_imgui() {
 void SceneHierarchyPanel::draw_toolbar() {
     Scene &scene = *context_.scene;
 
+    // One button, one action: a camera is a component, so a camera entity is
+    // just an empty entity with "Add Component -> Camera".
     if (ImGui::Button("+ Entity")) {
         set_selected(scene.create_entity("Entity"));
     }
+
     ImGui::SameLine();
     // Kept short on purpose: the hierarchy dock is narrow, and a long label
     // gets clipped instead of being readable.

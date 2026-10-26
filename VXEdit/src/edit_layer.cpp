@@ -105,16 +105,18 @@ void EditLayer::on_attach() {
         glm::vec4{1.f, 1.f, 1.f, 1.f},
         glm::vec2{400.f, 200.f});
 
-    camera_entity_ = scene_->create_entity("Camera Entity");
+    // A demo camera entity: nothing special about it, it simply owns a camera
+    // component and is marked primary. Any other entity could do the same.
     {
-        auto &camera = camera_entity_.add_component<CameraComponent>();
+        Entity camera_entity = scene_->create_entity("Camera Entity");
+        auto &camera = camera_entity.add_component<CameraComponent>();
         camera.camera.set_orthographic_size(static_cast<float>(HEIGHT));
         camera.camera.set_projection_type(
             SceneCamera::ProjectionType::Orthographic);
         camera.primary = true;
         // Initial pose: one unit in front of the sprite plane (z = 0), looking
         // down -Z. near/far are distances, so 0.01 .. 1000 covers it.
-        camera_entity_.get_component<TransformComponent>().translation =
+        camera_entity.get_component<TransformComponent>().translation =
             glm::vec3{0.f, 0.f, 1.f};
     }
 
@@ -127,16 +129,32 @@ void EditLayer::on_attach() {
 
 void EditLayer::bind_default_camera_script() {
     // The scene is rebuilt from code on every start, so a hand-made binding in
-    // the inspector does not survive a restart. Give the primary camera its
+    // the inspector does not survive a restart. Give the *primary* camera its
     // controller automatically, otherwise WASD/wheel silently do nothing.
+    //
+    // Keyed off "whichever entity owns the primary camera", not off a fixed
+    // entity: a camera is just a component, so it may live on a moving player
+    // instead.
     //
     // Only once per session and only when nothing is bound: unbinding it in the
     // inspector has to stick.
-    if (default_script_bound_ || !camera_entity_) {
+    if (default_script_bound_ || !scene_) {
         return;
     }
 
-    auto *existing = camera_entity_.try_get_component<NativeScriptComponent>();
+    Entity camera_entity{};
+    for (auto [handle, camera] :
+         scene_->registry().view<CameraComponent>().each()) {
+        if (camera.primary) {
+            camera_entity = Entity{handle, scene_.get()};
+            break;
+        }
+    }
+    if (!camera_entity) {
+        return;
+    }
+
+    auto *existing = camera_entity.try_get_component<NativeScriptComponent>();
     if (existing != nullptr && existing->is_bound()) {
         default_script_bound_ = true;
         return;
@@ -155,13 +173,13 @@ void EditLayer::bind_default_camera_script() {
     }
 
     if (existing == nullptr) {
-        camera_entity_.add_component<NativeScriptComponent>();
+        camera_entity.add_component<NativeScriptComponent>();
     }
-    if (ScriptRegistry::get().bind_by_name("CameraController",
-                                           camera_entity_)) {
-        IVX_INFO(
-            "Camera Entity: bound CameraController (WASD move, Q/E rotate, "
-            "wheel zoom)");
+    if (ScriptRegistry::get().bind_by_name("CameraController", camera_entity)) {
+        const auto *tag = camera_entity.try_get_component<TagComponent>();
+        IVX_INFO("'{}': bound CameraController (WASD move, Q/E rotate, wheel "
+                 "zoom)",
+                 tag != nullptr ? tag->tag : "camera");
         default_script_bound_ = true;
     }
 }
@@ -313,7 +331,6 @@ void EditLayer::setup_panels() {
     viewport_panel_ = viewport;
 
     inspector_panel_ = panels_.add<InspectorPanel>(context_);
-    camera_panel_ = panels_.add<CameraPanel>(context_);
     console_panel_ = panels_.add<ConsolePanel>();
     stats_panel_ = panels_.add<StatsPanel>();
     script_panel_ = panels_.add<ScriptPanel>(scripts_);
