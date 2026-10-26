@@ -1,5 +1,8 @@
 #include "scene_hierarchy_panel.h"
 
+#include "ivx/scene/components.h"
+
+#include <algorithm>
 #include <cstdint>
 #include <imgui.h>
 #include <string>
@@ -12,6 +15,30 @@ ImGuiTreeNodeFlags base_flags() {
     return ImGuiTreeNodeFlags_OpenOnArrow |
            ImGuiTreeNodeFlags_OpenOnDoubleClick |
            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+}
+
+// Size for a freshly created sprite, in world units.
+//
+// Unity spawns its default Square sprite at 1 unit in a 10-unit-tall 2D view,
+// i.e. ~10% of the view height. This scene has no fixed unit scale (the demo
+// camera is 720 units tall), so derive the same *proportion* from the primary
+// camera instead of hardcoding a number that would be invisible or huge
+// elsewhere.
+float default_sprite_size(Scene &scene) {
+    constexpr float kFallback = 100.f;
+    for (auto [handle, camera] :
+         scene.registry().view<CameraComponent>().each()) {
+        if (!camera.primary) {
+            continue;
+        }
+        if (camera.camera.get_projection_type() !=
+            SceneCamera::ProjectionType::Orthographic) {
+            break;
+        }
+        return std::clamp(
+            camera.camera.get_orthographic_size() * 0.1f, 1.f, kFallback);
+    }
+    return kFallback;
 }
 } // namespace
 
@@ -55,10 +82,19 @@ void SceneHierarchyPanel::on_imgui() {
 void SceneHierarchyPanel::draw_toolbar() {
     Scene &scene = *context_.scene;
 
-    // One button, one action: a camera is a component, so a camera entity is
-    // just an empty entity with "Add Component -> Camera".
+    // Spawns a usable entity, not an invisible one: origin + identity transform
+    // like Unity's "Create Empty", plus a white placeholder sprite because this
+    // editor has no gizmo icons to show an entity that renders nothing. Any
+    // component can be removed afterwards.
     if (ImGui::Button("+ Entity")) {
-        set_selected(scene.create_entity("Entity"));
+        set_selected(create_default_entity(scene));
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip(
+            "New entity at the origin (position 0, rotation 0, scale 1)\n"
+            "with a %.0fx%.0f white sprite so it is visible in the viewport.",
+            static_cast<double>(default_sprite_size(scene)),
+            static_cast<double>(default_sprite_size(scene)));
     }
 
     ImGui::SameLine();
@@ -70,6 +106,41 @@ void SceneHierarchyPanel::draw_toolbar() {
                           scene.get_root_entities().size(),
                           scene.registry().view<TagComponent>().size());
     }
+}
+
+Entity SceneHierarchyPanel::create_default_entity(Scene &scene) {
+    // Naming follows the usual "Entity" / "Entity (1)" / "Entity (2)" scheme,
+    // so a new object never shows up as a duplicate of an existing one.
+    std::string name = "Entity";
+    for (int suffix = 1;; ++suffix) {
+        bool taken = false;
+        for (auto [handle, tag] :
+             scene.registry().view<TagComponent>().each()) {
+            if (tag.tag == name) {
+                taken = true;
+                break;
+            }
+        }
+        if (!taken) {
+            break;
+        }
+        name = "Entity (" + std::to_string(suffix) + ")";
+    }
+
+    // Transform: Scene::create_entity() already gives the identity transform
+    // every engine spawns with (position 0, rotation 0, scale 1). Only the
+    // visual default is ours to choose.
+    Entity entity = scene.create_entity(name);
+
+    // Unity's default sprite tint is pure white and its default quad is a
+    // textureless square, so a flat white quad is the closest equivalent with
+    // no asset pipeline yet. Size comes from the camera (see
+    // default_sprite_size) so it reads on screen.
+    auto &sprite = entity.add_component<SpriteRendererComponent>();
+    const float size = default_sprite_size(scene);
+    sprite.size = glm::vec2{size, size};
+    sprite.color = glm::vec4{1.f, 1.f, 1.f, 1.f};
+    return entity;
 }
 
 void SceneHierarchyPanel::draw_entity_node(Entity entity) {
