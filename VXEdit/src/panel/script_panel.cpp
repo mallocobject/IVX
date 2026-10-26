@@ -96,6 +96,7 @@ TextEditor::ErrorMarkers parse_error_markers(const std::string &log,
 
 ScriptPanel::ScriptPanel(ScriptHost &host) : Panel("Scripts"), host_(host) {
     set_default_size(ImVec2{700.f, 460.f});
+    load_layout();
 }
 
 void ScriptPanel::on_imgui() {
@@ -109,28 +110,49 @@ void ScriptPanel::on_imgui() {
     draw_status();
     ImGui::Separator();
 
+    const float scale = ui::scale();
+    const ImVec2 avail = ImGui::GetContentRegionAvail();
+    if (avail.x <= 0.f || avail.y <= 0.f) {
+        return;
+    }
+
+    // Layout: status row above, then [library | splitter | editor] filling the
+    // rest. The compiler output lives in its own "Build" tab next to the
+    // Console, so this panel is only about picking and editing a script.
+    const float splitter = 6.f * scale; // divider thickness
+    const float min_body = 90.f * scale;
+    const float min_library = 190.f * scale;
+    const float min_editor = 240.f * scale;
+    const float body_height = std::max(min_body, avail.y);
+
     // Side by side instead of tabs: while editing you still see the library,
     // and the list is what you pick the next script from. Squeezing the list
     // into a tab (or the editor into a dock column) made one of the two
     // unusable.
-    const float available = ImGui::GetContentRegionAvail().x;
-    const float ui_scale = ui::scale();
-    const float library_width =
-        std::clamp(available * 0.34f, 300.f * ui_scale, 460.f * ui_scale);
+    if (library_width_ <= 0.f) {
+        library_width_ = std::clamp(
+            avail.x * 0.34f, min_library, std::max(min_library, 460.f * scale));
+    }
+    library_width_ =
+        std::clamp(library_width_,
+                   min_library,
+                   std::max(min_library, avail.x - min_editor - splitter));
 
-    if (ImGui::BeginChild(
-            "##library", ImVec2{library_width, 0.f}, ImGuiChildFlags_None)) {
+    if (ImGui::BeginChild("##library",
+                          ImVec2{library_width_, body_height},
+                          ImGuiChildFlags_None)) {
         draw_library_pane();
     }
     ImGui::EndChild();
 
-    ImGui::SameLine();
+    draw_vertical_splitter(splitter, body_height);
 
     // A slightly lighter background than the code editor's own: the empty pane
     // has to read as "nothing open yet", not as a broken view.
     ImGui::PushStyleColor(ImGuiCol_ChildBg,
                           ImVec4{0.169f, 0.169f, 0.176f, 1.f});
-    if (ImGui::BeginChild("##editor", ImVec2{0.f, 0.f}, ImGuiChildFlags_None)) {
+    if (ImGui::BeginChild(
+            "##editor", ImVec2{0.f, body_height}, ImGuiChildFlags_None)) {
         draw_editor_pane();
     }
     ImGui::EndChild();
@@ -151,6 +173,33 @@ void ScriptPanel::on_imgui() {
             }
         }
     }
+}
+
+void ScriptPanel::draw_vertical_splitter(float width, float height) {
+    ImGui::SameLine();
+    const ImVec2 pos = ImGui::GetCursorScreenPos();
+    ImGui::InvisibleButton("##library_splitter", ImVec2{width, height});
+    const bool hot = ImGui::IsItemHovered() || ImGui::IsItemActive();
+    if (hot) {
+        ImGui::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+    }
+    if (ImGui::IsItemActive()) {
+        library_width_ += ImGui::GetIO().MouseDelta.x;
+    }
+    if (ImGui::IsItemDeactivated()) {
+        save_layout();
+    }
+
+    // A 1 px line in the middle of the (invisible) handle, highlighted on hover
+    // so the divider is discoverable without adding chrome.
+    const float x = pos.x + width * 0.5f;
+    ImGui::GetWindowDrawList()->AddLine(
+        ImVec2{x, pos.y},
+        ImVec2{x, pos.y + height},
+        hot ? ImGui::GetColorU32(ImGuiCol_SeparatorHovered)
+            : ImGui::GetColorU32(ImGuiCol_Separator),
+        1.f);
+    ImGui::SameLine();
 }
 
 void ScriptPanel::draw_status() {
@@ -202,8 +251,6 @@ void ScriptPanel::draw_library_pane() {
     draw_new_script_form();
     ImGui::Separator();
     draw_script_list();
-    ImGui::Separator();
-    draw_build_output();
 }
 
 void ScriptPanel::draw_toolbar() {
@@ -536,23 +583,21 @@ bool ScriptPanel::save_script() {
     return true;
 }
 
-void ScriptPanel::draw_build_output() {
-    if (ImGui::CollapsingHeader("Build output",
-                                show_build_log_ ? ImGuiTreeNodeFlags_DefaultOpen
-                                                : ImGuiTreeNodeFlags_None)) {
-        show_build_log_ = true;
-        const std::string &log = host_.build_log();
-        if (log.empty()) {
-            ImGui::TextDisabled("(nothing yet)");
-        } else if (ImGui::BeginChild("##build_log", ImVec2{0.f, 0.f})) {
-            ImGui::PushStyleColor(ImGuiCol_Text,
-                                  ImVec4{0.75f, 0.75f, 0.75f, 1.f});
-            ImGui::TextUnformatted(log.c_str());
-            ImGui::PopStyleColor();
-            ImGui::EndChild();
-        } else {
-            ImGui::EndChild();
-        }
+void ScriptPanel::load_layout() {
+    // Only the library column width is persisted now: the compiler output moved
+    // to its own "Build" panel next to the Console.
+    std::ifstream file{SCRIPTS_PANEL_LAYOUT};
+    float width = 0.f;
+    if (file >> width) {
+        library_width_ = width;
+    }
+}
+
+void ScriptPanel::save_layout() const {
+    // Next to layout.ini so it survives being launched from anywhere.
+    std::ofstream file{SCRIPTS_PANEL_LAYOUT, std::ios::trunc};
+    if (file) {
+        file << library_width_ << "\n";
     }
 }
 
@@ -560,7 +605,6 @@ void ScriptPanel::start_build() {
     if (!host_.begin_build()) {
         return; // already building
     }
-    show_build_log_ = true;
     status_.clear();
     // Old error markers are stale the moment a new build starts.
     if (editor_ready_) {

@@ -10,8 +10,10 @@ deps/
 
 # Editor state, regenerated per machine
 VXEdit/assets/layout.ini
+VXEdit/assets/scripts_panel.txt
 VXEdit/assets/ui_scale.txt
-# ImGui's own window state (the editor uses VXEdit/assets/layout.ini instead)
+# ImGui's own window state (the editor uses VXEdit/assets/layout.ini
+VXEdit/assets/scripts_panel.txt instead)
 imgui.ini
 
 # clangd database: generated per machine by tools/gen-compile-db.ps1

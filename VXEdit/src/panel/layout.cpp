@@ -15,9 +15,9 @@ namespace ivx {
 //   | Scene          | Viewport / Scripts         | Inspector      |
 //   | Hierarchy      |                            | Camera         |
 //   |                |                            |                |
-//   +----------------+----------------------------+----------------+
-//   | Console / Stats                                             |
-//   +-------------------------------------------------------------+
+//   +                +----------------------------+                +
+//   |                |  Console / Build           |                |
+//   +--------------------------------------------------------------+
 void setup_default_layout(ImGuiID dockspace_id) {
     if (dockspace_id == 0) {
         return;
@@ -52,10 +52,14 @@ void setup_default_layout(ImGuiID dockspace_id) {
     // like any other component, so there is no camera panel to sit next to it.
     ImGui::DockBuilderDockWindow("Inspector", right);
 
-    // Only the console occupies the bottom strip. "Stats" is a floating overlay
-    // in the top-right corner (StatsPanel::begin_window) and the status bar
-    // sits on the main viewport's bottom edge (EditLayer::draw_status_bar), so
-    // neither of them competes for a dock slot.
+    // The bottom strip holds two tabs: the editor log and the compiler output.
+    // Both are text the engine produced, so they belong side by side instead of
+    // in two different docks. "Stats" is a floating overlay
+    // (StatsPanel::begin_window) and the status bar sits on the main viewport's
+    // bottom edge (EditLayer::draw_status_bar), so neither competes for a dock
+    // slot. Dock order matters: the last docked window is the one on screen, so
+    // "Build" comes first and the Console is visible by default.
+    ImGui::DockBuilderDockWindow("Build", bottom);
     ImGui::DockBuilderDockWindow("Console", bottom);
 
     ImGui::DockBuilderFinish(dockspace_id);

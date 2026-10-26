@@ -34,6 +34,8 @@ target_compile_definitions(VXEdit PRIVATE
     SHADERS="${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/"
     FONTS="${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/"
     LAYOUT="${CMAKE_CURRENT_SOURCE_DIR}/assets/layout.ini"
+    # Scripts panel divider positions (library width, build output height)
+    SCRIPTS_PANEL_LAYOUT="${CMAKE_CURRENT_SOURCE_DIR}/assets/scripts_panel.txt"
     # script module: where the DLL ends up and how to rebuild it
     SCRIPTS_DLL="${VX_SCRIPTS_BUILD_DIR}/VXScripts.dll"
     SCRIPTS_DIR="${VX_SCRIPTS_PROJECT_DIR}"

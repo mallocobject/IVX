@@ -1,6 +1,7 @@
 #pragma once
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
+#include "panel/build_output_panel.h"
 #include "panel/console_panel.h"
 #include "panel/editor_context.h"
 #include "panel/inspector_panel.h"
@@ -96,6 +97,7 @@ class EditLayer : public Layer {
     Ref<SceneHierarchyPanel> scene_hierarchy_panel_;
     Ref<InspectorPanel> inspector_panel_;
     Ref<ConsolePanel> console_panel_;
+    Ref<BuildOutputPanel> build_output_panel_;
     Ref<StatsPanel> stats_panel_;
     Ref<ScriptPanel> script_panel_;
     // The viewport is a LambdaPanel; kept so the stats overlay can tell whether

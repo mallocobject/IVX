@@ -33,7 +33,11 @@ class ScriptPanel : public Panel {
     void draw_toolbar();
     void draw_script_list();
     void draw_new_script_form();
-    void draw_build_output();
+    // Draggable divider between the library column and the editor.
+    void draw_vertical_splitter(float width, float height);
+    // Column width, persisted next to layout.ini.
+    void load_layout();
+    void save_layout() const;
 
     void open_script(const std::string &name);
     bool is_dirty() const;
@@ -54,10 +58,13 @@ class ScriptPanel : public Panel {
     // on the next frame (the library column is drawn before the editor column).
     bool focus_new_script_{false};
 
+    // Library column width in pixels; 0 = default. Restored from
+    // SCRIPTS_PANEL_LAYOUT and written back when the divider is released.
+    float library_width_{0.f};
+
     char new_script_name_[64]{};
     std::string status_;
     bool status_is_error_{false};
-    bool show_build_log_{false};
     std::string open_script_;
     // Content as of the last load/save, used for the dirty marker: the widget's
     // own IsTextChanged() flag is not reset by SetText in this fork.

@@ -131,48 +131,58 @@ bool ScriptHost::load_initial(std::string &error) {
 
 bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
     std::error_code ec;
-    const auto module_time = std::filesystem::last_write_time(
-        std::filesystem::path{SCRIPTS_DLL}, ec);
+    const std::filesystem::path module{SCRIPTS_DLL};
+    const auto module_time = std::filesystem::last_write_time(module, ec);
     if (ec) {
         return false; // no module yet: the caller builds it regardless
     }
 
+    // The script project is flat (sources, headers and its CMakeLists next to
+    // each other), so a plain directory_iterator is enough. iterating with the
+    // range-for keeps the error handling in one place instead of threading a
+    // mutable error_code through increment().
+    std::filesystem::directory_iterator entries{scripts_dir_, ec};
+    if (ec) {
+        return false;
+    }
+
     std::filesystem::file_time_type latest = module_time;
     std::filesystem::path latest_path;
-    bool stale = false;
 
-    // Only the inputs of the script project matter: its sources, its headers
-    // and its CMakeLists (the file list is a glob, so a new file also needs a
-    // configure pass).
-    for (auto it =
-             std::filesystem::recursive_directory_iterator{scripts_dir_, ec};
-         !ec && it != std::filesystem::recursive_directory_iterator{};
-         it.increment(ec)) {
-        if (!it->is_regular_file(ec)) {
+    for (const std::filesystem::directory_entry &entry : entries) {
+        std::error_code file_ec;
+        if (!entry.is_regular_file(file_ec) || file_ec) {
             continue;
         }
-        const std::filesystem::path &path = it->path();
+        const std::filesystem::path path = entry.path();
+
+        // Compare extensions/names as strings: constructing a path from a
+        // literal for operator!= pulls in the narrow<->wide conversion, which
+        // can throw.
         const std::string extension = path.extension().string();
         const bool source =
             extension == ".cpp" || extension == ".h" || extension == ".hpp";
-        if (!source && path.filename() != "CMakeLists.txt") {
+        if (!source && path.filename().string() != "CMakeLists.txt") {
             continue;
         }
-        const auto time = std::filesystem::last_write_time(path, ec);
-        if (ec) {
+
+        const auto time = std::filesystem::last_write_time(path, file_ec);
+        if (file_ec) {
             continue;
         }
         if (time > latest) {
             latest = time;
             latest_path = path;
-            stale = true;
         }
     }
 
-    if (stale && newest != nullptr) {
+    if (latest <= module_time) {
+        return false;
+    }
+    if (newest != nullptr) {
         *newest = std::move(latest_path);
     }
-    return stale;
+    return true;
 }
 
 void ScriptHost::unbind_all() {
@@ -307,6 +317,12 @@ void ScriptHost::poll_build() {
         build_seconds_,
         ScriptRegistry::get().entries().size(),
         restored);
+    if (!ok) {
+        // The compiler output is not echoed into the Console any more, it has
+        // its own panel.
+        IVX_ERROR(
+            "Script build failed — the compiler output is in the Build tab");
+    }
 }
 
 bool ScriptHost::create_script(const std::string &name,

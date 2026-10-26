@@ -379,12 +379,9 @@ void EditLayer::poll_scripts() {
     // not happen yet: retry now that the module is loaded.
     bind_default_camera_script();
 
-    if (!scripts_.build_log().empty()) {
-        IVX_INFO("Script build output:\n{}", scripts_.build_log());
-    }
-    if (!scripts_.last_build_ok()) {
-        IVX_ERROR("Script rebuild failed");
-    }
+    // ScriptHost::poll_build() already logs the outcome ("Scripts: build ok in
+    // ..."). The compiler output itself lives in the Build tab, so it is not
+    // echoed here.
 
     // The module just changed on disk: the "stale" hint is only true while the
     // sources are newer than it, so re-evaluate instead of keeping the startup
@@ -424,6 +421,9 @@ void EditLayer::setup_panels() {
 
     inspector_panel_ = panels_.add<InspectorPanel>(context_);
     console_panel_ = panels_.add<ConsolePanel>();
+    // Compiler output lives next to the Console (docked as a second tab in
+    // layout.cpp).
+    build_output_panel_ = panels_.add<BuildOutputPanel>(scripts_);
     stats_panel_ = panels_.add<StatsPanel>();
     script_panel_ = panels_.add<ScriptPanel>(scripts_);
 }

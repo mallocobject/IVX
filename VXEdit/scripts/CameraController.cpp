@@ -109,5 +109,3 @@ void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
 // identifier, so the type has to be unqualified.
 IVX_REGISTER_SCRIPT(CameraController)
 } // namespace ivx
-
-
