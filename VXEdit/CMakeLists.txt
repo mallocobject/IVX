@@ -15,7 +15,12 @@ target_link_libraries(VXEdit PRIVATE IVX ImGuiColorTextEdit)
 # project in scripts/ that the editor configures and builds on demand, so a script
 # rebuild never re-evaluates this solution (see scripts/CMakeLists.txt).
 set(VX_SCRIPTS_PROJECT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/scripts")
-set(VX_SCRIPTS_BUILD_DIR "${CMAKE_BINARY_DIR}/scripts")
+# One build directory per configuration. A Ninja tree is single-config and caches
+# CMAKE_BUILD_TYPE, so sharing one directory would let a Release editor load a
+# Debug-built DLL; Debug and Release differ in the CRT and in
+# _ITERATOR_DEBUG_LEVEL, which changes std container layouts, so the module would
+# then corrupt the registry it is handed. `$<CONFIG>` keeps the two apart.
+set(VX_SCRIPTS_BUILD_DIR "${CMAKE_BINARY_DIR}/scripts/$<CONFIG>")
 
 # vcvars64.bat of the Visual Studio instance CMake is using: the Ninja build of the
 # script module needs the MSVC environment.

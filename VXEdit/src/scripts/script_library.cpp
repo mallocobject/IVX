@@ -8,7 +8,10 @@
 #include <array>
 #include <cstdio>
 #include <cstdlib>
+#include <filesystem>
+#include <fstream>
 #include <mutex>
+#include <string_view>
 #include <thread>
 #include <utility>
 #include <vector>
@@ -232,13 +235,44 @@ bool ensure_msvc_environment(std::string &log) {
     return true;
 }
 
+// Reads CMAKE_BUILD_TYPE out of an existing Ninja tree, so a stale
+// configuration can be told apart from a matching one without running CMake.
+std::string cached_build_type(const std::filesystem::path &build_dir) {
+    std::ifstream cache{build_dir / "CMakeCache.txt"};
+    std::string line;
+    while (std::getline(cache, line)) {
+        constexpr std::string_view key = "CMAKE_BUILD_TYPE:";
+        if (line.rfind(key, 0) == 0) {
+            const std::size_t equals = line.find('=');
+            return equals == std::string::npos ? std::string{}
+                                               : line.substr(equals + 1);
+        }
+    }
+    return {};
+}
+
 // Configures the standalone Ninja project. Only needed once (or when the
 // generator/build directory was removed): new or removed scripts are handled by
 // CONFIGURE_DEPENDS, which makes Ninja re-run CMake on its own.
 bool configure_script_project(std::string &log) {
     const std::filesystem::path build_dir = SCRIPTS_BUILD_DIR;
-    if (std::filesystem::exists(build_dir / "build.ninja")) {
-        return true; // already configured
+
+    const bool configured = std::filesystem::exists(build_dir / "build.ninja");
+    if (configured) {
+        // A Ninja tree caches CMAKE_BUILD_TYPE, so `-DCMAKE_BUILD_TYPE` is
+        // ignored on a tree that was configured for the other configuration.
+        // Mixing them is not a cosmetic mismatch: Debug and Release use
+        // different CRTs and iterator debug levels, so std containers change
+        // layout and the module corrupts whatever it is handed. Start over
+        // instead.
+        const std::string cached = cached_build_type(build_dir);
+        if (cached.empty() || cached == IVX_BUILD_CONFIG) {
+            return true; // already configured for this configuration
+        }
+        log += "script build directory was configured for " + cached +
+               ", rebuilding for " + IVX_BUILD_CONFIG + "\n";
+        std::error_code ignored;
+        std::filesystem::remove_all(build_dir, ignored);
     }
 
     std::string command = "cmake -S \"" + std::string{SCRIPTS_PROJECT_DIR} +
