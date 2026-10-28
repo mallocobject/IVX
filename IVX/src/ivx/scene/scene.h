@@ -59,6 +59,14 @@ class Scene : public RefCounted {
 
     void on_viewport_resize(uint32_t width, uint32_t height);
 
+    // Last size the renderer reported. Remembered so a camera added later
+    // (Inspector) can start with the real aspect instead of SceneCamera's 16:9
+    // default, which would render the scene squashed until the layout is
+    // touched.
+    glm::uvec2 get_viewport_size() const {
+        return viewport_size_;
+    }
+
     entt::registry &registry() {
         return registry_;
     }
@@ -86,6 +94,7 @@ class Scene : public RefCounted {
                                 int depth);
 
     std::string name_{"Untitled"};
+    glm::uvec2 viewport_size_{0u, 0u};
     entt::registry registry_;
 };
 } // namespace ivx

@@ -20,7 +20,7 @@ Entities:
     SpriteRenderer:
       Size: [400, 400]
       TilingFactor: 1
-      Color: [0.95, 0.95, 0.95, 0.95]
+      Color: [1, 0, 0, 0.95]
       HasTexture: false
   - Entity: 3
     Tag: back piece
@@ -102,11 +102,11 @@ Entities:
         Near: 0.01
         Far: 1000
       Perspective:
-        VerticalFov: 100.00004
+        VerticalFov: 90
         Near: 0.01
         Far: 10000
       Primary: true
       FixedAspectRatio: false
     NativeScript:
-      Script: ""
-      Enabled: false
+      Script: CameraController
+      Enabled: true

@@ -44,6 +44,12 @@ inline std::uint64_t script_abi_hash() {
     mix_type(sizeof(ScriptRegistrar), alignof(ScriptRegistrar));
     mix_type(sizeof(Entity), alignof(Entity));
     mix_type(sizeof(entt::entity), alignof(entt::entity));
+    // Scene itself is reached through Entity (scripts call
+    // entity.get_component<T>(), which goes through scene_->registry()). A
+    // member added to Scene shifts that offset, so its size belongs in the
+    // fingerprint as well - without it a stale module reads the wrong address
+    // and aborts.
+    mix_type(sizeof(Scene), alignof(Scene));
 
     // Every component a script may reach through get_component<T>(), from the
     // single list in components.h so a new one cannot be forgotten here

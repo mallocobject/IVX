@@ -200,6 +200,16 @@ void add_camera(Entity entity) {
     // Become the visible camera only when the scene has none: adding a camera
     // must not silently change what the viewport shows.
     camera.primary = !scene_has_primary_camera(entity);
+
+    // Start from the size the scene was last rendered with: SceneCamera
+    // defaults to 16:9, which squashes the picture until the next layout change
+    // reports the real viewport.
+    if (Scene *scene = entity.scene()) {
+        const glm::uvec2 size = scene->get_viewport_size();
+        if (size.x != 0 && size.y != 0) {
+            camera.camera.set_viewport_size(size.x, size.y);
+        }
+    }
 }
 
 // Exactly one camera is primary: the renderer takes the first one it finds, so

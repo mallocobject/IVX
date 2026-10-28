@@ -345,6 +345,10 @@ void Scene::on_render() {
 }
 
 void Scene::on_viewport_resize(uint32_t width, uint32_t height) {
+    // Remembered even when the scene has no camera yet: a camera added later
+    // needs the real aspect, not SceneCamera's 16:9 default.
+    viewport_size_ = glm::uvec2{width, height};
+
     for (auto [handle, camera] : registry_.view<CameraComponent>().each()) {
         if (!camera.fixed_aspect_ratio) {
             camera.camera.set_viewport_size(width, height);

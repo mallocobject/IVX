@@ -475,6 +475,17 @@ void EditLayer::create_scene() {
 
     scripts_.set_scene(scene_.get());
     bind_default_camera_script();
+
+    // The new scene's cameras start with SceneCamera's default 16:9 aspect.
+    // Nothing else tells them the real viewport size - on_update() only calls
+    // on_viewport_resize() when the framebuffer is resized, and that does not
+    // happen when the scene is swapped - so without this the cube renders
+    // squashed (the projection assumes a wider viewport than the panel has)
+    // until the layout is dragged.
+    if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {
+        scene_->on_viewport_resize(static_cast<uint32_t>(viewport_size_.x),
+                                   static_cast<uint32_t>(viewport_size_.y));
+    }
 }
 
 void EditLayer::load_scene(const std::filesystem::path &filepath) {
