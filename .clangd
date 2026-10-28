@@ -31,6 +31,7 @@ CompileFlags:
     - -Ideps/BqLog/include
     - -Ideps/SDL/include
     - -Ideps/yaml-cpp/include
+    - -Ideps/ImGuizmo/src
   # Switches clang-cl does not implement; keeping them would make clangd drop the
   # whole command instead of just ignoring them.
   Remove:

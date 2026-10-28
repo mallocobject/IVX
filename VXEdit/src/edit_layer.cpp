@@ -3,6 +3,7 @@
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include "ivx/core/application.h"
 #include "ivx/core/input.h"
 #include "ivx/debug/instrumentor.h"
@@ -15,13 +16,17 @@
 #include "panel/layout.h"
 #include "scripts/script_registry.h"
 #include "ui/theme.h"
+
+#include <imgui.h>
+// -- -- -- -- -- -- -- -- -- -- -
+#include <ImGuizmo.h>
 #include <algorithm>
 #include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
-#include <imgui.h>
+
 #include <imgui_internal.h> // FindWindowByName (viewport focus after a layout reset)
 
 namespace ivx {
@@ -53,18 +58,23 @@ void EditLayer::on_attach() {
             // The module loaded, but it may be older than its sources: the
             // editor would then bind every script (the default CameraController
             // included) to the previous build, which looks perfectly healthy in
-            // the console. Only warn - rebuilding is the user's call (the
-            // status bar button, Ctrl+B with the Scripts tab focused, or the
-            // Scripts menu), so startup stays fast and nothing is thrown away
-            // unasked.
+            // the console.
+            //
+            // Two different ages, two different answers: a stale *engine
+            // header* is a correctness problem (the headers are the module's
+            // inline code and layouts), so it rebuilds immediately; a stale
+            // *script source* is a normal edit, so it only shows a hint and
+            // rebuilding stays the user's call (status bar button, Scripts
+            // menu).
+            rebuild_if_headers_changed();
             refresh_scripts_staleness();
             if (scripts_stale_) {
                 IVX_WARN(
-                    "Script sources are newer than {} 鈥?the running scripts "
-                    "are "
-                    "the previous build; use Scripts > Rebuild & Reload (or "
-                    "the "
-                    "status bar button) to rebuild them",
+                    "Script sources are newer than {} - the running scripts "
+                    "are the "
+                    "previous build; use Scripts > Rebuild & Reload (or the "
+                    "status bar "
+                    "button) to rebuild them",
                     std::filesystem::path{SCRIPTS_DLL}.filename().string());
             }
         }
@@ -194,11 +204,13 @@ void EditLayer::on_update(float dt) {
     // reload itself must happen here, on the main thread.
     poll_scripts();
 
-    // Pick up a script edited while the editor runs (~once every 2 s at 60
-    // fps). Only a hint: refresh_scripts_staleness() never builds anything
-    // itself.
+    // Pick up a script edited, or an engine header changed, while the editor
+    // runs (~once every 2 s at 60 fps). A script edit only refreshes the hint;
+    // a header change schedules a rebuild, because a module built before its
+    // headers runs old inline code.
     if (++staleness_tick_ >= 120) {
         staleness_tick_ = 0;
+        rebuild_if_headers_changed();
         refresh_scripts_staleness();
     }
 
@@ -267,6 +279,10 @@ void EditLayer::on_event(Event &event) {
 
 void EditLayer::on_imgui() {
     IVX_PROFILE_FUNCTION();
+
+    // ImGuizmo wants one BeginFrame() per UI frame, before any panel draws:
+    // without it IsOver()/IsUsing() never turn true and the handles are inert.
+    ImGuizmo::BeginFrame();
 
     // Top: the menu bar reserves its own height in the main viewport's work
     // area (and it owns the "Reset Layout" flag, so it runs before the
@@ -383,7 +399,8 @@ void EditLayer::create_scene() {
         auto &camera_transform =
             camera_entity.get_component<TransformComponent>();
         camera_transform.translation = glm::vec3{500.f};
-        camera_transform.rotation = glm::vec3{-35.264f, 45.f, 0.f};
+        camera_transform.rotation =
+            glm::vec3{glm::radians(-35.264f), glm::radians(45.f), 0.f};
     }
 
     {
@@ -410,7 +427,7 @@ void EditLayer::create_scene() {
         {
             auto &tf = back.get_component<TransformComponent>();
             tf.translation = glm::vec3{0.f, 0.f, -200.f};
-            tf.rotation = glm::vec3{0.f, 180.f, 0.f};
+            tf.rotation = glm::vec3{0.f, glm::radians(180.f), 0.f};
             tf.scale = glm::vec3{1.f};
             auto &sr = back.add_component<SpriteRendererComponent>();
             sr.color = glm::vec4{0.55f};
@@ -422,7 +439,7 @@ void EditLayer::create_scene() {
         {
             auto &tf = left.get_component<TransformComponent>();
             tf.translation = glm::vec3{-200.f, 0.f, 0.f};
-            tf.rotation = glm::vec3{0.f, -90.f, 0.f};
+            tf.rotation = glm::vec3{0.f, glm::radians(-90.f), 0.f};
             tf.scale = glm::vec3{1.f};
             auto &sr = left.add_component<SpriteRendererComponent>();
             sr.color = glm::vec4{0.70f};
@@ -434,7 +451,7 @@ void EditLayer::create_scene() {
         {
             auto &tf = right.get_component<TransformComponent>();
             tf.translation = glm::vec3{200.f, 0.f, 0.f};
-            tf.rotation = glm::vec3{0.f, 90.f, 0.f};
+            tf.rotation = glm::vec3{0.f, glm::radians(90.f), 0.f};
             tf.scale = glm::vec3{1.f};
             auto &sr = right.add_component<SpriteRendererComponent>();
             sr.color = glm::vec4{0.85f};
@@ -446,7 +463,7 @@ void EditLayer::create_scene() {
         {
             auto &tf = top.get_component<TransformComponent>();
             tf.translation = glm::vec3{0.f, 200.f, 0.f};
-            tf.rotation = glm::vec3{-90.f, 0.f, 0.f};
+            tf.rotation = glm::vec3{glm::radians(-90.f), 0.f, 0.f};
             tf.scale = glm::vec3{1.f};
             auto &sr = top.add_component<SpriteRendererComponent>();
             sr.color = glm::vec4{1.00f};
@@ -458,7 +475,7 @@ void EditLayer::create_scene() {
         {
             auto &tf = bottom.get_component<TransformComponent>();
             tf.translation = glm::vec3{0.f, -200.f, 0.f};
-            tf.rotation = glm::vec3{90.f, 0.f, 0.f};
+            tf.rotation = glm::vec3{glm::radians(90.f), 0.f, 0.f};
             tf.scale = glm::vec3{1.f};
             auto &sr = bottom.add_component<SpriteRendererComponent>();
             sr.color = glm::vec4{0.40f};
@@ -556,6 +573,38 @@ void EditLayer::refresh_scripts_staleness() {
     scripts_stale_ = scripts_.has_newer_sources();
 }
 
+void EditLayer::rebuild_if_headers_changed() {
+    if (scripts_.is_building() || !scripts_.is_loaded()) {
+        return;
+    }
+
+    // Engine headers are the module's *code*: inline functions such as the
+    // SceneCamera accessors are compiled into VXScripts.dll. A module built
+    // before them keeps the old behaviour without any fuss (a changed FOV
+    // setter once left the wheel zoom clamped to 1 degree), and a layout change
+    // reads the wrong offsets. So this rebuilds on its own instead of waiting
+    // for the user; a plain script edit still only shows a hint.
+    const std::filesystem::file_time_type newest =
+        scripts_.newest_engine_header();
+    if (newest == std::filesystem::file_time_type{} ||
+        newest <= headers_rebuild_mark_) {
+        return; // nothing new since the last attempt: a failing build must not
+                // loop
+    }
+    if (!scripts_.has_newer_engine_headers()) {
+        return;
+    }
+
+    headers_rebuild_mark_ = newest;
+    IVX_INFO("Scripts: engine headers changed, rebuilding {}",
+             std::filesystem::path{SCRIPTS_DLL}.filename().string());
+    // Clean: no script source changed, and Ninja's dependency database does not
+    // reliably track engine headers - an incremental build answers "no work to
+    // do", leaves the old module in place, and would rebuild again on every
+    // tick forever.
+    scripts_.begin_build(true);
+}
+
 void EditLayer::setup_panels() {
     IVX_PROFILE_FUNCTION();
 
@@ -620,6 +669,22 @@ void EditLayer::draw_menu_bar() {
         ImGui::EndMenu();
     }
     panels_.draw_view_menu();
+    if (ImGui::BeginMenu("Gizmo")) {
+        // Same three modes as the numeric shortcuts; the checkmark doubles as
+        // the current state readout (there is no room for one in the status
+        // bar).
+        if (ImGui::MenuItem(
+                "Translate", "1", gizmo_mode_ == GizmoMode::Translate)) {
+            gizmo_mode_ = GizmoMode::Translate;
+        }
+        if (ImGui::MenuItem("Rotate", "2", gizmo_mode_ == GizmoMode::Rotate)) {
+            gizmo_mode_ = GizmoMode::Rotate;
+        }
+        if (ImGui::MenuItem("Scale", "3", gizmo_mode_ == GizmoMode::Scale)) {
+            gizmo_mode_ = GizmoMode::Scale;
+        }
+        ImGui::EndMenu();
+    }
     if (ImGui::BeginMenu("Scripts")) {
         if (ImGui::MenuItem("Rebuild & Reload")) {
             reload_scripts();
@@ -704,9 +769,10 @@ void EditLayer::draw_status_bar() {
             std::snprintf(
                 scripts_text, sizeof(scripts_text), "Scripts: build failed");
         } else if (scripts_stale_) {
-            // Sources changed after the module was built, so the running
-            // scripts are the previous build. Nothing is rebuilt automatically;
-            // the hint names the menu entry that triggers it.
+            // A script source changed after the module was built, so the
+            // running scripts are the previous build of it. Engine-header
+            // changes do not show up here: they rebuild the module on their
+            // own.
             std::snprintf(scripts_text,
                           sizeof(scripts_text),
                           "Scripts: %zu | sources changed (Scripts > Rebuild & "
@@ -798,5 +864,122 @@ void EditLayer::draw_viewport_content() {
         viewport_size_,
         ImVec2{0.0f, 1.0f},
         ImVec2{1.0f, 0.0f});
+
+    // Gizmo handles go on top of the image, in its exact rectangle.
+    draw_gizmo(ImGui::GetItemRectMin(), ImGui::GetItemRectSize());
+}
+
+int EditLayer::gizmo_operation() const {
+    switch (gizmo_mode_) {
+    case GizmoMode::Rotate:
+        return ImGuizmo::ROTATE;
+    case GizmoMode::Scale:
+        return ImGuizmo::SCALE;
+    case GizmoMode::Translate:
+    default:
+        return ImGuizmo::TRANSLATE;
+    }
+}
+
+void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
+    if (!scene_ || !context_.has_selection()) {
+        return;
+    }
+
+    Entity selected = context_.selected_entity();
+    auto *transform = selected.try_get_component<TransformComponent>();
+    if (transform == nullptr) {
+        return;
+    }
+
+    // Keys 1/2/3 switch the handles, like the numeric shortcuts in most
+    // editors. W/E/R would collide with the camera controller (WASD movement,
+    // Q/E rotation, R reset).
+    if (input_owned_) {
+        if (ImGui::IsKeyPressed(ImGuiKey_1, false)) {
+            gizmo_mode_ = GizmoMode::Translate;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_2, false)) {
+            gizmo_mode_ = GizmoMode::Rotate;
+        }
+        if (ImGui::IsKeyPressed(ImGuiKey_3, false)) {
+            gizmo_mode_ = GizmoMode::Scale;
+        }
+    }
+
+    // The viewport renders with the primary camera, so the gizmo has to use the
+    // same pair of matrices or the handles drift away from the geometry.
+    glm::mat4 view{1.f};
+    glm::mat4 projection{1.f};
+    bool orthographic = true;
+    bool found = false;
+    for (auto [handle, camera, camera_transform] :
+         scene_->registry()
+             .view<CameraComponent, TransformComponent>()
+             .each()) {
+        if (!camera.primary) {
+            continue;
+        }
+        projection = camera.camera.get_proj_matrix();
+        view = glm::inverse(camera_transform.world);
+        orthographic = camera.camera.get_projection_type() ==
+                       SceneCamera::ProjectionType::Orthographic;
+        found = true;
+        break;
+    }
+    if (!found) {
+        return;
+    }
+
+    ImGuizmo::SetOrthographic(orthographic);
+    ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+    ImGuizmo::SetRect(image_min.x, image_min.y, image_size.x, image_size.y);
+
+    // transform.world is refreshed by Scene::on_render() earlier in the frame.
+    glm::mat4 model = transform->world;
+    ImGuizmo::Manipulate(glm::value_ptr(view),
+                         glm::value_ptr(projection),
+                         static_cast<ImGuizmo::OPERATION>(gizmo_operation()),
+                         ImGuizmo::LOCAL,
+                         glm::value_ptr(model));
+
+    if (ImGuizmo::IsUsing()) {
+        apply_gizmo_matrix(selected, model);
+    }
+}
+
+void EditLayer::apply_gizmo_matrix(Entity entity,
+                                   const glm::mat4 &world_matrix) {
+    auto *transform = entity.try_get_component<TransformComponent>();
+    if (transform == nullptr) {
+        return;
+    }
+
+    // The gizmo works in world space; the component stores a local,
+    // parent-relative pose.
+    glm::mat4 parent_world{1.f};
+    if (Entity parent = entity.parent()) {
+        if (const auto *parent_transform =
+                parent.try_get_component<TransformComponent>()) {
+            parent_world = parent_transform->world;
+        }
+    }
+    const glm::mat4 local = glm::inverse(parent_world) * world_matrix;
+
+    transform->translation = glm::vec3{local[3]};
+
+    glm::mat3 rotation{local};
+    glm::vec3 scale{1.f};
+    for (int column = 0; column < 3; ++column) {
+        const float length = glm::length(rotation[column]);
+        scale[column] = length > 0.f ? length : 1.f;
+        rotation[column] /= scale[column];
+    }
+    transform->scale = scale;
+
+    const float pitch = std::asin(std::clamp(-rotation[2][1], -1.f, 1.f));
+    const float yaw = std::atan2(rotation[2][0], rotation[2][2]);
+    const float roll = std::atan2(rotation[0][1], rotation[1][1]);
+    transform->rotation = glm::vec3{pitch, yaw, roll};
 }
 } // namespace ivx

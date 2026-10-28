@@ -9,7 +9,7 @@ add_executable(VXEdit ${VXEDIT_SOURCES})
 # where the including file lives.
 target_include_directories(VXEdit PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-target_link_libraries(VXEdit PRIVATE IVX ImGuiColorTextEdit)
+target_link_libraries(VXEdit PRIVATE IVX ImGuiColorTextEdit imguizmo)
 
 # The script module is NOT part of this build: it has its own standalone Ninja
 # project in scripts/ that the editor configures and builds on demand, so a script

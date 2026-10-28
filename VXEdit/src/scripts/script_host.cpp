@@ -202,6 +202,27 @@ bool ScriptHost::load_initial(std::string &error) {
     return loaded;
 }
 
+namespace {
+// Folds the newest matching file under `directory` into `latest`. A missing
+// directory is not an error here: the iterator is simply empty.
+void fold_since_module(const std::filesystem::path &directory,
+                       std::initializer_list<std::string_view> extensions,
+                       bool recursive,
+                       std::filesystem::file_time_type &latest) {
+    std::error_code dir_ec;
+    if (recursive) {
+        fold_newest(
+            std::filesystem::recursive_directory_iterator{directory, dir_ec},
+            extensions,
+            latest);
+    } else {
+        fold_newest(std::filesystem::directory_iterator{directory, dir_ec},
+                    extensions,
+                    latest);
+    }
+}
+} // namespace
+
 bool ScriptHost::has_newer_sources() const {
     std::error_code ec;
     const std::filesystem::path module{SCRIPTS_DLL};
@@ -212,38 +233,49 @@ bool ScriptHost::has_newer_sources() const {
 
     std::filesystem::file_time_type latest = module_time;
 
-    // 1) The script project itself. It is flat (sources, headers and its
-    // CMakeLists next to each other), so a plain directory_iterator is enough.
-    {
-        std::error_code dir_ec;
-        fold_newest(std::filesystem::directory_iterator{scripts_dir_, dir_ec},
-                    {".cpp", ".h", ".hpp"},
-                    latest);
-        // The file list is a glob, so touching CMakeLists also needs a rebuild.
-        const std::filesystem::path cmake_lists =
-            scripts_dir_ / std::filesystem::path{"CMakeLists.txt"};
-        std::error_code file_ec;
-        const auto time =
-            std::filesystem::last_write_time(cmake_lists, file_ec);
-        if (!file_ec && time > latest) {
-            latest = time;
-        }
+    // The script project is flat (sources, headers and its CMakeLists next to
+    // each other), so a plain directory_iterator is enough.
+    fold_since_module(scripts_dir_, {".cpp", ".h", ".hpp"}, false, latest);
+    // The file list is a glob, so touching CMakeLists also needs a rebuild.
+    const std::filesystem::path cmake_lists =
+        scripts_dir_ / std::filesystem::path{"CMakeLists.txt"};
+    std::error_code file_ec;
+    const auto cmake_time =
+        std::filesystem::last_write_time(cmake_lists, file_ec);
+    if (!file_ec && cmake_time > latest) {
+        latest = cmake_time;
     }
 
-    // 2) The engine headers the module is compiled against. A layout change
-    // there (a component gaining a member, a virtual added to ScriptableEntity,
-    // ...) invalidates the module without touching a single script source,
-    // which is exactly the case that used to surface as a crash instead of a
-    // rebuild.
-    {
-        std::error_code dir_ec;
-        fold_newest(
-            std::filesystem::recursive_directory_iterator{
-                std::filesystem::path{IVX_ROOT_DIR} / "IVX" / "src", dir_ec},
-            {".h", ".hpp"},
-            latest);
+    return latest > module_time;
+}
+
+std::filesystem::file_time_type ScriptHost::newest_engine_header() const {
+    // A file_time_type default value means "nothing found": the loop below
+    // starts from the epoch, so any real file wins.
+    std::filesystem::file_time_type latest{};
+    fold_since_module(std::filesystem::path{IVX_ROOT_DIR} / "IVX" / "src",
+                      {".h", ".hpp"},
+                      true,
+                      latest);
+    return latest;
+}
+
+bool ScriptHost::has_newer_engine_headers() const {
+    std::error_code ec;
+    const auto module_time = std::filesystem::last_write_time(
+        std::filesystem::path{SCRIPTS_DLL}, ec);
+    if (ec) {
+        return false; // no module yet: load_initial() already schedules the
+                      // first build
     }
 
+    // `fold_since_module` only raises `latest`, so seeding it with the module
+    // timestamp turns the answer into "is any header newer than the module".
+    std::filesystem::file_time_type latest = module_time;
+    fold_since_module(std::filesystem::path{IVX_ROOT_DIR} / "IVX" / "src",
+                      {".h", ".hpp"},
+                      true,
+                      latest);
     return latest > module_time;
 }
 
@@ -270,9 +302,12 @@ bool ScriptHost::needs_reconfigure() const {
     return script_project_needs_reconfigure();
 }
 
-bool ScriptHost::begin_build() {
+bool ScriptHost::begin_build(bool clean) {
     if (building_) {
         return false;
+    }
+    if (clean) {
+        force_rebuild_ = true;
     }
 
     // Remember the bindings before the instances (and their script_name) go
@@ -320,7 +355,9 @@ bool ScriptHost::begin_build() {
     const bool reconfigure = last_build_reconfigured_;
     IVX_INFO("Scripts: building{}{}",
              reconfigure ? " (reconfiguring, file set changed)" : "",
-             clean_first ? " (clean rebuild of a rejected module)" : "");
+             clean_first
+                 ? " (clean rebuild: headers changed or module rejected)"
+                 : "");
 
     // The worker only compiles. Everything that touches the scene or the loader
     // stays on the main thread (see poll_build()).

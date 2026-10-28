@@ -97,7 +97,7 @@ glm::mat4 SceneCamera::get_proj_matrix() const {
             -right, right, -top, top, orthographic_near_, orthographic_far_);
     }
 
-    return perspective_rh_reverse_z(glm::radians(perspective_vertical_fov_),
+    return perspective_rh_reverse_z(perspective_vertical_fov_,
                                     aspect_ratio_,
                                     perspective_near_,
                                     perspective_far_);

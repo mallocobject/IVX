@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
 namespace ivx {
@@ -60,14 +61,10 @@ class SceneCamera {
     }
 
     // ---- perspective ----
-    // Degrees, like Unity's Camera.fieldOfView and Unreal's
-    // UCameraComponent::FieldOfView. Only the matrix builders convert:
-    // glm::perspective()/glm::rotate() want radians, so get_proj_matrix() and
-    // TransformComponent::load_matrix() call glm::radians().
-    float get_perspective_vertical_fov() const { // degrees
+    float get_perspective_vertical_fov() const { // radians
         return perspective_vertical_fov_;
     }
-    void set_perspective_vertical_fov(float vertical_fov) { // degrees
+    void set_perspective_vertical_fov(float vertical_fov) { // radians
         perspective_vertical_fov_ = vertical_fov;
     }
     float get_perspective_near() const { // positive distance
@@ -96,7 +93,7 @@ class SceneCamera {
     float orthographic_near_{0.01f};
     float orthographic_far_{1000.f};
 
-    float perspective_vertical_fov_{90.f}; // 90 degrees
+    float perspective_vertical_fov_{glm::radians(45.f)}; // 45 degrees
     float perspective_near_{0.01f};
     float perspective_far_{10000.f};
 

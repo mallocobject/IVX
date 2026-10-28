@@ -33,14 +33,26 @@ class ScriptHost {
 
     bool load_initial(std::string &error);
 
-    // True when a script source, the script project's CMakeLists or one of the
-    // engine headers it is compiled against is newer than the built module.
-    // Loading the module in that state silently runs the previous build and the
-    // editor binds scripts against stale code, so the caller is expected to
-    // schedule a rebuild. Engine headers count because a layout change there (a
-    // component gaining a member, a virtual added to ScriptableEntity)
-    // invalidates the module without touching a script.
+    // True when a script source or the script project's CMakeLists is newer
+    // than the built module: the module runs the previous build of *user code*.
+    // Only a hint - rebuilding stays the user's call, because editing a script
+    // is not a correctness problem.
     bool has_newer_sources() const;
+
+    // True when one of the engine headers the module is compiled against is
+    // newer than the module. Those headers carry inline code and layouts the
+    // scripts link against, so a module built before them silently keeps the
+    // old behaviour (a changed SceneCamera::set_perspective_vertical_fov() once
+    // left the wheel zoom clamped to 1 degree) or crashes on a layout change. A
+    // rebuild is not optional here, which is why the caller schedules one
+    // instead of showing a hint.
+    bool has_newer_engine_headers() const;
+
+    // Newest timestamp under IVX/src, or a default-constructed value when it
+    // cannot be read. Exposed so the caller can remember which revision it
+    // already tried: a build that keeps failing must not be retried on every
+    // tick.
+    std::filesystem::file_time_type newest_engine_header() const;
 
     // Destroys every script instance while the module is still loaded. Must run
     // before the DLL is unloaded: on_destroy() executes code that lives in it.
@@ -49,7 +61,13 @@ class ScriptHost {
     // Starts a build. Instances are unbound and the module unloaded first,
     // because the linker cannot overwrite a DLL that is still mapped in.
     // Returns false when a build is already running.
-    bool begin_build();
+    //
+    // `clean` throws the object files away as well. Use it when the *headers*
+    // changed but no source did: Ninja's dependency database misses headers
+    // often enough that an incremental build answers "no work to do" and
+    // silently keeps the old module, which then rebuilds forever without ever
+    // changing anything.
+    bool begin_build(bool clean = false);
 
     // Call once per frame. When the worker finished it joins it, loads the
     // fresh module and re-binds every script by name.

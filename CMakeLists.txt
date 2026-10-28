@@ -22,6 +22,7 @@ set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
 if (NOT EXISTS "${DEPS_DIR}/glm"  OR
     NOT EXISTS "${DEPS_DIR}/imgui" OR
+    NOT EXISTS "${DEPS_DIR}/ImGuizmo" OR
     NOT EXISTS "${DEPS_DIR}/SDL" OR
     NOT EXISTS "${DEPS_DIR}/yaml-cpp")
     message(FATAL_ERROR
@@ -85,6 +86,14 @@ set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
 set(YAML_CPP_INSTALL OFF CACHE BOOL "" FORCE)
 add_subdirectory("${DEPS_DIR}/yaml-cpp" "${CMAKE_BINARY_DIR}/_deps/yaml-cpp-build")
+
+# ---- ImGuizmo ----
+# Transform gizmo (translate/rotate/scale handles) for the editor viewport. Its own
+# CMakeLists only links imgui when it is the top-level project and otherwise fetches imgui
+# from GitHub, so the link is wired up here instead.
+set(IMGUIZMO_STANDALONE OFF CACHE BOOL "" FORCE)
+add_subdirectory("${DEPS_DIR}/ImGuizmo" "${CMAKE_BINARY_DIR}/_deps/ImGuizmo-build")
+target_link_libraries(imguizmo PUBLIC imgui)
 
 # ---- ImGuiColorTextEdit ----
 # Syntax highlighting editor widget used by the editor's script panel.

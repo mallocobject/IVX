@@ -31,6 +31,18 @@ class EditLayer : public Layer {
     // owned by Panel, these functions only emit widgets.
     void draw_viewport_content();
 
+    // ---- transform gizmo (ImGuizmo) ----
+    enum class GizmoMode { Translate = 0, Rotate = 1, Scale = 2 };
+
+    // Draws the gizmo for the selected entity on top of the viewport image.
+    // `image_min` and `image_size` come from the ImGui::Image() call, so the
+    // handles line up with what the camera rendered.
+    void draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size);
+    // Writes the gizmo's world matrix back into the entity's local
+    static void apply_gizmo_matrix(Entity entity,
+                                   const glm::mat4 &world_matrix);
+    int gizmo_operation() const;
+
     void setup_panels();
 
     // Main menu bar (own viewport row) and the bottom status bar.
@@ -57,6 +69,13 @@ class EditLayer : public Layer {
     // every build and periodically so an edit made while the editor runs shows
     // up too.
     void refresh_scripts_staleness();
+
+    // Rebuilds the module when an engine header it is compiled against changed.
+    // Unlike a script edit this is not a hint: the headers are the module's
+    // inline code and data layout, so running an older build of them misbehaves
+    // or crashes. Called at startup and on the same periodic tick as
+    // refresh_scripts_staleness().
+    void rebuild_if_headers_changed();
 
     // Binds CameraController to the primary camera once per session (see the
     // comment in the implementation).
@@ -89,6 +108,10 @@ class EditLayer : public Layer {
     bool visible_{false};
     ImVec2 viewport_size_{0.f, 0.f};
 
+    // Which handles the gizmo shows. Keys 1/2/3 switch it while the viewport
+    // owns the input; the menu shows the same three entries.
+    GizmoMode gizmo_mode_{GizmoMode::Translate};
+
     bool layout_initialized_{false};
     bool reset_layout_requested_{false};
     // Set once the default camera controller has been bound (or found already
@@ -99,6 +122,10 @@ class EditLayer : public Layer {
     // True while some script source is newer than the loaded module (shows a
     // hint in the status bar; never triggers a build on its own).
     bool scripts_stale_{false};
+    // Newest engine-header timestamp that already triggered a rebuild. Kept so
+    // a build that fails cannot retry on every tick: the retry waits for the
+    // next header edit.
+    std::filesystem::file_time_type headers_rebuild_mark_{};
     // Frame counter for the periodic staleness re-check (~2 s at 60 fps).
     int staleness_tick_{0};
 

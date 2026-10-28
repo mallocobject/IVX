@@ -51,7 +51,7 @@ void CameraController::on_update(float dt) {
 
         transform.translation.x += movement.x;
         transform.translation.y += movement.y;
-        transform.rotation.z += rotation;
+        transform.rotation.z += glm::radians(rotation);
     } else {
         const glm::mat4 basis = detail::build_rotation(transform.rotation);
         const glm::vec3 forward = -glm::vec3{basis[2]};
@@ -113,8 +113,8 @@ void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
     constexpr float kMinFov = 1.f;   // 1 degree
     constexpr float kMaxFov = 179.f; // 179 degrees
     const float fov = camera.camera.get_perspective_vertical_fov();
-    const float next = glm::clamp(fov * factor, kMinFov, kMaxFov);
-    camera.camera.set_perspective_vertical_fov(next);
+    const float next = glm::clamp(glm::degrees(fov) * factor, kMinFov, kMaxFov);
+    camera.camera.set_perspective_vertical_fov(glm::radians(next));
 }
 // Stays inside namespace ivx: IVX_REGISTER_SCRIPT pastes the type name into
 // an identifier, so the type has to be unqualified.
