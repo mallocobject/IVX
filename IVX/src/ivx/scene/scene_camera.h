@@ -93,7 +93,7 @@ class SceneCamera {
     float orthographic_near_{0.01f};
     float orthographic_far_{1000.f};
 
-    float perspective_vertical_fov_{glm::radians(45.f)}; // 45 degrees
+    float perspective_vertical_fov_{glm::radians(90.f)};
     float perspective_near_{0.01f};
     float perspective_far_{10000.f};
 

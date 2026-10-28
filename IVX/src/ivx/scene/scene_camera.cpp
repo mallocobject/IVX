@@ -2,55 +2,11 @@
 #include "scene_camera.h"
 
 #include "ivx/core/base.h"
+#include "ivx/utils/math.h"
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
 namespace ivx {
-namespace {
-// Reverse-Z projections for a right-handed view space (camera looks down -Z):
-// near -> depth 1, far -> depth 0, matching glClipControl(GL_ZERO_TO_ONE) plus
-// glDepthFunc(GL_GREATER).
-//
-// `n`/`f` are positive distances; the near plane lands at view z = -n.
-static glm::mat4 ortho_rh_reverse_z(float left,
-                                    float right,
-                                    float bottom,
-                                    float top,
-                                    float z_near,
-                                    float z_far) {
-    glm::mat4 proj(1.f);
-    proj[0][0] = 2.f / (right - left);
-    proj[1][1] = 2.f / (top - bottom);
-    proj[2][2] = 1.f / (z_far - z_near);
-    proj[3][0] = -(right + left) / (right - left);
-    proj[3][1] = -(top + bottom) / (top - bottom);
-    proj[3][2] = z_far / (z_far - z_near);
-    return proj;
-}
-
-// `n`/`f` are positive distances; the near plane lands at view z = -n.
-static glm::mat4
-perspective_rh_reverse_z(float fovY, float aspect, float n, float f) {
-    float focal = 1.f / std::tan(fovY * 0.5f);
-
-    glm::mat4 proj(0.f);
-    proj[0][0] = focal / aspect;
-    proj[1][1] = focal;
-    proj[2][2] = n / (f - n);
-    proj[2][3] = -1.f; // clip.w = -z_view: positive in front of the camera
-    proj[3][2] = n * f / (f - n);
-    return proj;
-}
-
-// Near/far are distances: keep them positive and ordered.
-void validate_clip_planes(float &near_clip, float &far_clip) {
-    near_clip = glm::max(near_clip, 0.001f);
-    if (far_clip <= near_clip) {
-        far_clip = near_clip + 0.001f;
-    }
-}
-} // namespace
-
 void SceneCamera::set_projection_type(ProjectionType type) {
     projection_type_ = type;
 }

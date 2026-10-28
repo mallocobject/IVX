@@ -233,6 +233,18 @@ void EditLayer::on_update(float dt) {
     // keyboard polling happens depends on viewport focus (set while drawing the
     // viewport panel, see draw_viewport_content()).
 
+    if (input_owned_) {
+        if (Input::is_key_pressed(KeyCode::D1)) {
+            gizmo_mode_ = GizmoMode::Translate;
+        }
+        if (Input::is_key_pressed(KeyCode::D2)) {
+            gizmo_mode_ = GizmoMode::Rotate;
+        }
+        if (Input::is_key_pressed(KeyCode::D3)) {
+            gizmo_mode_ = GizmoMode::Scale;
+        }
+    }
+
     if (scene_) {
         scene_->on_update(dt);
     }
@@ -887,25 +899,7 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
     }
 
     Entity selected = context_.selected_entity();
-    auto *transform = selected.try_get_component<TransformComponent>();
-    if (transform == nullptr) {
-        return;
-    }
-
-    // Keys 1/2/3 switch the handles, like the numeric shortcuts in most
-    // editors. W/E/R would collide with the camera controller (WASD movement,
-    // Q/E rotation, R reset).
-    if (input_owned_) {
-        if (ImGui::IsKeyPressed(ImGuiKey_1, false)) {
-            gizmo_mode_ = GizmoMode::Translate;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_2, false)) {
-            gizmo_mode_ = GizmoMode::Rotate;
-        }
-        if (ImGui::IsKeyPressed(ImGuiKey_3, false)) {
-            gizmo_mode_ = GizmoMode::Scale;
-        }
-    }
+    auto &transform = selected.get_component<TransformComponent>();
 
     // The viewport renders with the primary camera, so the gizmo has to use the
     // same pair of matrices or the handles drift away from the geometry.
@@ -936,7 +930,7 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
     ImGuizmo::SetRect(image_min.x, image_min.y, image_size.x, image_size.y);
 
     // transform.world is refreshed by Scene::on_render() earlier in the frame.
-    glm::mat4 model = transform->world;
+    glm::mat4 model = transform.world;
     ImGuizmo::Manipulate(glm::value_ptr(view),
                          glm::value_ptr(projection),
                          static_cast<ImGuizmo::OPERATION>(gizmo_operation()),
@@ -950,36 +944,17 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
 
 void EditLayer::apply_gizmo_matrix(Entity entity,
                                    const glm::mat4 &world_matrix) {
-    auto *transform = entity.try_get_component<TransformComponent>();
-    if (transform == nullptr) {
-        return;
-    }
+    auto &transform = entity.get_component<TransformComponent>();
 
     // The gizmo works in world space; the component stores a local,
     // parent-relative pose.
     glm::mat4 parent_world{1.f};
     if (Entity parent = entity.parent()) {
-        if (const auto *parent_transform =
-                parent.try_get_component<TransformComponent>()) {
-            parent_world = parent_transform->world;
-        }
+        parent_world = parent.get_component<TransformComponent>().world;
     }
     const glm::mat4 local = glm::inverse(parent_world) * world_matrix;
 
-    transform->translation = glm::vec3{local[3]};
-
-    glm::mat3 rotation{local};
-    glm::vec3 scale{1.f};
-    for (int column = 0; column < 3; ++column) {
-        const float length = glm::length(rotation[column]);
-        scale[column] = length > 0.f ? length : 1.f;
-        rotation[column] /= scale[column];
-    }
-    transform->scale = scale;
-
-    const float pitch = std::asin(std::clamp(-rotation[2][1], -1.f, 1.f));
-    const float yaw = std::atan2(rotation[2][0], rotation[2][2]);
-    const float roll = std::atan2(rotation[0][1], rotation[1][1]);
-    transform->rotation = glm::vec3{pitch, yaw, roll};
+    decompose_transform(
+        local, transform.translation, transform.rotation, transform.scale);
 }
 } // namespace ivx
