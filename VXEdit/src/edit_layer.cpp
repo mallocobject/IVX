@@ -1,4 +1,4 @@
-﻿#include "edit_layer.h"
+#include "edit_layer.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
@@ -92,23 +92,29 @@ void EditLayer::on_attach() {
 
     frame_buffer_ = FrameBuffer::create(spec);
 
-    scene_ = make_ref<Scene>();
-    context_.scene = scene_;
+    // The editor starts without a scene: the user picks File > New or File >
+    // Open. An auto-created empty scene looks the same as a broken one, and
+    // entities added to it had no file to belong to; the hierarchy panel
+    // refuses to create entities until a scene exists.
+    scene_.reset();
+    context_.scene.reset();
 
     setup_panels();
 }
 
 void EditLayer::bind_default_camera_script() {
-    // The scene is rebuilt from code on every start, so a hand-made binding in
-    // the inspector does not survive a restart. Give the *primary* camera its
-    // controller automatically, otherwise WASD/wheel silently do nothing.
+    // A scene written to disk only stores the script *name*, and a scene built
+    // by File > New has no binding at all, so the primary camera gets its
+    // controller automatically - otherwise WASD and the wheel silently do
+    // nothing.
     //
     // Keyed off "whichever entity owns the primary camera", not off a fixed
     // entity: a camera is just a component, so it may live on a moving player
     // instead.
     //
-    // Only once per session and only when nothing is bound: unbinding it in the
-    // inspector has to stick.
+    // Once per scene and only when nothing is bound: unbinding it in the
+    // inspector has to stick (create_scene()/load_scene() reset the flag for
+    // their scene).
     if (default_script_bound_ || !scene_) {
         return;
     }
@@ -202,7 +208,9 @@ void EditLayer::on_update(float dt) {
             uint32_t w = static_cast<uint32_t>(viewport_size_.x);
             uint32_t h = static_cast<uint32_t>(viewport_size_.y);
 
-            scene_->on_viewport_resize(w, h);
+            if (scene_) {
+                scene_->on_viewport_resize(w, h);
+            }
             frame_buffer_->resize(w, h);
         }
     }
@@ -213,7 +221,9 @@ void EditLayer::on_update(float dt) {
     // keyboard polling happens depends on viewport focus (set while drawing the
     // viewport panel, see draw_viewport_content()).
 
-    scene_->on_update(dt);
+    if (scene_) {
+        scene_->on_update(dt);
+    }
 
     // render
     Renderer2D::reset_stats();
@@ -227,7 +237,7 @@ void EditLayer::on_update(float dt) {
         RenderCommand::clear();
     }
 
-    {
+    if (scene_) {
         // draw
         IVX_PROFILE_SCOPE("Renderer draw");
 
@@ -334,6 +344,24 @@ void EditLayer::reload_scripts() {
 }
 
 void EditLayer::create_scene() {
+    // The old scene is about to be replaced, so everything tied to it goes with
+    // it:
+    //
+    //   * the script instances live in the DLL but are owned by the entities of
+    //   the old
+    //     scene, so they are released while the module is still around (~Scene
+    //     would do it as well, this just makes the order explicit);
+    //   * default_script_bound_ is *per scene* state - it means "the primary
+    //   camera of this
+    //     scene got its controller". Leaving it set made the second and every
+    //     later New skip the binding, which is why the WASD controls silently
+    //     died after a couple of new scenes;
+    //   * ScriptHost::set_scene() drops any binding a build in flight had
+    //   recorded for the
+    //     previous scene (entity handles overlap between scenes).
+    scripts_.release_all_scripts();
+    default_script_bound_ = false;
+
     scene_ = make_ref<Scene>();
     context_.scene = scene_;
     context_.clear_selection();
@@ -555,14 +583,24 @@ void EditLayer::draw_menu_bar() {
     }
 
     if (ImGui::BeginMenu("File")) {
-        if (ImGui::MenuItem("New", nullptr, false, scene_ != nullptr)) {
+        // New / Open are the only way to get a scene, so they must stay enabled
+        // while there is none; only the actions that need one check for it.
+        if (ImGui::MenuItem("New")) {
             create_scene();
         }
-        if (ImGui::MenuItem("Open", nullptr, false, scene_ != nullptr)) {
-            load_scene(SCENES "scene.ivx");
+        if (ImGui::MenuItem("Open")) {
+            if (auto filepath =
+                    FileDialog::open_file("IVX Scene (*.ivx)\0*.ivx\0");
+                !filepath.empty()) {
+                load_scene(filepath);
+            }
         }
         if (ImGui::MenuItem("Save as ...", nullptr, false, scene_ != nullptr)) {
-            save_scene(SCENES "scene.ivx");
+            if (auto filepath =
+                    FileDialog::save_file("IVX Scene (*.ivx)\0*.ivx\0");
+                !filepath.empty()) {
+                save_scene(filepath);
+            }
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Exit")) {
@@ -633,7 +671,8 @@ void EditLayer::draw_status_bar() {
         ImGui::TextDisabled("|");
         ImGui::SameLine();
         ImGui::Text("%zu object(s)",
-                    scene_->registry().view<TagComponent>().size());
+                    scene_ ? scene_->registry().view<TagComponent>().size()
+                           : std::size_t{0});
 
         ImGui::SameLine();
         ImGui::TextDisabled("|");

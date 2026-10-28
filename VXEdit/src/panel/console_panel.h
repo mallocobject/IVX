@@ -36,6 +36,10 @@ class ConsolePanel : public Panel {
     void draw_entries();
     bool visible(LogLevel level) const;
     bool matches_filter(const std::string &text) const;
+    // Puts the selected line - or every visible line when nothing is selected -
+    // on the clipboard, so an error message can be pasted into an editor or a
+    // bug report.
+    void copy_visible_lines();
 
     std::vector<Entry> entries_;
     std::size_t max_entries_{4096};
@@ -43,6 +47,9 @@ class ConsolePanel : public Panel {
     bool level_visible_[k_level_count]{true, true, true, true, true, true};
     bool auto_scroll_{true};
     bool scroll_to_bottom_{false};
+    // Index into entries_ of the clicked line, -1 when none. Whole lines are
+    // selectable: copying one log line at a time is what a console is for.
+    int selected_{-1};
     char filter_[128]{};
 };
 

@@ -30,7 +30,7 @@ target_include_directories(IVX PUBLIC
 # handed to the linker as a file name ("LNK1104: cannot open file YAML_CPP.lib"), while
 # a wrong namespaced name fails at configure time.
 target_link_libraries(IVX PUBLIC
-    SDL3::SDL3 glad imgui glm stb_image BqLog opengl32 entt yaml-cpp::yaml-cpp)
+    SDL3::SDL3 glad imgui glm stb_image BqLog opengl32 entt yaml-cpp::yaml-cpp comdlg32)
 
 target_compile_definitions(IVX PUBLIC
     IVX_PLATFORM_WINDOWS

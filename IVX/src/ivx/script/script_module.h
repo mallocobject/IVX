@@ -36,9 +36,12 @@ struct ScriptRegistrar {
 
 // The exported entry point every script module must provide:
 //
-//   extern "C" IVX_SCRIPT_MODULE_EXPORT
+//   extern "C" __declspec(dllexport)
 //   void ivx_register_scripts(const ivx::ScriptRegistrar *registrar,
 //                             const ivx::ScriptApi *api);
+//
+// Modules also export ivx_script_module_abi(); the host compares that
+// fingerprint with its own before calling the entry point (see script_abi.h).
 //
 // Each module gets its own copy of the slot below (inline variables are not
 // merged across Windows DLLs), so the host's install and the module's install
@@ -67,6 +70,8 @@ inline bool script_mouse_pressed(int button) {
            g_script_api->mouse_pressed(button);
 }
 
+// Returns (0, 0) until a host installs the table, so a script can call it
+// unconditionally.
 inline void script_mouse_pos(float *x, float *y) {
     if (g_script_api != nullptr && g_script_api->mouse_pos != nullptr) {
         g_script_api->mouse_pos(x, y);

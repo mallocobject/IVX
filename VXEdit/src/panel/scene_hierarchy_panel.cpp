@@ -57,7 +57,11 @@ void SceneHierarchyPanel::set_selected(Entity entity) {
 
 void SceneHierarchyPanel::on_imgui() {
     if (!context_.scene) {
-        ImGui::TextUnformatted("No scene");
+        // The editor starts without a scene (File > New or File > Open).
+        // Creating entities here would have nowhere to be saved, so the panel
+        // only explains how to get one.
+        ImGui::TextDisabled("No scene loaded.");
+        ImGui::TextDisabled("Use File > New or File > Open.");
         return;
     }
     context_.validate_selection();

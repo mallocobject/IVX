@@ -284,4 +284,10 @@ ImVec4 text_muted() {
     return color(kTextDisabled);
 }
 
+float log_font_size() {
+    // Style::FontSizeBase is the UI base size times the scale; log text uses
+    // the smaller monospace base at kLogFontScale of it.
+    return kBaseMonoFontSize * current_scale() * kLogFontScale;
+}
+
 } // namespace ivx::ui

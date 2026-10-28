@@ -31,3 +31,5 @@
 #include "ivx/script/script_module.h"
 
 #include "ivx/serialize/serializer.h"
+
+#include "ivx/utils/file_dialog.h"

@@ -372,7 +372,7 @@ void warm_up_script_build_environment() {
 #endif
 }
 
-bool build_script_module(bool reconfigure, std::string &log) {
+bool build_script_module(bool reconfigure, bool clean_first, std::string &log) {
 #if defined(IVX_PLATFORM_WINDOWS)
     if (!ensure_msvc_environment(log)) {
         return false;
@@ -386,8 +386,13 @@ bool build_script_module(bool reconfigure, std::string &log) {
     // changed and re-runs CMake itself when the source glob changes. Nothing
     // here knows about the editor's solution, so a script rebuild cannot
     // invalidate it.
+    //
+    // `--clean-first` throws the objects away without touching the rules: used
+    // after a module was rejected, where stale objects would reproduce the same
+    // bad DLL.
     const std::string build_command =
-        "cmake --build \"" + std::string{SCRIPTS_BUILD_DIR} + "\" 2>&1";
+        "cmake --build \"" + std::string{SCRIPTS_BUILD_DIR} + "\"" +
+        (clean_first ? " --clean-first" : "") + " 2>&1";
     IVX_CORE_DEBUG("script build command: {}", build_command);
     const int build_exit = run_command("\"" + build_command + "\"", log);
     if (log.empty()) {
@@ -396,6 +401,7 @@ bool build_script_module(bool reconfigure, std::string &log) {
     return build_exit == 0;
 #else
     (void)reconfigure;
+    (void)clean_first;
     log = "script modules are only implemented for Windows";
     return false;
 #endif

@@ -10,13 +10,13 @@ namespace ivx {
 
 // Name <-> script type table.
 //
-// Scripts usually come from a module DLL (VXScripts), so this is filled at load
-// time and cleared before the module is unloaded -- the function pointers would
-// dangle afterwards. Scripts compiled into the editor can still register
-// through the add<T>() helper.
+// Scripts come from a module DLL (VXScripts), so this is filled at load time
+// and cleared before the module is unloaded -- the function pointers would
+// dangle afterwards.
 //
-// The function pointers identify the type: bind<T>() produces the same
-// instantiate/destroy addresses for every call, so they work as a type key.
+// The function pointers identify the type: the instantiate/destroy pair
+// produced for one script type is always the same pair, so it works as a type
+// key.
 struct ScriptEntry {
     std::string name;
     ScriptableEntity *(*instantiate)(){nullptr};

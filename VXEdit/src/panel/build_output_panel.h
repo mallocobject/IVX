@@ -3,6 +3,8 @@
 #include "panel.h"
 
 #include <string>
+#include <string_view>
+#include <vector>
 
 namespace ivx {
 class ScriptHost;
@@ -26,6 +28,10 @@ class BuildOutputPanel : public Panel {
     void draw_status();
 
   private:
+    // Puts the selected line - or the whole log when nothing is selected - on
+    // the clipboard.
+    void copy_selected_or_all();
+
     ScriptHost &host_;
 
     // The build log is stable while idle, so the widget only re-reads it when
@@ -35,6 +41,11 @@ class BuildOutputPanel : public Panel {
     bool auto_scroll_{true};
     // Idle -> building edge, used to bring the tab to the front.
     bool was_building_{false};
+
+    // Line view of the log, rebuilt when its length changes. string_views keep
+    // the split cheap: the text itself stays in ScriptHost.
+    std::vector<std::string_view> lines_;
+    int selected_{-1};
 };
 
 } // namespace ivx

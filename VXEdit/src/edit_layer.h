@@ -92,7 +92,9 @@ class EditLayer : public Layer {
     bool layout_initialized_{false};
     bool reset_layout_requested_{false};
     // Set once the default camera controller has been bound (or found already
-    // bound), so unbinding it in the inspector sticks.
+    // bound) for the current scene, so unbinding it in the inspector sticks.
+    // Reset by create_scene() and load_scene(): the flag belongs to one scene,
+    // not to the session.
     bool default_script_bound_{false};
     // True while some script source is newer than the loaded module (shows a
     // hint in the status bar; never triggers a build on its own).

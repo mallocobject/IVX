@@ -33,12 +33,14 @@ class ScriptHost {
 
     bool load_initial(std::string &error);
 
-    // True when a script source (or the script project's CMakeLists) is newer
-    // than the built module. Loading the module in that state silently runs the
-    // previous build and the editor binds scripts against stale code, so the
-    // caller is expected to schedule a rebuild. `newest` receives the offending
-    // file.
-    bool has_newer_sources(std::filesystem::path *newest = nullptr) const;
+    // True when a script source, the script project's CMakeLists or one of the
+    // engine headers it is compiled against is newer than the built module.
+    // Loading the module in that state silently runs the previous build and the
+    // editor binds scripts against stale code, so the caller is expected to
+    // schedule a rebuild. Engine headers count because a layout change there (a
+    // component gaining a member, a virtual added to ScriptableEntity)
+    // invalidates the module without touching a script.
+    bool has_newer_sources() const;
 
     // Destroys every script instance while the module is still loaded. Must run
     // before the DLL is unloaded: on_destroy() executes code that lives in it.
@@ -117,9 +119,10 @@ class ScriptHost {
     bool building_{false};
     bool last_build_ok_{false};
     bool last_build_reconfigured_{false};
-    // Set when a module was rejected at load time: the next build deletes the
-    // DLL first so that Ninja relinks instead of reporting "no work to do".
-    bool force_relink_{false};
+    // Set when a module was rejected at load time: the next build throws away
+    // the DLL and the object files, so it really recompiles instead of
+    // answering "no work to do".
+    bool force_rebuild_{false};
     float build_seconds_{0.f};
     std::chrono::steady_clock::time_point build_start_{};
     std::string last_log_;

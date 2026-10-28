@@ -9,6 +9,10 @@ namespace ivx::ui {
 inline constexpr float kBaseFontSize = 17.f;
 // Monospace is set a little smaller: the same nominal size looks larger in it.
 inline constexpr float kBaseMonoFontSize = 16.f;
+// Console and build output use the code face at this fraction of the monospace
+// size: log lines are dense and a whole compiler log should fit on screen. This
+// is the one number to change if the logs read too small or too large.
+inline constexpr float kLogFontScale = 0.85f;
 
 // Photoshop-style dark theme: neutral grays, square corners, tight rows, one
 // blue accent used only for selection/focus, and a proportional UI font with a
@@ -30,6 +34,10 @@ const Fonts &load_fonts();
 // keeps its proportions. Persisted next to the editor assets.
 void set_scale(float scale);
 float scale();
+
+// Base size for log text (Console, Build output), already multiplied by the UI
+// scale. Pass it to ImGui::PushFont(fonts.mono, ui::log_font_size()).
+float log_font_size();
 
 // The two colours widgets occasionally need beyond the stock ImGui ones: the
 // single accent (Adobe blue, used for selection/focus everywhere) and the muted

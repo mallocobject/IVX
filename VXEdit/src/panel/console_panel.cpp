@@ -110,9 +110,20 @@ void ConsolePanel::on_imgui() {
 void ConsolePanel::draw_toolbar() {
     if (ImGui::Button("Clear")) {
         entries_.clear();
+        selected_ = -1;
         for (auto &count : counts_) {
             count = 0;
         }
+    }
+
+    ImGui::SameLine();
+    // Copies the clicked line, or everything that passes the filters.
+    if (ImGui::Button("Copy")) {
+        copy_visible_lines();
+    }
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Copy the selected line to the clipboard.\n"
+                          "With nothing selected, copies every visible line.");
     }
 
     ImGui::SameLine();
@@ -159,8 +170,9 @@ void ConsolePanel::draw_toolbar() {
 
 void ConsolePanel::draw_entries() {
     // Log lines are columns of similar-looking glyphs: monospace keeps
-    // timestamps and banners aligned.
-    ImGui::PushFont(ui::load_fonts().mono, 0.f);
+    // timestamps and banners aligned, at a size a notch smaller than the UI so
+    // more of the log fits.
+    ImGui::PushFont(ui::load_fonts().mono, ui::log_font_size());
 
     if (!ImGui::BeginChild("##console_scroll",
                            ImVec2{0.f, 0.f},
@@ -171,14 +183,30 @@ void ConsolePanel::draw_entries() {
         return;
     }
 
-    for (const Entry &entry : entries_) {
+    for (std::size_t i = 0; i < entries_.size(); ++i) {
+        const Entry &entry = entries_[i];
         if (!visible(entry.level) || !matches_filter(entry.text)) {
             continue;
         }
 
+        // Selectable instead of TextUnformatted: a clicked line can be copied
+        // (Ctrl+C or the Copy button), which is how an error message ends up in
+        // a bug report.
         ImGui::PushStyleColor(ImGuiCol_Text, level_color(entry.level));
-        ImGui::TextUnformatted(entry.text.c_str());
+        ImGui::PushID(static_cast<int>(i));
+        if (ImGui::Selectable(entry.text.c_str(),
+                              selected_ == static_cast<int>(i))) {
+            selected_ = static_cast<int>(i);
+        }
+        ImGui::PopID();
         ImGui::PopStyleColor();
+    }
+
+    // Ctrl+C while the log has focus: copy the selection, or everything
+    // visible.
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+        ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+        copy_visible_lines();
     }
 
     if (scroll_to_bottom_ && auto_scroll_) {
@@ -188,6 +216,25 @@ void ConsolePanel::draw_entries() {
 
     ImGui::EndChild();
     ImGui::PopFont();
+}
+
+void ConsolePanel::copy_visible_lines() {
+    std::string text;
+    for (std::size_t i = 0; i < entries_.size(); ++i) {
+        const Entry &entry = entries_[i];
+        const int index = static_cast<int>(i);
+        const bool is_selected = selected_ == index;
+        if (!is_selected && (selected_ >= 0 || !visible(entry.level) ||
+                             !matches_filter(entry.text))) {
+            continue; // a selection narrows the copy down to that one line
+        }
+        text += entry.text;
+        text += '\n';
+    }
+
+    if (!text.empty()) {
+        ImGui::SetClipboardText(text.c_str());
+    }
 }
 
 bool ConsolePanel::visible(LogLevel level) const {

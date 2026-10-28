@@ -35,9 +35,10 @@ class ScriptLibrary {
 // Builds only the script module (VXScripts.dll): the engine and the editor are
 // separate targets and are not touched. `reconfigure` runs CMake first, which
 // is only needed when the *set* of script files changed; plain source edits go
-// straight to the compiler. Blocks while compiling, so call it from a worker
-// thread (see ScriptHost).
-bool build_script_module(bool reconfigure, std::string &log);
+// straight to the compiler. `clean_first` discards the objects too, which is
+// what a rejected module needs (stale objects would rebuild the same bad DLL).
+// Blocks while compiling, so call it from a worker thread (see ScriptHost).
+bool build_script_module(bool reconfigure, bool clean_first, std::string &log);
 
 // True when the Ninja tree under SCRIPTS_BUILD_DIR cannot build this module as
 // it is: no build.ninja yet, or a cache that remembers another configuration or

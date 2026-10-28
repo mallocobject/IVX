@@ -39,24 +39,61 @@ void BuildOutputPanel::on_imgui() {
         return;
     }
 
-    // Compiler output is column aligned: monospace, like the code editor.
-    ImGui::PushFont(ui::load_fonts().mono, 0.f);
+    // Compiler output is column aligned: monospace, like the code editor, and
+    // smaller than the UI so a whole compiler log fits (see ui::kLogFontScale).
+    ImGui::PushFont(ui::load_fonts().mono, ui::log_font_size());
     if (ImGui::BeginChild("##build_log",
                           ImVec2{0.f, 0.f},
                           ImGuiChildFlags_None,
                           ImGuiWindowFlags_HorizontalScrollbar)) {
+        // Re-split only when the log changed; the views point into ScriptHost's
+        // string.
+        const std::string &log = host_.build_log();
+        const std::size_t length = log.size();
+        if (length != shown_length_) {
+            shown_length_ = length;
+            scroll_to_bottom_ = true;
+            selected_ = -1;
+            lines_.clear();
+            std::size_t begin = 0;
+            while (begin <= log.size()) {
+                const std::size_t end = log.find('\n', begin);
+                lines_.emplace_back(
+                    log.data() + begin,
+                    (end == std::string::npos ? log.size() : end) - begin);
+                if (end == std::string::npos) {
+                    break;
+                }
+                begin = end + 1;
+            }
+        }
+
         ImGui::PushStyleColor(ImGuiCol_Text, ImVec4{0.78f, 0.78f, 0.80f, 1.f});
-        ImGui::TextUnformatted(host_.build_log().c_str());
+        for (std::size_t i = 0; i < lines_.size(); ++i) {
+            if (lines_[i].empty()) {
+                ImGui::Spacing();
+                continue;
+            }
+            ImGui::PushID(static_cast<int>(i));
+            // Selectable, not TextUnformatted: a clicked line can be copied,
+            // which is what a build log is usually needed for.
+            if (ImGui::Selectable(std::string{lines_[i]}.c_str(),
+                                  selected_ == static_cast<int>(i))) {
+                selected_ = static_cast<int>(i);
+            }
+            ImGui::PopID();
+        }
         ImGui::PopStyleColor();
+
+        // Ctrl+C while the log has focus: the selection, or the whole log.
+        if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows) &&
+            ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C, false)) {
+            copy_selected_or_all();
+        }
 
         // Follow the tail while a build runs, and once after it finishes, so
         // the error at the end of a failed build is on screen without
         // scrolling.
-        const std::size_t length = host_.build_log().size();
-        if (length != shown_length_) {
-            shown_length_ = length;
-            scroll_to_bottom_ = true;
-        }
         if (auto_scroll_ && (host_.is_building() || scroll_to_bottom_)) {
             ImGui::SetScrollHereY(1.f);
             if (!host_.is_building()) {
@@ -66,6 +103,18 @@ void BuildOutputPanel::on_imgui() {
     }
     ImGui::EndChild();
     ImGui::PopFont();
+}
+
+void BuildOutputPanel::copy_selected_or_all() {
+    const std::string &log = host_.build_log();
+    if (selected_ >= 0 && static_cast<std::size_t>(selected_) < lines_.size()) {
+        const std::string line{lines_[static_cast<std::size_t>(selected_)]};
+        ImGui::SetClipboardText(line.c_str());
+        return;
+    }
+    if (!log.empty()) {
+        ImGui::SetClipboardText(log.c_str());
+    }
 }
 
 void BuildOutputPanel::draw_status() {
@@ -79,6 +128,18 @@ void BuildOutputPanel::draw_status() {
     if (ImGui::IsItemHovered()) {
         ImGui::SetTooltip(
             "Compile VXScripts.dll on a worker thread and hot reload it.");
+    }
+
+    ImGui::SameLine();
+    // Copies the clicked line, or the whole log.
+    ImGui::BeginDisabled(host_.build_log().empty());
+    if (ImGui::Button("Copy")) {
+        copy_selected_or_all();
+    }
+    ImGui::EndDisabled();
+    if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Copy the selected line to the clipboard.\n"
+                          "With nothing selected, copies the whole log.");
     }
 
     ImGui::SameLine();

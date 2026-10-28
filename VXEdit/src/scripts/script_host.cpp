@@ -10,23 +10,20 @@
 #include <chrono>
 #include <format>
 #include <fstream>
-#include <iterator>
-#include <set>
 #include <utility>
 #include <vector>
 
 namespace ivx {
 namespace {
 
-// Folds the newest matching file of an iterator range into
-// `latest`/`latest_path`. Written against std::filesystem iterators so the flat
-// and the recursive scans below share one loop; every step uses a local
-// error_code because a single shared one gets clobbered by the next call.
+// Folds the newest matching file of an iterator range into `latest`. Written
+// against std::filesystem iterators so the flat and the recursive scans below
+// share one loop; every step uses a local error_code because a single shared
+// one gets clobbered by the next call.
 template <typename Iterator>
 void fold_newest(Iterator it,
                  std::initializer_list<std::string_view> extensions,
-                 std::filesystem::file_time_type &latest,
-                 std::filesystem::path &latest_path) {
+                 std::filesystem::file_time_type &latest) {
     for (; it != Iterator{}; ++it) {
         std::error_code entry_ec;
         if (!it->is_regular_file(entry_ec) || entry_ec) {
@@ -54,7 +51,6 @@ void fold_newest(Iterator it,
         }
         if (time > latest) {
             latest = time;
-            latest_path = path;
         }
     }
 }
@@ -201,12 +197,12 @@ bool ScriptHost::load_initial(std::string &error) {
         // a file copied from another configuration), a plain rebuild would
         // answer "no work to do" because the DLL looks newer than its sources.
         // begin_build() deletes the file first, which forces a relink.
-        force_relink_ = true;
+        force_rebuild_ = true;
     }
     return loaded;
 }
 
-bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
+bool ScriptHost::has_newer_sources() const {
     std::error_code ec;
     const std::filesystem::path module{SCRIPTS_DLL};
     const auto module_time = std::filesystem::last_write_time(module, ec);
@@ -215,7 +211,6 @@ bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
     }
 
     std::filesystem::file_time_type latest = module_time;
-    std::filesystem::path latest_path;
 
     // 1) The script project itself. It is flat (sources, headers and its
     // CMakeLists next to each other), so a plain directory_iterator is enough.
@@ -223,8 +218,7 @@ bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
         std::error_code dir_ec;
         fold_newest(std::filesystem::directory_iterator{scripts_dir_, dir_ec},
                     {".cpp", ".h", ".hpp"},
-                    latest,
-                    latest_path);
+                    latest);
         // The file list is a glob, so touching CMakeLists also needs a rebuild.
         const std::filesystem::path cmake_lists =
             scripts_dir_ / std::filesystem::path{"CMakeLists.txt"};
@@ -233,7 +227,6 @@ bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
             std::filesystem::last_write_time(cmake_lists, file_ec);
         if (!file_ec && time > latest) {
             latest = time;
-            latest_path = cmake_lists;
         }
     }
 
@@ -248,17 +241,10 @@ bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
             std::filesystem::recursive_directory_iterator{
                 std::filesystem::path{IVX_ROOT_DIR} / "IVX" / "src", dir_ec},
             {".h", ".hpp"},
-            latest,
-            latest_path);
+            latest);
     }
 
-    if (latest <= module_time) {
-        return false;
-    }
-    if (newest != nullptr) {
-        *newest = std::move(latest_path);
-    }
-    return true;
+    return latest > module_time;
 }
 
 void ScriptHost::unbind_all() {
@@ -267,7 +253,7 @@ void ScriptHost::unbind_all() {
     }
     for (auto [handle, script] :
          scene_->registry().view<NativeScriptComponent>().each()) {
-        script.unbind(); // clears script_name too; captured below
+        script.unbind();
     }
 }
 
@@ -308,13 +294,18 @@ bool ScriptHost::begin_build() {
     library_.unload();
 
     // A module that was rejected (stale layout, copied in from another
-    // configuration) is newer than its own sources, so Ninja would report "no
-    // work to do" and the module would stay rejected forever. Dropping the file
-    // forces a relink, which is cheap.
-    if (force_relink_) {
+    // configuration) is newer than its own sources, so Ninja would answer "no
+    // work to do" and the module would stay rejected forever. Deleting the DLL
+    // alone is not enough: the *objects* can be stale as well (a header change
+    // Ninja's dependency database missed), and re-linking them reproduces the
+    // same rejected module - which is how a rejected module could never
+    // recover. `--clean-first` discards the objects without touching the rules;
+    // it costs a few seconds and only happens after a rejection.
+    const bool clean_first = force_rebuild_;
+    if (clean_first) {
         std::error_code ignored;
         std::filesystem::remove(SCRIPTS_DLL, ignored);
-        force_relink_ = false;
+        force_rebuild_ = false;
     }
 
     // Only a changed file *set* needs a configure pass (the sources are
@@ -327,14 +318,15 @@ bool ScriptHost::begin_build() {
     last_log_.clear();
 
     const bool reconfigure = last_build_reconfigured_;
-    IVX_INFO("Scripts: building{}",
-             reconfigure ? " (reconfiguring, file set changed)" : "");
+    IVX_INFO("Scripts: building{}{}",
+             reconfigure ? " (reconfiguring, file set changed)" : "",
+             clean_first ? " (clean rebuild of a rejected module)" : "");
 
     // The worker only compiles. Everything that touches the scene or the loader
     // stays on the main thread (see poll_build()).
-    worker_ = std::thread{[this, reconfigure] {
+    worker_ = std::thread{[this, reconfigure, clean_first] {
         std::string log;
-        const bool ok = build_script_module(reconfigure, log);
+        const bool ok = build_script_module(reconfigure, clean_first, log);
         // The thread's last statement: publish the result.
         {
             std::lock_guard<std::mutex> lock(result_mutex_);
@@ -394,7 +386,6 @@ void ScriptHost::poll_build() {
     }
     pending_bindings_.clear();
 
-    const bool ok = last_build_ok_ && loaded;
     building_ = false;
     build_seconds_ = std::chrono::duration<float>(
                          std::chrono::steady_clock::now() - build_start_)
@@ -411,7 +402,7 @@ void ScriptHost::poll_build() {
         // DLL that was copied in from another configuration looks newer than
         // its sources, so Ninja would answer "no work to do" and the module
         // would stay rejected forever.
-        force_relink_ = true;
+        force_rebuild_ = true;
         return;
     }
 
