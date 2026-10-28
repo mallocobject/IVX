@@ -2,6 +2,7 @@
 
 #include "ivx/core/input.h"
 #include "ivx/core/logger.h"
+#include "ivx/script/script_abi.h"
 #include "ivx/script/script_module.h"
 #include "script_registry.h"
 
@@ -72,6 +73,7 @@ void registrar_add(const char *name,
 const ScriptRegistrar g_registrar{kScriptModuleVersion, &registrar_add};
 
 using RegisterScriptsFn = void (*)(const ScriptRegistrar *, const ScriptApi *);
+using ScriptAbiFn = const char *(*)();
 
 } // namespace
 
@@ -87,6 +89,30 @@ bool ScriptLibrary::load(const std::filesystem::path &dll, std::string &error) {
     if (module == nullptr) {
         error = "LoadLibrary failed (" + std::to_string(::GetLastError()) +
                 "): " + dll.string();
+        return false;
+    }
+
+    // Layout handshake first: a module built against a different engine layout
+    // (component gained a member, vtable reordered, other CRT, other Ref
+    // flavour) would read the wrong offsets and take the process down inside
+    // the DLL. Refusing it turns a crash into a rebuild.
+    auto *abi = reinterpret_cast<ScriptAbiFn>(
+        ::GetProcAddress(module, "ivx_script_module_abi"));
+    if (abi == nullptr) {
+        ::FreeLibrary(module);
+        error =
+            dll.filename().string() +
+            " has no ivx_script_module_abi export (built by an older editor?)";
+        return false;
+    }
+
+    const std::string module_abi = abi() != nullptr ? std::string{abi()} : "?";
+    const std::string editor_abi = script_abi_fingerprint();
+    if (module_abi != editor_abi) {
+        ::FreeLibrary(module);
+        error = dll.filename().string() +
+                " was built for a different engine (" + module_abi +
+                ", editor is " + editor_abi + ")";
         return false;
     }
 
@@ -235,20 +261,34 @@ bool ensure_msvc_environment(std::string &log) {
     return true;
 }
 
-// Reads CMAKE_BUILD_TYPE out of an existing Ninja tree, so a stale
-// configuration can be told apart from a matching one without running CMake.
-std::string cached_build_type(const std::filesystem::path &build_dir) {
+// Reads one cache entry out of an existing Ninja tree, so a stale configuration
+// can be told apart from a matching one without running CMake.
+std::string cached_entry(const std::filesystem::path &build_dir,
+                         std::string_view key) {
     std::ifstream cache{build_dir / "CMakeCache.txt"};
     std::string line;
     while (std::getline(cache, line)) {
-        constexpr std::string_view key = "CMAKE_BUILD_TYPE:";
-        if (line.rfind(key, 0) == 0) {
-            const std::size_t equals = line.find('=');
-            return equals == std::string::npos ? std::string{}
-                                               : line.substr(equals + 1);
+        if (line.rfind(key, 0) != 0) {
+            continue;
         }
+        const std::size_t equals = line.find('=');
+        return equals == std::string::npos ? std::string{}
+                                           : line.substr(equals + 1);
     }
     return {};
+}
+
+std::string cached_build_type(const std::filesystem::path &build_dir) {
+    return cached_entry(build_dir, "CMAKE_BUILD_TYPE:");
+}
+
+// The repository root the tree was configured against. A tree configured with a
+// relative or unexpanded root ($PWD, %CD%, a moved checkout, ...) has include
+// paths that do not exist, so every build fails on the first #include until the
+// tree is wiped - that is the "the DLL never links" case, and it has to heal
+// itself.
+std::string cached_ivx_root(const std::filesystem::path &build_dir) {
+    return cached_entry(build_dir, "IVX_ROOT:");
 }
 
 // Configures the standalone Ninja project. Only needed once (or when the
@@ -266,11 +306,27 @@ bool configure_script_project(std::string &log) {
         // layout and the module corrupts whatever it is handed. Start over
         // instead.
         const std::string cached = cached_build_type(build_dir);
-        if (cached.empty() || cached == IVX_BUILD_CONFIG) {
-            return true; // already configured for this configuration
+        const std::string root = cached_ivx_root(build_dir);
+
+        const bool wrong_config = !cached.empty() && cached != IVX_BUILD_CONFIG;
+        const bool wrong_root =
+            !root.empty() && root != std::string{IVX_ROOT_DIR};
+
+        if (!wrong_config && !wrong_root) {
+            return true; // already configured for this configuration and
+                         // checkout
         }
-        log += "script build directory was configured for " + cached +
-               ", rebuilding for " + IVX_BUILD_CONFIG + "\n";
+
+        if (wrong_config) {
+            log += "script build directory was configured for " + cached +
+                   ", rebuilding for " + IVX_BUILD_CONFIG + "\n";
+        }
+        if (wrong_root) {
+            log += "script build directory points at '" + root +
+                   "' instead of '" + std::string{IVX_ROOT_DIR} +
+                   "', reconfiguring\n";
+        }
+
         std::error_code ignored;
         std::filesystem::remove_all(build_dir, ignored);
     }
@@ -287,6 +343,20 @@ bool configure_script_project(std::string &log) {
     return true;
 }
 } // namespace
+
+bool script_project_needs_reconfigure() {
+    const std::filesystem::path build_dir = SCRIPTS_BUILD_DIR;
+    if (!std::filesystem::exists(build_dir / "build.ninja")) {
+        return true;
+    }
+
+    const std::string cached = cached_build_type(build_dir);
+    const std::string root = cached_ivx_root(build_dir);
+    if (!cached.empty() && cached != IVX_BUILD_CONFIG) {
+        return true;
+    }
+    return !root.empty() && root != std::string{IVX_ROOT_DIR};
+}
 
 void warm_up_script_build_environment() {
 #if defined(IVX_PLATFORM_WINDOWS)

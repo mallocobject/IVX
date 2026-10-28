@@ -2,6 +2,32 @@ Format: 1
 Scene: Untitled
 Entities:
   - Entity: 0
+    Tag: Colorful Square
+    Transform:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: ~
+    SpriteRenderer:
+      Size: [400, 400]
+      TilingFactor: 9.61
+      Color: [0.9716599, 0.12981689, 0.12981689, 1]
+      HasTexture: false
+  - Entity: 0
+    Tag: Entity
+    Transform:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: 0
+    SpriteRenderer:
+      Size: [276.5, 203.5]
+      TilingFactor: 1
+      Color: [1, 1, 1, 1]
+      HasTexture: false
+  - Entity: 0
     Tag: Camera
     Transform:
       Translation: [0, 0, 22.5]
@@ -24,16 +50,3 @@ Entities:
     NativeScript:
       Script: CameraController
       Enabled: true
-  - Entity: 0
-    Tag: Colorful Square
-    Transform:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    Relationship:
-      Parent: ~
-    SpriteRenderer:
-      Size: [400, 400]
-      TilingFactor: 1
-      Color: [1, 1, 1, 1]
-      HasTexture: true

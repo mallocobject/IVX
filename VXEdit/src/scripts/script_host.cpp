@@ -195,7 +195,15 @@ std::size_t ScriptHost::bind_scene_scripts() {
 }
 
 bool ScriptHost::load_initial(std::string &error) {
-    return library_.load(SCRIPTS_DLL, error);
+    const bool loaded = library_.load(SCRIPTS_DLL, error);
+    if (!loaded) {
+        // The module on disk is unusable. Whatever put it there (a stale build,
+        // a file copied from another configuration), a plain rebuild would
+        // answer "no work to do" because the DLL looks newer than its sources.
+        // begin_build() deletes the file first, which forces a relink.
+        force_relink_ = true;
+    }
+    return loaded;
 }
 
 bool ScriptHost::has_newer_sources(std::filesystem::path *newest) const {
@@ -268,8 +276,12 @@ bool ScriptHost::needs_reconfigure() const {
     // (SCRIPTS_PROJECT_DIR) and its own build directory. Configuring is a
     // one-time cost: after that Ninja re-runs CMake by itself when scripts are
     // added or removed, thanks to CONFIGURE_DEPENDS in that project.
-    return !std::filesystem::exists(std::filesystem::path{SCRIPTS_BUILD_DIR} /
-                                    "build.ninja");
+    //
+    // A tree that remembers another configuration or another checkout root is
+    // not usable either: its include paths point somewhere else, so the build
+    // dies on the first #include. script_project_needs_reconfigure() covers
+    // those cases and the configure pass wipes the tree.
+    return script_project_needs_reconfigure();
 }
 
 bool ScriptHost::begin_build() {
@@ -294,6 +306,16 @@ bool ScriptHost::begin_build() {
     // cannot overwrite a DLL that is still mapped into the process.
     unbind_all();
     library_.unload();
+
+    // A module that was rejected (stale layout, copied in from another
+    // configuration) is newer than its own sources, so Ninja would report "no
+    // work to do" and the module would stay rejected forever. Dropping the file
+    // forces a relink, which is cheap.
+    if (force_relink_) {
+        std::error_code ignored;
+        std::filesystem::remove(SCRIPTS_DLL, ignored);
+        force_relink_ = false;
+    }
 
     // Only a changed file *set* needs a configure pass (the sources are
     // globbed); a plain source edit goes straight to the compiler.
@@ -378,16 +400,32 @@ void ScriptHost::poll_build() {
                          std::chrono::steady_clock::now() - build_start_)
                          .count();
 
+    if (!loaded) {
+        // The compiler was happy but the module is unusable (stale layout,
+        // missing export, wrong architecture). Say so: "build failed" would
+        // send the reader to the compiler output, which is empty in this case.
+        IVX_ERROR("Scripts: build {}, but the module was rejected: {}",
+                  last_build_ok_ ? "ok" : "failed",
+                  error);
+        // Force the next attempt to relink instead of trusting the timestamp: a
+        // DLL that was copied in from another configuration looks newer than
+        // its sources, so Ninja would answer "no work to do" and the module
+        // would stay rejected forever.
+        force_relink_ = true;
+        return;
+    }
+
     IVX_INFO(
         "Scripts: build {}{} in {:.2f} s, {} type(s), {} binding(s) restored",
-        ok ? "ok" : "FAILED",
+        last_build_ok_ ? "ok" : "FAILED",
         last_build_reconfigured_ ? " (reconfigured)" : "",
         build_seconds_,
         ScriptRegistry::get().entries().size(),
         restored);
-    if (!ok) {
-        // The compiler output is not echoed into the Console any more, it has
-        // its own panel.
+    if (!last_build_ok_) {
+        // Loading the previous DLL still works when the build failed, so the
+        // editor keeps its script types; the compiler output is in the Build
+        // tab.
         IVX_ERROR(
             "Script build failed — the compiler output is in the Build tab");
     }

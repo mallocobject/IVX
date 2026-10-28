@@ -17,8 +17,6 @@
 namespace ivx {
 namespace {
 
-static std::unordered_map<entt::entity, uint64_t> id_to_uid;
-
 // ---- writing ---------------------------------------------------------------
 
 YAML::Emitter &operator<<(YAML::Emitter &out, const glm::vec2 &value) {
@@ -130,7 +128,7 @@ YAML::Emitter &operator<<(YAML::Emitter &out, Entity entity) {
     if (const auto &parent =
             entity.get_component<RelationshipComponent>().parent;
         parent != entt::null) {
-        out << id_to_uid[parent];
+        out << entity.get_component<IdComponent>().uid;
     } else {
         out << YAML::Null; // root
     }
@@ -407,13 +405,17 @@ void Serializer::serialize(const Ref<Scene> &scene,
 
     Scene &world = *scene;
 
-    id_to_uid.clear();
-    id_to_uid.reserve(world.registry().view<TagComponent>().size());
-
-    auto entities = world.get_root_entities();
-
-    for (Entity root : entities) {
-        id_to_uid[root.handle()] = root.get_component<IdComponent>().uid;
+    std::vector<Entity> order;
+    const auto collect = [&](auto &&self, Entity e) -> void {
+        order.push_back(e);
+        for (entt::entity child : e.children()) {
+            if (world.registry().valid(child)) {
+                self(self, Entity{child, &world});
+            }
+        }
+    };
+    for (Entity root : world.get_root_entities()) {
+        collect(collect, root);
     }
 
     YAML::Emitter out;
@@ -422,7 +424,7 @@ void Serializer::serialize(const Ref<Scene> &scene,
     out << YAML::Key << "Format" << YAML::Value << k_format_version;
     out << YAML::Key << "Scene" << YAML::Value << world.get_name();
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-    for (Entity entity : entities) {
+    for (Entity entity : order) {
         out << entity;
     }
     out << YAML::EndSeq;
@@ -450,7 +452,6 @@ void Serializer::serialize(const Ref<Scene> &scene,
         return;
     }
 
-    IVX_INFO(
-        "Scene saved: {} ({} entities)", filepath.string(), entities.size());
+    IVX_INFO("Scene saved: {} ({} entities)", filepath.string(), order.size());
 }
 } // namespace ivx

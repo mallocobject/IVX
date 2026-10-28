@@ -113,4 +113,22 @@ struct CameraComponent {
 
 struct NativeScriptComponent;
 
+// Every component type that may cross the script boundary. Scripts call
+// get_component<T>(), which instantiates entt's lookup inside the module DLL,
+// so the layout of each of these has to match between the module and the
+// engine. Listed once, here, so a new component cannot silently drop out of the
+// ABI fingerprint (see ivx/script/script_abi.h).
+//
+// RelationshipComponent is included even though it holds entt handles: the
+// serializer and the hierarchy data sit next to the other components in the
+// same storage.
+#define IVX_ABI_COMPONENT_LIST(X)                                              \
+    X(TagComponent)                                                            \
+    X(IdComponent)                                                             \
+    X(TransformComponent)                                                      \
+    X(RelationshipComponent)                                                   \
+    X(SpriteRendererComponent)                                                 \
+    X(CameraComponent)                                                         \
+    X(NativeScriptComponent)
+
 } // namespace ivx

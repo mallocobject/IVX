@@ -117,6 +117,9 @@ class ScriptHost {
     bool building_{false};
     bool last_build_ok_{false};
     bool last_build_reconfigured_{false};
+    // Set when a module was rejected at load time: the next build deletes the
+    // DLL first so that Ninja relinks instead of reporting "no work to do".
+    bool force_relink_{false};
     float build_seconds_{0.f};
     std::chrono::steady_clock::time_point build_start_{};
     std::string last_log_;

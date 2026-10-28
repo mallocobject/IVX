@@ -39,6 +39,13 @@ class ScriptLibrary {
 // thread (see ScriptHost).
 bool build_script_module(bool reconfigure, std::string &log);
 
+// True when the Ninja tree under SCRIPTS_BUILD_DIR cannot build this module as
+// it is: no build.ninja yet, or a cache that remembers another configuration or
+// another checkout path. A tree configured with a wrong root has include paths
+// that do not exist and fails on the first #include, so the caller has to wipe
+// it instead of trusting it.
+bool script_project_needs_reconfigure();
+
 // Captures the MSVC environment (vcvars64.bat) on a background thread, so the
 // first script build does not have to wait for it.
 void warm_up_script_build_environment();
