@@ -27,3 +27,7 @@
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
 #include "ivx/scene/scriptable_entity.h"
+
+#include "ivx/script/script_module.h"
+
+#include "ivx/serialize/serializer.h"

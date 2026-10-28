@@ -36,32 +36,26 @@ void InspectorPanel::on_imgui() {
 }
 
 void InspectorPanel::draw_entity_header(Entity entity) {
-    const auto *tag = entity.try_get_component<TagComponent>();
-    if (tag == nullptr) {
-        return;
-    }
+    auto &tag = entity.get_component<TagComponent>();
 
     // Re-seed the edit buffer whenever the selection changes, so typing in the
     // field is not overwritten by the component value every frame.
     if (name_buffer_entity_ != entity.handle()) {
         name_buffer_entity_ = entity.handle();
         std::snprintf(
-            name_buffer_, sizeof(name_buffer_), "%s", tag->value.c_str());
+            name_buffer_, sizeof(name_buffer_), "%s", tag.value.c_str());
     }
 
     // The one and only name editor: TagComponent has no section of its own.
-    ImGui::TextDisabled(
-        "Entity %u",
-        static_cast<uint32_t>(static_cast<entt::id_type>(entity.handle())));
+    const auto &uid = entity.get_component<IdComponent>();
+    ImGui::TextDisabled("Entity %llu", uid.uid);
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     // Live editing (no EnterReturnsTrue): the hierarchy renames as you type.
     // The tag is just a display name, so writing it directly is all that is
     // needed.
     if (ImGui::InputText("##name", name_buffer_, sizeof(name_buffer_))) {
-        if (auto *editable = entity.try_get_component<TagComponent>()) {
-            editable->value = name_buffer_;
-        }
+        entity.get_component<TagComponent>().value = name_buffer_;
     }
 }
 

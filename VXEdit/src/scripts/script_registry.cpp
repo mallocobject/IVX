@@ -67,10 +67,9 @@ bool ScriptRegistry::bind_by_name(const std::string &name,
     // Remembered so the editor can re-bind after a module reload.
     component->script_name = found->name;
 
-    const auto *tag = entity.try_get_component<TagComponent>();
     IVX_INFO("Bound script '{}' to '{}'",
              found->name,
-             tag != nullptr ? tag->value : "<unnamed>");
+             entity.get_component<TagComponent>().value);
     return true;
 }
 

@@ -1,0 +1,39 @@
+Format: 1
+Scene: Untitled
+Entities:
+  - Entity: 0
+    Tag: Camera
+    Transform:
+      Translation: [0, 0, 22.5]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: ~
+    Camera:
+      Projection: Perspective
+      Orthographic:
+        Size: 2832.5671
+        Near: 0.01
+        Far: 1000
+      Perspective:
+        VerticalFov: 179
+        Near: 0.01
+        Far: 1000
+      Primary: true
+      FixedAspectRatio: false
+    NativeScript:
+      Script: CameraController
+      Enabled: true
+  - Entity: 0
+    Tag: Colorful Square
+    Transform:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: ~
+    SpriteRenderer:
+      Size: [400, 400]
+      TilingFactor: 1
+      Color: [1, 1, 1, 1]
+      HasTexture: true

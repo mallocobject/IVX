@@ -66,6 +66,15 @@ class Scene : public RefCounted {
         return registry_;
     }
 
+    const std::string &get_name() const {
+        return name_;
+    }
+    // Display name, written to and read from the scene file. Purely cosmetic:
+    // nothing inside the scene refers to it.
+    void set_name(std::string name) {
+        name_ = std::move(name);
+    }
+
     template <typename... T>
     auto view() {
         return registry_.view<T...>();
@@ -76,6 +85,7 @@ class Scene : public RefCounted {
                                 const glm::mat4 &parent_world,
                                 int depth);
 
+    std::string name_{"Untitled"};
     entt::registry registry_;
 };
 } // namespace ivx

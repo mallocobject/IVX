@@ -10,6 +10,7 @@
 #include "ivx/render/render_command.h"
 #include "ivx/scene/scene.h"
 #include "ivx/scene/scriptable_entity.h"
+#include "ivx/serialize/serializer.h"
 #include "panel/component_registry.h"
 #include "panel/layout.h"
 #include "scripts/script_registry.h"
@@ -179,10 +180,10 @@ void EditLayer::bind_default_camera_script() {
         camera_entity.add_component<NativeScriptComponent>();
     }
     if (ScriptRegistry::get().bind_by_name("CameraController", camera_entity)) {
-        const auto *tag = camera_entity.try_get_component<TagComponent>();
+        const auto &tag = camera_entity.get_component<TagComponent>();
         IVX_INFO("'{}': bound CameraController (WASD move, Q/E rotate, wheel "
                  "zoom)",
-                 tag != nullptr ? tag->value : "camera");
+                 tag.value);
         default_script_bound_ = true;
     }
 }
@@ -365,6 +366,44 @@ void EditLayer::reload_scripts() {
     }
 }
 
+void EditLayer::save_scene() {
+    if (!scene_) {
+        return;
+    }
+    Serializer::serialize(scene_, std::filesystem::path{SCENES} / "scene.ivx");
+}
+
+void EditLayer::load_scene() {
+    Ref<Scene> loaded =
+        Serializer::deserialize(std::filesystem::path{SCENES} / "scene.ivx");
+    if (!loaded) {
+        return; // Serializer already logged why
+    }
+
+    // The whole scene object is replaced: cameras, scripts and the selection
+    // all point into the old one. Panels read context_.scene, so they follow
+    // along.
+    scene_ = std::move(loaded);
+    context_.scene = scene_;
+    context_.clear_selection();
+
+    // Scripts and viewport have to be re-attached to the new scene: the
+    // serializer stores a Native Script by name only, and camera aspect ratios
+    // come from the viewport.
+    scripts_.set_scene(scene_.get());
+    scripts_.bind_scene_scripts();
+
+    if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {
+        scene_->on_viewport_resize(static_cast<uint32_t>(viewport_size_.x),
+                                   static_cast<uint32_t>(viewport_size_.y));
+    }
+
+    // Let bind_default_camera_script() run again for a camera that has no
+    // controller yet.
+    default_script_bound_ = false;
+    bind_default_camera_script();
+}
+
 void EditLayer::poll_scripts() {
     if (!scripts_.is_building()) {
         return;
@@ -434,6 +473,13 @@ void EditLayer::draw_menu_bar() {
     }
 
     if (ImGui::BeginMenu("File")) {
+        if (ImGui::MenuItem("Save Scene", nullptr, false, scene_ != nullptr)) {
+            save_scene();
+        }
+        if (ImGui::MenuItem("Load Scene", nullptr, false, scene_ != nullptr)) {
+            load_scene();
+        }
+        ImGui::Separator();
         if (ImGui::MenuItem("Exit")) {
             Application::get().close();
         }
@@ -491,11 +537,9 @@ void EditLayer::draw_status_bar() {
         // --- left: what is selected, then how big the scene is
         if (context_.has_selection()) {
             const Entity selected = context_.selected_entity();
-            if (const auto *tag = selected.try_get_component<TagComponent>()) {
-                ImGui::TextUnformatted(tag->value.c_str());
-            } else {
-                ImGui::TextUnformatted("(no tag)");
-            }
+            const auto &tag = selected.get_component<TagComponent>();
+            ImGui::TextUnformatted(tag.value.c_str());
+
         } else {
             ImGui::TextDisabled("No selection");
         }

@@ -402,9 +402,8 @@ void draw_script(Entity entity,
         if (script.is_bound()) {
             ImGui::SameLine();
             if (ImGui::Button("Unbind")) {
-                const auto *tag = entity.try_get_component<TagComponent>();
-                IVX_INFO("Unbound script from '{}'",
-                         tag != nullptr ? tag->value : "<unnamed>");
+                const auto &tag = entity.get_component<TagComponent>();
+                IVX_INFO("Unbound script from '{}'", tag.value);
                 script.unbind();
             }
         }
@@ -431,14 +430,20 @@ void register_all_components() {
         return; // already registered
     }
 
-    // Tag is edited by the inspector header (the entity name), so it has no
+    // Id/Tag is edited by the inspector header (the entity name), so it has no
     // section of its own and cannot be added/removed.
+    registry.add<IdComponent>(
+        "Uid",
+        /*draw*/ {},
+        {.removable = false, .addable = false, .draw_in_inspector = false});
     registry.add<TagComponent>(
         "Tag",
         /*draw*/ {},
         {.removable = false, .addable = false, .draw_in_inspector = false});
     registry.add<TransformComponent>(
-        "Transform", draw_transform, {.removable = false});
+        "Transform",
+        draw_transform,
+        {.removable = false, .addable = false, .draw_in_inspector = true});
     registry.add<SpriteRendererComponent>("Sprite Renderer", draw_sprite);
     // A camera is just a component: it can be added, edited and removed like
     // any other. Scene Hierarchy's "+ Entity" menu is the shortcut for a fresh

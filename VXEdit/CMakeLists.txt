@@ -33,6 +33,7 @@ target_compile_definitions(VXEdit PRIVATE
     TEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/"
     SHADERS="${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/"
     FONTS="${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/"
+    SCENES="${CMAKE_CURRENT_SOURCE_DIR}/assets/scenes/"
     LAYOUT="${CMAKE_CURRENT_SOURCE_DIR}/assets/layout.ini"
     # Scripts panel divider positions (library width, build output height)
     SCRIPTS_PANEL_LAYOUT="${CMAKE_CURRENT_SOURCE_DIR}/assets/scripts_panel.txt"

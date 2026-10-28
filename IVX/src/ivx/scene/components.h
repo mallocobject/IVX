@@ -61,6 +61,10 @@ struct TagComponent {
     }
 };
 
+struct IdComponent {
+    uint64_t uid{0};
+};
+
 struct TransformComponent {
     glm::vec3 translation{0.f};
     glm::vec3 rotation{0.f}; // pitch, yaw, roll

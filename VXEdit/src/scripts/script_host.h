@@ -53,6 +53,12 @@ class ScriptHost {
     // fresh module and re-binds every script by name.
     void poll_build();
 
+    // Binds the Native Script components that only carry a name (what a scene
+    // file restores - the name -> type table lives here, not in the
+    // serializer). Entities that are already bound are skipped. Returns how
+    // many bindings were created.
+    std::size_t bind_scene_scripts();
+
     bool is_building() const {
         return building_;
     }

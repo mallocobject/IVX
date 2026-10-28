@@ -60,6 +60,7 @@ Entity Scene::create_entity(const std::string &name) {
     entity.add_component<TransformComponent>();
     entity.add_component<RelationshipComponent>();
     entity.add_component<TagComponent>(name);
+    entity.add_component<IdComponent>(0ull);
     return entity;
 }
 
@@ -112,11 +113,11 @@ Entity Scene::find_by_name(std::string_view name) {
 }
 
 bool Scene::rename_entity(Entity entity, std::string_view name) {
-    auto *tag = entity.try_get_component<TagComponent>();
-    if (tag == nullptr || name.empty()) {
+    auto &tag = entity.get_component<TagComponent>();
+    if (name.empty()) {
         return false;
     }
-    tag->value = name;
+    tag.value = name;
     return true;
 }
 

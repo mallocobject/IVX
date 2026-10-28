@@ -166,6 +166,34 @@ void ScriptHost::release_all_scripts() {
     unbind_all();
 }
 
+std::size_t ScriptHost::bind_scene_scripts() {
+    if (scene_ == nullptr || !library_.is_loaded()) {
+        return 0;
+    }
+
+    std::size_t bound = 0;
+    for (auto [handle, script] :
+         scene_->registry().view<NativeScriptComponent>().each()) {
+        // Already live, or a component the user added but never bound: nothing
+        // to do.
+        if (script.script_name.empty() || script.instantiate != nullptr) {
+            continue;
+        }
+        if (ScriptRegistry::get().bind_by_name(script.script_name,
+                                               Entity{handle, scene_})) {
+            ++bound;
+        } else {
+            IVX_WARN("Scripts: '{}' is not a known script type",
+                     script.script_name);
+        }
+    }
+
+    if (bound > 0) {
+        IVX_INFO("Scripts: bound {} script(s) from the loaded scene", bound);
+    }
+    return bound;
+}
+
 bool ScriptHost::load_initial(std::string &error) {
     return library_.load(SCRIPTS_DLL, error);
 }
