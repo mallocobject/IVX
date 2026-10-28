@@ -21,9 +21,8 @@ namespace ivx {
 //     scene binds it afterwards (see ScriptHost::bind_scene_scripts in the
 //     editor).
 //
-// Values are written exactly as the engine holds them:
-// TransformComponent::rotation is stored in radians because that is what
-// build_rotation() consumes.
+// Values are written exactly as the engine holds them: rotation in degrees, the
+// unit the inspector, the scripts and TransformComponent::build_rotation() use.
 class Serializer {
   public:
     // Returns an empty Ref on failure (missing file, bad YAML, no Entities

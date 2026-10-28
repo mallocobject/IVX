@@ -54,6 +54,10 @@ void OpenGLRendererAPI::init() {
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_GREATER); // reverse-z
 
+    glFrontFace(GL_CCW);
+    glCullFace(GL_BACK);
+    glEnable(GL_CULL_FACE);
+
     glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
 }
 

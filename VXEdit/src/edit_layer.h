@@ -37,10 +37,12 @@ class EditLayer : public Layer {
     void draw_menu_bar();
     void draw_status_bar();
 
-    // File > Save Scene / Load Scene. Both go through ivx::Serializer and use a
+    void create_scene();
+
+    // File > Open / Save Scene. Both go through ivx::Serializer and use a
     // fixed path under the editor assets: there is no file dialog yet.
-    void save_scene();
-    void load_scene();
+    void load_scene(const std::filesystem::path &filepath);
+    void save_scene(const std::filesystem::path &filepath);
 
     // Starts a non-blocking rebuild of VXScripts.dll; poll_scripts() finishes
     // it.

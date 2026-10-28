@@ -98,7 +98,7 @@ class SceneCamera {
 
     float perspective_vertical_fov_{90.f}; // 90 degrees
     float perspective_near_{0.01f};
-    float perspective_far_{1000.f};
+    float perspective_far_{10000.f};
 
     float aspect_ratio_{16.f / 9.f};
 };

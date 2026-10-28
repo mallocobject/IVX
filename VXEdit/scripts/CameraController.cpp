@@ -16,6 +16,8 @@ void CameraController::on_update(float dt) {
     static constexpr float speed = 500.f;
     static constexpr float delta = 180.f;
 
+    auto &transform = get_component<TransformComponent>();
+
     glm::vec2 movement{0.f};
     if (key_pressed(KeyCode::W)) {
         movement.y++;
@@ -30,24 +32,33 @@ void CameraController::on_update(float dt) {
         movement.x++;
     }
 
-    glm::vec3 translation{0.f};
     if (movement.x != 0 || movement.y != 0) {
-        const glm::vec2 direction = glm::normalize(movement);
-        translation.x = direction.x * speed * dt;
-        translation.y = direction.y * speed * dt;
+        movement = glm::normalize(movement);
+        movement.x *= speed * dt;
+        movement.y *= speed * dt;
     }
 
-    float rotation = 0.f;
-    if (key_pressed(KeyCode::Q)) {
-        rotation += delta * dt;
-    }
-    if (key_pressed(KeyCode::E)) {
-        rotation -= delta * dt;
-    }
+    if (get_component<CameraComponent>().camera.get_projection_type() ==
+        SceneCamera::ProjectionType::Orthographic) {
 
-    auto &transform = get_component<TransformComponent>();
-    transform.translation += translation;
-    transform.rotation.z += rotation;
+        float rotation = 0.f;
+        if (key_pressed(KeyCode::Q)) {
+            rotation += delta * dt;
+        }
+        if (key_pressed(KeyCode::E)) {
+            rotation -= delta * dt;
+        }
+
+        transform.translation.x += movement.x;
+        transform.translation.y += movement.y;
+        transform.rotation.z += rotation;
+    } else {
+        const glm::mat4 basis = detail::build_rotation(transform.rotation);
+        const glm::vec3 forward = -glm::vec3{basis[2]};
+        const glm::vec3 right = glm::vec3{basis[0]};
+
+        transform.translation += forward * movement.y + right * movement.x;
+    }
 }
 
 void CameraController::on_destroy() {
@@ -78,9 +89,9 @@ void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
         return;
     }
 
-    // Offsets are not always +-1: a fast wheel sends one event with 2 or 3, and
-    // precision touchpads send fractions. Scaling by the amount keeps "one
-    // notch = one step" true in both cases.
+    // Offsets are not always +-1: a fast wheel sends one event with 2 or 3,
+    // and precision touchpads send fractions. Scaling by the amount keeps
+    // "one notch = one step" true in both cases.
     auto &camera = get_component<CameraComponent>();
 
     const float factor = glm::pow(0.9f, y_offset);
@@ -105,7 +116,7 @@ void CameraController::on_mouse_scrolled(float /*x_offset*/, float y_offset) {
     const float next = glm::clamp(fov * factor, kMinFov, kMaxFov);
     camera.camera.set_perspective_vertical_fov(next);
 }
-// Stays inside namespace ivx: IVX_REGISTER_SCRIPT pastes the type name into an
-// identifier, so the type has to be unqualified.
+// Stays inside namespace ivx: IVX_REGISTER_SCRIPT pastes the type name into
+// an identifier, so the type has to be unqualified.
 IVX_REGISTER_SCRIPT(CameraController)
 } // namespace ivx

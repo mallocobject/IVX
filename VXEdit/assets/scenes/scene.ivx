@@ -1,48 +1,108 @@
 Format: 1
 Scene: Untitled
 Entities:
-  - Entity: 0
-    Tag: Colorful Square
+  - Entity: 1
+    Tag: Cube
     Transform:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     Relationship:
       Parent: ~
-    SpriteRenderer:
-      Size: [400, 400]
-      TilingFactor: 9.61
-      Color: [0.9716599, 0.12981689, 0.12981689, 1]
-      HasTexture: false
-  - Entity: 0
-    Tag: Entity
+  - Entity: 2
+    Tag: front piece
     Transform:
-      Translation: [0, 0, 0]
+      Translation: [0, 0, -200]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     Relationship:
-      Parent: 0
+      Parent: 1
     SpriteRenderer:
-      Size: [276.5, 203.5]
+      Size: [400, 400]
+      TilingFactor: 1
+      Color: [0.95, 0.95, 0.95, 0.95]
+      HasTexture: false
+  - Entity: 3
+    Tag: back piece
+    Transform:
+      Translation: [0, 0, 200]
+      Rotation: [0, 180, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: 1
+    SpriteRenderer:
+      Size: [400, 400]
+      TilingFactor: 1
+      Color: [0.55, 0.55, 0.55, 0.55]
+      HasTexture: false
+  - Entity: 4
+    Tag: left piece
+    Transform:
+      Translation: [-200, 0, 0]
+      Rotation: [0, -90, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: 1
+    SpriteRenderer:
+      Size: [400, 400]
+      TilingFactor: 1
+      Color: [0.7, 0.7, 0.7, 0.7]
+      HasTexture: false
+  - Entity: 5
+    Tag: right piece
+    Transform:
+      Translation: [200, 0, 0]
+      Rotation: [0, 90, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: 1
+    SpriteRenderer:
+      Size: [400, 400]
+      TilingFactor: 1
+      Color: [0.85, 0.85, 0.85, 0.85]
+      HasTexture: false
+  - Entity: 6
+    Tag: top piece
+    Transform:
+      Translation: [0, 200, 0]
+      Rotation: [-90, 0, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: 1
+    SpriteRenderer:
+      Size: [400, 400]
       TilingFactor: 1
       Color: [1, 1, 1, 1]
+      HasTexture: false
+  - Entity: 7
+    Tag: bottom piece
+    Transform:
+      Translation: [0, -200, 0]
+      Rotation: [90, 0, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: 1
+    SpriteRenderer:
+      Size: [400, 400]
+      TilingFactor: 1
+      Color: [0.4, 0.4, 0.4, 0.4]
       HasTexture: false
   - Entity: 0
     Tag: Camera
     Transform:
-      Translation: [0, 0, 22.5]
-      Rotation: [0, 0, 0]
+      Translation: [315.67, 309.982, 481.5]
+      Rotation: [-21.264, 33, 0]
       Scale: [1, 1, 1]
     Relationship:
       Parent: ~
     Camera:
       Projection: Perspective
       Orthographic:
-        Size: 2832.5671
+        Size: 720
         Near: 0.01
         Far: 1000
       Perspective:
-        VerticalFov: 179
+        VerticalFov: 88.2
         Near: 0.01
         Far: 1000
       Primary: true

@@ -21,9 +21,16 @@ using namespace entt::literals;
 
 namespace detail {
 inline glm::mat4 build_rotation(const glm::vec3 &rotation) {
-    float yaw = rotation.y;
-    float pitch = rotation.x;
-    float roll = rotation.z;
+    // Degrees at the data boundary, radians only inside the trigonometry. The
+    // inspector, the scene files and the scripts all work in degrees (the same
+    // convention SceneCamera uses for its field of view); feeding degrees
+    // straight into cos/sin turned a 90 degree face into 90 radians, i.e. ten
+    // full turns plus a bit, which is why a hand-built cube came out scrambled.
+    const glm::vec3 radians = glm::radians(rotation);
+
+    float yaw = radians.y;
+    float pitch = radians.x;
+    float roll = radians.z;
 
     const float cy = std::cos(yaw), sy = std::sin(yaw);
     const float cp = std::cos(pitch), sp = std::sin(pitch);
@@ -67,7 +74,8 @@ struct IdComponent {
 
 struct TransformComponent {
     glm::vec3 translation{0.f};
-    glm::vec3 rotation{0.f}; // pitch, yaw, roll
+    glm::vec3 rotation{
+        0.f}; // pitch, yaw, roll in degrees (see detail::build_rotation)
     glm::vec3 scale{1.f};
 
     // Derived state: refreshed once per frame by

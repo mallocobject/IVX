@@ -128,7 +128,8 @@ YAML::Emitter &operator<<(YAML::Emitter &out, Entity entity) {
     if (const auto &parent =
             entity.get_component<RelationshipComponent>().parent;
         parent != entt::null) {
-        out << entity.get_component<IdComponent>().uid;
+        // out << entity.get_component<IdComponent>().uid;
+        out << static_cast<uint64_t>(parent); // HACK
     } else {
         out << YAML::Null; // root
     }
@@ -288,8 +289,8 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
         scene->set_name(name.as<std::string>());
     }
 
-    std::unordered_map<std::uint32_t, Entity> by_id;
-    std::uint32_t next_id = 0;
+    std::unordered_map<std::uint64_t, Entity> by_id;
+    std::uint64_t next_id = 0;
     std::size_t textured_sprites = 0;
 
     // Pass 1: entities and their components. Parent links are resolved
@@ -299,14 +300,15 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
             continue;
         }
 
-        const std::uint32_t id =
-            read_scalar<std::uint32_t>(node["Entity"], next_id);
+        const std::uint64_t uid =
+            read_scalar<std::uint64_t>(node["Entity"], next_id);
         ++next_id;
 
         const std::string tag =
             read_scalar<std::string>(node["Tag"], std::string{"Entity"});
         Entity entity = scene->create_entity(tag);
-        by_id[id] = entity;
+        entity.get_component<IdComponent>().uid = uid;
+        by_id[uid] = entity;
 
         try {
             if (const YAML::Node transform = node["Transform"];
@@ -350,7 +352,7 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
                 "Scene '{}': entity {} ('{}') has an unreadable component "
                 "({}); the rest of it was loaded",
                 filepath.string(),
-                id,
+                uid,
                 tag,
                 exception.what());
         }

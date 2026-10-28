@@ -1,4 +1,4 @@
-#include "edit_layer.h"
+﻿#include "edit_layer.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float2.hpp"
 #include "glm/ext/vector_float3.hpp"
@@ -53,14 +53,14 @@ void EditLayer::on_attach() {
             // The module loaded, but it may be older than its sources: the
             // editor would then bind every script (the default CameraController
             // included) to the previous build, which looks perfectly healthy in
-            // the console. Only warn — rebuilding is the user's call (the
+            // the console. Only warn - rebuilding is the user's call (the
             // status bar button, Ctrl+B with the Scripts tab focused, or the
             // Scripts menu), so startup stays fast and nothing is thrown away
             // unasked.
             refresh_scripts_staleness();
             if (scripts_stale_) {
                 IVX_WARN(
-                    "Script sources are newer than {} — the running scripts "
+                    "Script sources are newer than {} 鈥?the running scripts "
                     "are "
                     "the previous build; use Scripts > Rebuild & Reload (or "
                     "the "
@@ -82,9 +82,9 @@ void EditLayer::on_attach() {
     ui::apply_theme();
     ui::load_fonts();
 
-    auto texture = Texture2D::create(TEXTURES "tilemap.png");
-    auto sub_texture =
-        SubTexture2D::create(texture, {1.f, 1.f}, {16.f, 16.f}, {1.f, 1.f});
+    // auto texture = Texture2D::create(TEXTURES "tilemap.png");
+    // auto sub_texture =
+    //     SubTexture2D::create(texture, {1.f, 1.f}, {16.f, 16.f}, {1.f, 1.f});
 
     FrameBufferSpecification spec;
     spec.width = WIDTH;
@@ -94,39 +94,6 @@ void EditLayer::on_attach() {
 
     scene_ = make_ref<Scene>();
     context_.scene = scene_;
-
-    {
-        Entity square_entity = scene_->create_entity("Colorful Square");
-        auto &tf = square_entity.get_component<TransformComponent>();
-        tf.translation = glm::vec3{0.f};
-        tf.rotation = glm::vec3{0.f};
-        tf.scale = glm::vec3{1.f};
-
-        auto &sr = square_entity.add_component<SpriteRendererComponent>();
-        sr.sub_texture = sub_texture;
-        sr.tiling_factor = 1.f;
-        sr.color = glm::vec4{1.f};
-        sr.size = glm::vec2{400.f};
-    }
-
-    // A demo camera entity: nothing special about it, it simply owns a camera
-    // component and is marked primary. Any other entity could do the same.
-    {
-        Entity camera_entity = scene_->create_entity("Camera");
-        auto &camera = camera_entity.add_component<CameraComponent>();
-        camera.camera.set_orthographic_size(static_cast<float>(HEIGHT));
-        camera.camera.set_projection_type(
-            SceneCamera::ProjectionType::Orthographic);
-        camera.primary = true;
-        // Initial pose: one unit in front of the sprite plane (z = 0), looking
-        // down -Z. near/far are distances, so 0.01 .. 1000 covers it.
-        camera_entity.get_component<TransformComponent>().translation =
-            glm::vec3{0.f, 0.f, 1.f};
-    }
-
-    // The script host needs the scene to re-bind scripts after a hot reload.
-    scripts_.set_scene(scene_.get());
-    bind_default_camera_script();
 
     setup_panels();
 }
@@ -366,16 +333,124 @@ void EditLayer::reload_scripts() {
     }
 }
 
-void EditLayer::save_scene() {
-    if (!scene_) {
-        return;
+void EditLayer::create_scene() {
+    scene_ = make_ref<Scene>();
+    context_.scene = scene_;
+    context_.clear_selection();
+
+    {
+        Entity camera_entity = scene_->create_entity("Camera");
+        auto &camera = camera_entity.add_component<CameraComponent>();
+        camera.camera.set_orthographic_size(static_cast<float>(HEIGHT));
+        camera.camera.set_projection_type(
+            SceneCamera::ProjectionType::Perspective);
+        camera.primary = true;
+
+        // Three-quarter view onto the cube: sitting at (500, 500, 500) with
+        // rotation zero the camera looks straight down -Z, so the cube ends up
+        // 500 units off to the side/below the view axis and only its near face
+        // fills the corner of the screen. Yaw 45 / pitch -35.26 aims the camera
+        // at the origin from that corner, and the distance stays inside the
+        // default far plane (1000).
+        auto &camera_transform =
+            camera_entity.get_component<TransformComponent>();
+        camera_transform.translation = glm::vec3{500.f};
+        camera_transform.rotation = glm::vec3{-35.264f, 45.f, 0.f};
     }
-    Serializer::serialize(scene_, std::filesystem::path{SCENES} / "scene.ivx");
+
+    {
+        Entity cube_entity = scene_->create_entity("Cube");
+        auto &tf = cube_entity.get_component<TransformComponent>();
+        tf.translation = glm::vec3{0.f};
+        tf.rotation = glm::vec3{0.f};
+        tf.scale = glm::vec3{1.f};
+
+        // front
+        Entity front = scene_->create_entity("front piece");
+        {
+            auto &tf = front.get_component<TransformComponent>();
+            tf.translation = glm::vec3{0.f, 0.f, 200.f};
+            tf.rotation = glm::vec3{0.f};
+            tf.scale = glm::vec3{1.f};
+            auto &sr = front.add_component<SpriteRendererComponent>();
+            sr.color = glm::vec4{0.95f};
+            sr.size = glm::vec2{400.f};
+        }
+
+        // back
+        Entity back = scene_->create_entity("back piece");
+        {
+            auto &tf = back.get_component<TransformComponent>();
+            tf.translation = glm::vec3{0.f, 0.f, -200.f};
+            tf.rotation = glm::vec3{0.f, 180.f, 0.f};
+            tf.scale = glm::vec3{1.f};
+            auto &sr = back.add_component<SpriteRendererComponent>();
+            sr.color = glm::vec4{0.55f};
+            sr.size = glm::vec2{400.f};
+        }
+
+        // left
+        Entity left = scene_->create_entity("left piece");
+        {
+            auto &tf = left.get_component<TransformComponent>();
+            tf.translation = glm::vec3{-200.f, 0.f, 0.f};
+            tf.rotation = glm::vec3{0.f, -90.f, 0.f};
+            tf.scale = glm::vec3{1.f};
+            auto &sr = left.add_component<SpriteRendererComponent>();
+            sr.color = glm::vec4{0.70f};
+            sr.size = glm::vec2{400.f};
+        }
+
+        // right
+        Entity right = scene_->create_entity("right piece");
+        {
+            auto &tf = right.get_component<TransformComponent>();
+            tf.translation = glm::vec3{200.f, 0.f, 0.f};
+            tf.rotation = glm::vec3{0.f, 90.f, 0.f};
+            tf.scale = glm::vec3{1.f};
+            auto &sr = right.add_component<SpriteRendererComponent>();
+            sr.color = glm::vec4{0.85f};
+            sr.size = glm::vec2{400.f};
+        }
+
+        // top
+        Entity top = scene_->create_entity("top piece");
+        {
+            auto &tf = top.get_component<TransformComponent>();
+            tf.translation = glm::vec3{0.f, 200.f, 0.f};
+            tf.rotation = glm::vec3{-90.f, 0.f, 0.f};
+            tf.scale = glm::vec3{1.f};
+            auto &sr = top.add_component<SpriteRendererComponent>();
+            sr.color = glm::vec4{1.00f};
+            sr.size = glm::vec2{400.f};
+        }
+
+        // bottom
+        Entity bottom = scene_->create_entity("bottom piece");
+        {
+            auto &tf = bottom.get_component<TransformComponent>();
+            tf.translation = glm::vec3{0.f, -200.f, 0.f};
+            tf.rotation = glm::vec3{90.f, 0.f, 0.f};
+            tf.scale = glm::vec3{1.f};
+            auto &sr = bottom.add_component<SpriteRendererComponent>();
+            sr.color = glm::vec4{0.40f};
+            sr.size = glm::vec2{400.f};
+        }
+
+        scene_->set_parent(front, cube_entity);
+        scene_->set_parent(back, cube_entity);
+        scene_->set_parent(left, cube_entity);
+        scene_->set_parent(right, cube_entity);
+        scene_->set_parent(top, cube_entity);
+        scene_->set_parent(bottom, cube_entity);
+    }
+
+    scripts_.set_scene(scene_.get());
+    bind_default_camera_script();
 }
 
-void EditLayer::load_scene() {
-    Ref<Scene> loaded =
-        Serializer::deserialize(std::filesystem::path{SCENES} / "scene.ivx");
+void EditLayer::load_scene(const std::filesystem::path &filepath) {
+    Ref<Scene> loaded = Serializer::deserialize(filepath);
     if (!loaded) {
         return; // Serializer already logged why
     }
@@ -402,6 +477,13 @@ void EditLayer::load_scene() {
     // controller yet.
     default_script_bound_ = false;
     bind_default_camera_script();
+}
+
+void EditLayer::save_scene(const std::filesystem::path &filepath) {
+    if (!scene_) {
+        return;
+    }
+    Serializer::serialize(scene_, filepath);
 }
 
 void EditLayer::poll_scripts() {
@@ -473,11 +555,14 @@ void EditLayer::draw_menu_bar() {
     }
 
     if (ImGui::BeginMenu("File")) {
-        if (ImGui::MenuItem("Save Scene", nullptr, false, scene_ != nullptr)) {
-            save_scene();
+        if (ImGui::MenuItem("New", nullptr, false, scene_ != nullptr)) {
+            create_scene();
         }
-        if (ImGui::MenuItem("Load Scene", nullptr, false, scene_ != nullptr)) {
-            load_scene();
+        if (ImGui::MenuItem("Open", nullptr, false, scene_ != nullptr)) {
+            load_scene(SCENES "scene.ivx");
+        }
+        if (ImGui::MenuItem("Save as ...", nullptr, false, scene_ != nullptr)) {
+            save_scene(SCENES "scene.ivx");
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Exit")) {

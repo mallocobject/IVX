@@ -60,7 +60,8 @@ Entity Scene::create_entity(const std::string &name) {
     entity.add_component<TransformComponent>();
     entity.add_component<RelationshipComponent>();
     entity.add_component<TagComponent>(name);
-    entity.add_component<IdComponent>(0ull);
+    entity.add_component<IdComponent>(
+        static_cast<uint64_t>(entity.handle())); // HACK
     return entity;
 }
 
