@@ -7,7 +7,7 @@
 #include "ivx/core/input.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/event.h"
-#include "ivx/renderer/render_command.h"
+#include "ivx/render/render_command.h"
 #include "ivx/scene/scene.h"
 #include "ivx/scene/scriptable_entity.h"
 #include "panel/component_registry.h"

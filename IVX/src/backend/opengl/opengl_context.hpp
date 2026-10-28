@@ -3,7 +3,7 @@
 #include "SDL3/SDL_video.h"
 #include "ivx/core/logger.h"
 #include "ivx/debug/instrumentor.h"
-#include "ivx/renderer/graphics_context.h"
+#include "ivx/render/graphics_context.h"
 #include <SDL3/SDL.h>
 #include <glad/glad.h>
 

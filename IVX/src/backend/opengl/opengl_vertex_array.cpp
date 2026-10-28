@@ -3,7 +3,7 @@
 #include "ivx/core/base.h"
 
 #include "ivx/core/ref.hpp"
-#include "ivx/renderer/buffer.h"
+#include "ivx/render/buffer.h"
 #include <glad/glad.h>
 
 namespace ivx {

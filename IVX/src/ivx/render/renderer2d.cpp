@@ -8,11 +8,11 @@
 #include "glm/ext/vector_float4.hpp"
 #include "glm/matrix.hpp"
 #include "glm/trigonometric.hpp"
-#include "ivx/renderer/renderer.h"
-#include "ivx/renderer/shader.h"
-#include "ivx/renderer/sub_texture2d.h"
-#include "ivx/renderer/texture.h"
-#include "ivx/renderer/vertex_array.h"
+#include "ivx/render/renderer.h"
+#include "ivx/render/shader.h"
+#include "ivx/render/sub_texture2d.h"
+#include "ivx/render/texture.h"
+#include "ivx/render/vertex_array.h"
 #include <algorithm>
 #include <array>
 #include <cstdint>

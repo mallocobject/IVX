@@ -8,8 +8,8 @@
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/application_event.h"
 #include "ivx/imgui/imgui_layer.h"
-#include "ivx/renderer/render_command.h"
-#include "ivx/renderer/renderer.h"
+#include "ivx/render/render_command.h"
+#include "ivx/render/renderer.h"
 #include <glm/glm.hpp>
 #include <memory>
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/renderer/shader.h"
+#include "ivx/render/shader.h"
 #include <cstdint>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>

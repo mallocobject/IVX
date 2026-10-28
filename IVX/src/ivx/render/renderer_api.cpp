@@ -3,7 +3,7 @@
 
 #include "backend/opengl/opengl_renderer_api.h"
 #include "ivx/core/base.h"
-#include "ivx/renderer/renderer_api.h"
+#include "ivx/render/renderer_api.h"
 
 namespace ivx {
 RendererAPI::API RendererAPI::api_ = RendererAPI::API::kOpenGL;

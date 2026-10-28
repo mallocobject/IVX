@@ -2,7 +2,7 @@
 
 #include "ivx/core/ref.hpp"
 #include "ivx/core/ref_counted.hpp"
-#include "ivx/renderer/vertex_array.h"
+#include "ivx/render/vertex_array.h"
 #include <cstdint>
 #include <glm/glm.hpp>
 #include <memory>

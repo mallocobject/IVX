@@ -5,7 +5,7 @@
 #include "ivx/core/logger.h"
 #include "ivx/event/key_event.h"
 #include "ivx/event/mouse_event.h"
-#include "ivx/renderer/renderer2d.h"
+#include "ivx/render/renderer2d.h"
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scriptable_entity.h"

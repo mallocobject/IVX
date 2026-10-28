@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ivx/core/window.h"
-#include "ivx/renderer/graphics_context.h"
+#include "ivx/render/graphics_context.h"
 
 #include <SDL3/SDL.h>
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "ivx/core/ref.hpp"
-#include "ivx/renderer/renderer_api.h"
+#include "ivx/render/renderer_api.h"
 #include <glm/glm.hpp>
 
 namespace ivx {

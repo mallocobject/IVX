@@ -3,10 +3,10 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "ivx/core/ref.hpp"
 #include "ivx/event/application_event.h"
-#include "ivx/renderer/render_command.h"
-#include "ivx/renderer/renderer_api.h"
-#include "ivx/renderer/shader.h"
-#include "ivx/renderer/vertex_array.h"
+#include "ivx/render/render_command.h"
+#include "ivx/render/renderer_api.h"
+#include "ivx/render/shader.h"
+#include "ivx/render/vertex_array.h"
 #include <glm/glm.hpp>
 #include <memory>
 

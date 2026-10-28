@@ -1,8 +1,8 @@
 #pragma once
 
 #include "ivx/core/ref.hpp"
-#include "ivx/renderer/renderer_api.h"
-#include "ivx/renderer/vertex_array.h"
+#include "ivx/render/renderer_api.h"
+#include "ivx/render/vertex_array.h"
 #include <cstdint>
 #include <glm/glm.hpp>
 

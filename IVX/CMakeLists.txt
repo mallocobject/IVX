@@ -23,10 +23,14 @@ target_include_directories(IVX PUBLIC
     "${CMAKE_SOURCE_DIR}/deps/imgui"             # <imgui.h>
     "${CMAKE_SOURCE_DIR}/deps/imgui/backends"    # <backends/imgui_impl_sdl3.h>
     "${CMAKE_SOURCE_DIR}/deps/BqLog/include"     # <bq_log/bq_log.h>
-    "${CMAKE_SOURCE_DIR}/deps/SDL/include")      # <SDL3/SDL.h>
+    "${CMAKE_SOURCE_DIR}/deps/SDL/include"       # <SDL3/SDL.h>
+    "${CMAKE_SOURCE_DIR}/deps/yaml-cpp/include") # <yaml-cpp/yaml.h>
 
+# The namespaced alias, not the bare target name: a typo in a plain name is silently
+# handed to the linker as a file name ("LNK1104: cannot open file YAML_CPP.lib"), while
+# a wrong namespaced name fails at configure time.
 target_link_libraries(IVX PUBLIC
-    SDL3::SDL3 glad imgui glm stb_image BqLog opengl32 entt)
+    SDL3::SDL3 glad imgui glm stb_image BqLog opengl32 entt yaml-cpp::yaml-cpp)
 
 target_compile_definitions(IVX PUBLIC
     IVX_PLATFORM_WINDOWS

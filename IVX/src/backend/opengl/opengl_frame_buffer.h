@@ -1,5 +1,5 @@
 #include "glm/ext/vector_float4.hpp"
-#include "ivx/renderer/frame_buffer.h"
+#include "ivx/render/frame_buffer.h"
 #include <cstdint>
 
 namespace ivx {

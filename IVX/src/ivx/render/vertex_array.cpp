@@ -2,7 +2,7 @@
 #include "vertex_array.h"
 #include "backend/opengl/opengl_vertex_array.h"
 #include "ivx/core/base.h"
-#include "ivx/renderer/renderer_api.h"
+#include "ivx/render/renderer_api.h"
 
 namespace ivx {
 Ref<VertexArray> VertexArray::create() {

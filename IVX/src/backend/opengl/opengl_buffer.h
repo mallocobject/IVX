@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/renderer/buffer.h"
+#include "ivx/render/buffer.h"
 #include <cstdint>
 
 namespace ivx {

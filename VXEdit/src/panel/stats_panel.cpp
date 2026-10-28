@@ -5,7 +5,7 @@
 #include "ivx/core/application.h"
 #include "ivx/core/logger.h"
 #include "ivx/core/window.h"
-#include "ivx/renderer/renderer2d.h"
+#include "ivx/render/renderer2d.h"
 #include "ui/theme.h"
 
 #include <algorithm>

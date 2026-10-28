@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ivx/renderer/texture.h"
+#include "ivx/render/texture.h"
 #include <cstdint>
 #include <glad/glad.h>
 #include <string>

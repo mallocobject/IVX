@@ -1,7 +1,7 @@
 #include "ivxpch.h"
 #include "buffer.h"
 #include "ivx/core/base.h"
-#include "ivx/renderer/renderer_api.h"
+#include "ivx/render/renderer_api.h"
 
 #include "backend/opengl/opengl_buffer.h"
 

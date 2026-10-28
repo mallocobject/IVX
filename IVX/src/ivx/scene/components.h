@@ -5,8 +5,8 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/ref.hpp"
-#include "ivx/renderer/sub_texture2d.h"
-#include "ivx/renderer/texture.h"
+#include "ivx/render/sub_texture2d.h"
+#include "ivx/render/texture.h"
 #include "ivx/scene/scene_camera.h"
 #include <entt.hpp>
 #include <glm/ext.hpp>
@@ -96,22 +96,6 @@ struct SpriteRendererComponent {
     glm::vec2 size{1.f};
     float tiling_factor{1.f};
     glm::vec4 color{1.f};
-
-    // SpriteRendererComponent() = default;
-    // SpriteRendererComponent(const Ref<Texture2D> &texture,
-    //                         float tiling_factor = 1.f,
-    //                         const glm::vec4 &color = glm::vec4{1.f},
-    //                         const glm::vec2 &size = glm::vec2{1.f})
-    //     : texture(texture), size(size), tiling_factor(tiling_factor),
-    //       color(color) {
-    // }
-    // SpriteRendererComponent(const Ref<SubTexture2D> &sub_texture,
-    //                         float tiling_factor = 1.f,
-    //                         const glm::vec4 &color = glm::vec4{1.f},
-    //                         const glm::vec2 &size = glm::vec2{1.f})
-    //     : sub_texture(sub_texture), size(size), tiling_factor(tiling_factor),
-    //       color(color) {
-    // }
 };
 
 // Projection parameters live in SceneCamera, the component only adds the

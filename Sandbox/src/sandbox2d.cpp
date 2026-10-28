@@ -3,7 +3,7 @@
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/event.h"
-#include "ivx/renderer/render_command.h"
+#include "ivx/render/render_command.h"
 #include <imgui.h>
 
 Sandbox2D::Sandbox2D() : ivx::Layer("Sandbox2D") {

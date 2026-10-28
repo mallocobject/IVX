@@ -2,7 +2,7 @@
 #include "renderer.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "ivx/core/ref.hpp"
-#include "ivx/renderer/render_command.h"
+#include "ivx/render/render_command.h"
 #include "renderer2D.h"
 #include "renderer2d.h"
 

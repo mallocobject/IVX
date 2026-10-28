@@ -10,13 +10,20 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 if (MSVC)
     add_compile_options(/utf-8 /W3 /Zc:__cplusplus)
     add_compile_definitions(_CRT_SECURE_NO_WARNINGS NOMINMAX)
+
+    # Dynamic CRT (/MD + /MDd) for every target, third-party ones included. This has to be
+    # set before the dependencies are added: yaml-cpp defaults to the *static* CRT when it
+    # builds a static library, which then fails to link against our /MD objects with
+    # LNK2038 "RuntimeLibrary mismatch: MTd_StaticDebug vs MDd_DynamicDebug".
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 endif()
 
 set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
 if (NOT EXISTS "${DEPS_DIR}/glm"  OR
     NOT EXISTS "${DEPS_DIR}/imgui" OR
-    NOT EXISTS "${DEPS_DIR}/SDL")
+    NOT EXISTS "${DEPS_DIR}/SDL" OR
+    NOT EXISTS "${DEPS_DIR}/yaml-cpp")
     message(FATAL_ERROR
         "Missing dependencies in ${DEPS_DIR}.\n"
         "Please run setup_deps.bat(Windows) or ./setup_deps.sh(Linux/macOS)")
@@ -69,6 +76,15 @@ target_include_directories(stb_image PUBLIC "${VENDOR_DIR}/stb_image")
 # ---- entt ----
 add_library(entt INTERFACE)
 target_include_directories(entt INTERFACE "${VENDOR_DIR}/entt/include")
+
+# ---- yaml-cpp ----
+# Only the library is needed: the parse/read/sandbox command line tools and the googletest
+# suite would be built (and take minutes) for nothing otherwise.
+set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+set(YAML_CPP_INSTALL OFF CACHE BOOL "" FORCE)
+add_subdirectory("${DEPS_DIR}/yaml-cpp" "${CMAKE_BINARY_DIR}/_deps/yaml-cpp-build")
 
 # ---- ImGuiColorTextEdit ----
 # Syntax highlighting editor widget used by the editor's script panel.
