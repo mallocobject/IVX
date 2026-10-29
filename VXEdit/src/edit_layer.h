@@ -38,7 +38,10 @@ class EditLayer : public Layer {
     // `image_min` and `image_size` come from the ImGui::Image() call, so the
     // handles line up with what the camera rendered.
     void draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size);
-    // Writes the gizmo's world matrix back into the entity's local
+    // Writes the drag back into the entity's local transform: translation and
+    // scale are read from `world_matrix`, rotation is composed from this
+    // frame's increment (see the comment in the implementation for why
+    // ImGuizmo's deltaMatrix cannot be used here).
     static void apply_gizmo_matrix(Entity entity,
                                    const glm::mat4 &world_matrix);
     int gizmo_operation() const;

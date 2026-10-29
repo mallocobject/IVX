@@ -282,10 +282,10 @@ void Scene::update_world_recursive(Entity entity,
     }
 
     glm::mat4 world = parent_world;
-    if (auto *transform = entity.try_get_component<TransformComponent>()) {
-        transform->world = parent_world * transform->load_matrix();
-        world = transform->world;
-    }
+
+    auto &transform = entity.get_component<TransformComponent>();
+    transform.world = parent_world * transform.load_matrix();
+    world = transform.world;
 
     const auto *relationship =
         entity.try_get_component<RelationshipComponent>();

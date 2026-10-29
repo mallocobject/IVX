@@ -233,18 +233,6 @@ void EditLayer::on_update(float dt) {
     // keyboard polling happens depends on viewport focus (set while drawing the
     // viewport panel, see draw_viewport_content()).
 
-    if (input_owned_) {
-        if (Input::is_key_pressed(KeyCode::D1)) {
-            gizmo_mode_ = GizmoMode::Translate;
-        }
-        if (Input::is_key_pressed(KeyCode::D2)) {
-            gizmo_mode_ = GizmoMode::Rotate;
-        }
-        if (Input::is_key_pressed(KeyCode::D3)) {
-            gizmo_mode_ = GizmoMode::Scale;
-        }
-    }
-
     if (scene_) {
         scene_->on_update(dt);
     }
@@ -925,17 +913,49 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
         return;
     }
 
+    if (input_owned_) {
+        if (Input::is_key_pressed(KeyCode::D1)) {
+            gizmo_mode_ = GizmoMode::Translate;
+        }
+        if (Input::is_key_pressed(KeyCode::D2)) {
+            gizmo_mode_ = GizmoMode::Rotate;
+        }
+        if (Input::is_key_pressed(KeyCode::D3)) {
+            gizmo_mode_ = GizmoMode::Scale;
+        }
+    }
+
+    float snap_value[3]{0.f};
+    float *snap_ptr = nullptr;
+    if (Input::is_key_pressed(KeyCode::LeftControl)) {
+        switch (gizmo_operation()) {
+        case ImGuizmo::TRANSLATE:
+            snap_value[0] = snap_value[1] = snap_value[2] = 50.f;
+            snap_ptr = snap_value;
+            break;
+        case ImGuizmo::ROTATE:
+            snap_value[0] = 45.0f;
+            snap_ptr = snap_value;
+            break;
+        case ImGuizmo::SCALE:
+            snap_value[0] = 0.1f;
+            snap_ptr = snap_value;
+            break;
+        }
+    }
+
     ImGuizmo::SetOrthographic(orthographic);
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(image_min.x, image_min.y, image_size.x, image_size.y);
 
-    // transform.world is refreshed by Scene::on_render() earlier in the frame.
     glm::mat4 model = transform.world;
     ImGuizmo::Manipulate(glm::value_ptr(view),
                          glm::value_ptr(projection),
                          static_cast<ImGuizmo::OPERATION>(gizmo_operation()),
                          ImGuizmo::LOCAL,
-                         glm::value_ptr(model));
+                         glm::value_ptr(model),
+                         nullptr,
+                         snap_ptr);
 
     if (ImGuizmo::IsUsing()) {
         apply_gizmo_matrix(selected, model);
@@ -954,7 +974,28 @@ void EditLayer::apply_gizmo_matrix(Entity entity,
     }
     const glm::mat4 local = glm::inverse(parent_world) * world_matrix;
 
-    decompose_transform(
-        local, transform.translation, transform.rotation, transform.scale);
+    glm::vec3 translation{0.f};
+    glm::vec3 unused_rotation{0.f};
+    glm::vec3 scale{1.f};
+    decompose_transform(local, translation, unused_rotation, scale);
+
+    // ???
+    const glm::vec3 previous_rotation = transform.rotation;
+    const glm::mat3 delta_world = rotation_of(world_matrix) *
+                                  glm::transpose(rotation_of(transform.world));
+    const glm::mat3 parent_rotation = rotation_of(parent_world);
+    const glm::quat increment = glm::normalize(glm::quat_cast(
+        glm::transpose(parent_rotation) * delta_world * parent_rotation));
+    const glm::quat current = glm::normalize(glm::quat_cast(
+        rotation_of(detail::build_rotation(transform.rotation))));
+    const glm::quat updated = glm::normalize(increment * current);
+    const glm::vec3 rotation =
+        euler_from_rotation_matrix(glm::mat3_cast(updated));
+
+    transform.translation = translation;
+    transform.scale = scale;
+    transform.rotation =
+        unwrap_euler(nearest_equivalent_euler(rotation, previous_rotation),
+                     previous_rotation);
 }
 } // namespace ivx

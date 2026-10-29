@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cmath>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
@@ -47,23 +48,69 @@ inline void validate_clip_planes(float &near_clip, float &far_clip) {
     }
 }
 
+// Rotation part of a transform with the scale divided out: the columns are
+// normalised, so a matrix that also carries a scale still yields a usable
+// rotation.
+inline glm::mat3 rotation_of(const glm::mat4 &transform) {
+    glm::mat3 rotation{transform};
+    for (int column = 0; column < 3; column++) {
+        const float length = glm::length(rotation[column]);
+        rotation[column] /= length > 0.f ? length : 1.f;
+    }
+    return rotation;
+}
+
+// pitch/yaw/roll of a rotation matrix, in the yaw*pitch*roll order that
+// detail::build_rotation() builds. Both Euler triples of the same rotation are
+// possible (see nearest_equivalent_euler); this returns whichever the signs
+// select.
+inline glm::vec3 euler_from_rotation_matrix(const glm::mat3 &rotation) {
+    const float pitch = std::asin(std::clamp(-rotation[2][1], -1.f, 1.f));
+    const float yaw = std::atan2(rotation[2][0], rotation[2][2]);
+    const float roll = std::atan2(rotation[0][1], rotation[1][1]);
+    return glm::vec3{pitch, yaw, roll};
+}
+
 inline void decompose_transform(const glm::mat4 &transform,
                                 glm::vec3 &translation,
                                 glm::vec3 &rotation,
                                 glm::vec3 &scale) {
     translation = glm::vec3(transform[3]);
 
-    glm::mat3 rotation_mat{transform};
-
     for (int column = 0; column < 3; column++) {
-        const float length = glm::length(rotation_mat[column]);
+        const float length = glm::length(glm::vec3{transform[column]});
         scale[column] = length > 0.f ? length : 1.f;
-        rotation_mat[column] /= scale[column];
     }
 
-    const float pitch = std::asin(std::clamp(-rotation_mat[2][1], -1.f, 1.f));
-    const float yaw = std::atan2(rotation_mat[2][0], rotation_mat[2][2]);
-    const float roll = std::atan2(rotation_mat[0][1], rotation_mat[1][1]);
-    rotation = glm::vec3{pitch, yaw, roll};
+    rotation = euler_from_rotation_matrix(rotation_of(transform));
+}
+
+inline float wrap_angle(float radians) {
+    return std::remainder(radians, 2.f * glm::pi<float>());
+}
+
+inline glm::vec3 nearest_equivalent_euler(const glm::vec3 &candidate,
+                                          const glm::vec3 &previous) {
+    const auto distance = [](const glm::vec3 &a, const glm::vec3 &b) {
+        const glm::vec3 delta = a - b;
+        return std::abs(wrap_angle(delta.x)) + std::abs(wrap_angle(delta.y)) +
+               std::abs(wrap_angle(delta.z));
+    };
+
+    const glm::vec3 dual{glm::pi<float>() - candidate.x,
+                         candidate.y + glm::pi<float>(),
+                         candidate.z + glm::pi<float>()};
+    return distance(candidate, previous) <= distance(dual, previous) ? candidate
+                                                                     : dual;
+}
+
+inline glm::vec3 unwrap_euler(const glm::vec3 &angles,
+                              const glm::vec3 &previous) {
+    glm::vec3 result = angles;
+    for (int axis = 0; axis < 3; axis++) {
+        result[axis] =
+            previous[axis] + wrap_angle(angles[axis] - previous[axis]);
+    }
+    return result;
 }
 } // namespace ivx
