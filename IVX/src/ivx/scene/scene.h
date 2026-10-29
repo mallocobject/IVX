@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ivx/core/ref_counted.hpp"
+#include "ivx/render/camera.h"
 #include "ivx/scene/components.h"
 #include <entt.hpp>
 #include <string>
@@ -24,45 +25,28 @@ class Scene : public RefCounted {
     // Destroys the entity and, recursively, everything below it.
     void destroy_entity(Entity entity);
 
-    // Renames the entity. TagComponent::value is only a display name: the
-    // entity handle is the identity, so nothing else has to be kept in sync.
-    // Returns false for an invalid entity or an empty name.
     bool rename_entity(Entity entity, std::string_view name);
 
     // First entity whose TagComponent::value equals `name`, or an invalid
     // Entity. Names are not unique; identity is the handle.
     Entity find_by_name(std::string_view name);
 
-    // ---- hierarchy ----
-    // Reparents `child`. Passing an invalid `parent` makes it a root node.
-    // Rejects self-parenting and anything that would create a cycle.
     void set_parent(Entity child, Entity parent);
     std::vector<Entity> get_root_entities();
     std::vector<Entity> get_children(Entity entity);
     bool is_descendant_of(Entity entity, Entity ancestor);
 
     void on_update(float dt);
-    // Forwards an engine event to every enabled script's on_key_* / on_mouse_*
-    // hooks. Call it from the layer's on_event(), so scripts see the same
-    // events the rest of the app sees (and nothing while ImGui has the
-    // keyboard).
+
     void on_event(Event &event);
-    // Draws every entity that has a TransformComponent +
-    // SpriteRendererComponent. The caller owns the camera: wrap it in
-    // Renderer2D::begin_scene()/end_scene().
+
+    void on_render(Camera &camera);
     void on_render();
 
-    // Refreshes TransformComponent::world for the whole hierarchy, parents
-    // before children (world = parent_world * local). on_render() calls this,
-    // call it yourself if you need world transforms outside of rendering.
     void update_world_transforms();
 
     void on_viewport_resize(uint32_t width, uint32_t height);
 
-    // Last size the renderer reported. Remembered so a camera added later
-    // (Inspector) can start with the real aspect instead of SceneCamera's 16:9
-    // default, which would render the scene squashed until the layout is
-    // touched.
     glm::uvec2 get_viewport_size() const {
         return viewport_size_;
     }
@@ -77,8 +61,7 @@ class Scene : public RefCounted {
     const std::string &get_name() const {
         return name_;
     }
-    // Display name, written to and read from the scene file. Purely cosmetic:
-    // nothing inside the scene refers to it.
+
     void set_name(std::string name) {
         name_ = std::move(name);
     }

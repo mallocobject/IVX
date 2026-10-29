@@ -40,46 +40,6 @@ EditLayer::EditLayer() : Layer("EditLayer") {
 void EditLayer::on_attach() {
     IVX_PROFILE_FUNCTION();
 
-    // Script module first: its registry has to exist before anything can bind a
-    // script. A missing DLL is not fatal, the editor just has no script types.
-    // vcvars64.bat costs a couple of seconds, so start capturing the MSVC
-    // environment now: by the time the first build runs it is usually ready.
-    warm_up_script_build_environment();
-
-    {
-        std::string error;
-        if (!scripts_.load_initial(error)) {
-            IVX_WARN("Script module not loaded ({}), building it", error);
-            // The module lives in its own build directory, so a fresh tree has
-            // no DLL yet. Kick off the first build; poll_scripts() loads it
-            // when it is done.
-            scripts_.begin_build();
-        } else {
-            // The module loaded, but it may be older than its sources: the
-            // editor would then bind every script (the default CameraController
-            // included) to the previous build, which looks perfectly healthy in
-            // the console.
-            //
-            // Two different ages, two different answers: a stale *engine
-            // header* is a correctness problem (the headers are the module's
-            // inline code and layouts), so it rebuilds immediately; a stale
-            // *script source* is a normal edit, so it only shows a hint and
-            // rebuilding stays the user's call (status bar button, Scripts
-            // menu).
-            rebuild_if_headers_changed();
-            refresh_scripts_staleness();
-            if (scripts_stale_) {
-                IVX_WARN(
-                    "Script sources are newer than {} - the running scripts "
-                    "are the "
-                    "previous build; use Scripts > Rebuild & Reload (or the "
-                    "status bar "
-                    "button) to rebuild them",
-                    std::filesystem::path{SCRIPTS_DLL}.filename().string());
-            }
-        }
-    }
-
     // The editor layout is stored next to the assets instead of the process
     // working directory, so it survives being launched from anywhere.
     Application::get().imgui_layer()->set_ini_filename(LAYOUT);
@@ -112,74 +72,8 @@ void EditLayer::on_attach() {
     setup_panels();
 }
 
-void EditLayer::bind_default_camera_script() {
-    // A scene written to disk only stores the script *name*, and a scene built
-    // by File > New has no binding at all, so the primary camera gets its
-    // controller automatically - otherwise WASD and the wheel silently do
-    // nothing.
-    //
-    // Keyed off "whichever entity owns the primary camera", not off a fixed
-    // entity: a camera is just a component, so it may live on a moving player
-    // instead.
-    //
-    // Once per scene and only when nothing is bound: unbinding it in the
-    // inspector has to stick (create_scene()/load_scene() reset the flag for
-    // their scene).
-    if (default_script_bound_ || !scene_) {
-        return;
-    }
-
-    Entity camera_entity{};
-    for (auto [handle, camera] :
-         scene_->registry().view<CameraComponent>().each()) {
-        if (camera.primary) {
-            camera_entity = Entity{handle, scene_.get()};
-            break;
-        }
-    }
-    if (!camera_entity) {
-        return;
-    }
-
-    auto *existing = camera_entity.try_get_component<NativeScriptComponent>();
-    if (existing != nullptr && existing->is_bound()) {
-        default_script_bound_ = true;
-        return;
-    }
-
-    const bool available =
-        std::any_of(ScriptRegistry::get().entries().begin(),
-                    ScriptRegistry::get().entries().end(),
-                    [](const ScriptEntry &entry) {
-                        return entry.name == "CameraController";
-                    });
-    if (!available) {
-        // The module is still being built (fresh tree) or the script was
-        // removed; poll_scripts() tries again once the build has finished.
-        return;
-    }
-
-    if (existing == nullptr) {
-        camera_entity.add_component<NativeScriptComponent>();
-    }
-    if (ScriptRegistry::get().bind_by_name("CameraController", camera_entity)) {
-        const auto &tag = camera_entity.get_component<TagComponent>();
-        IVX_INFO("'{}': bound CameraController (WASD move, Q/E rotate, wheel "
-                 "zoom)",
-                 tag.value);
-        default_script_bound_ = true;
-    }
-}
-
 void EditLayer::on_detach() {
     IVX_PROFILE_FUNCTION();
-
-    // Script instances live inside VXScripts.dll: their vtable and their code
-    // are gone once the module is unloaded. Scene::~Scene() calls on_destroy()
-    // on whatever is still bound, and ~Scene runs *after* this layer's
-    // ScriptHost member, so the instances have to be released here, while the
-    // module is still mapped.
-    scripts_.release_all_scripts();
 
     // Leave the global gate open for whatever runs after the editor layer.
     Input::set_enabled(true);
@@ -188,30 +82,9 @@ void EditLayer::on_detach() {
 void EditLayer::on_update(float dt) {
     IVX_PROFILE_FUNCTION();
 
-    const auto update_start = std::chrono::steady_clock::now();
-
-    // Finalize the previous frame's measurements and start a new sample.
-    if (stats_panel_) {
-        stats_panel_->begin_frame(dt);
-    }
-
     // Keeps collecting log output even when the Console panel is closed.
     if (console_panel_) {
         console_panel_->pump();
-    }
-
-    // Finish a script build that ran on the worker thread this frame: the
-    // reload itself must happen here, on the main thread.
-    poll_scripts();
-
-    // Pick up a script edited, or an engine header changed, while the editor
-    // runs (~once every 2 s at 60 fps). A script edit only refreshes the hint;
-    // a header change schedules a rebuild, because a module built before its
-    // headers runs old inline code.
-    if (++staleness_tick_ >= 120) {
-        staleness_tick_ = 0;
-        rebuild_if_headers_changed();
-        refresh_scripts_staleness();
     }
 
     if (visible_) {
@@ -224,18 +97,15 @@ void EditLayer::on_update(float dt) {
                 scene_->on_viewport_resize(w, h);
             }
             frame_buffer_->resize(w, h);
+            editor_camera_.set_viewport_size(w, h);
         }
     }
-
-    // Gate input, not script state: overwriting NativeScriptComponent::enabled
-    // here used to silently undo the inspector's "Enabled" checkbox and made
-    // "Unbind" look broken. Whether a script runs is the user's choice; whether
-    // keyboard polling happens depends on viewport focus (set while drawing the
-    // viewport panel, see draw_viewport_content()).
 
     if (scene_) {
         scene_->on_update(dt);
     }
+
+    editor_camera_.on_update(dt);
 
     // render
     Renderer2D::reset_stats();
@@ -253,18 +123,10 @@ void EditLayer::on_update(float dt) {
         // draw
         IVX_PROFILE_SCOPE("Renderer draw");
 
-        scene_->on_render();
+        scene_->on_render(editor_camera_);
     }
 
     frame_buffer_->unbind();
-
-    if (stats_panel_) {
-        const auto update_end = std::chrono::steady_clock::now();
-        const float ms =
-            std::chrono::duration<float, std::milli>(update_end - update_start)
-                .count();
-        stats_panel_->submit("update", ms);
-    }
 }
 
 void EditLayer::on_event(Event &event) {
@@ -272,8 +134,11 @@ void EditLayer::on_event(Event &event) {
     // viewport owns the input. The rule has to match the polling one exactly:
     // with focus-only gating here and hover-based gating there, the wheel
     // (event) died while WASD (polled) kept working.
-    if (input_owned_ && scene_) {
-        scene_->on_event(event);
+    if (input_owned_) {
+        if (scene_) {
+            scene_->on_event(event);
+        }
+        editor_camera_.on_event(event);
     }
 }
 
@@ -308,14 +173,6 @@ void EditLayer::on_imgui() {
     }
 
     // --- UI / ImGui submission ---
-    const auto ui_start = std::chrono::steady_clock::now();
-
-    // The stats overlay is anchored to the viewport: hide it while the viewport
-    // tab is not the visible one (writing a script, for instance), otherwise it
-    // covers the code. One frame of lag, which is invisible in practice.
-    if (stats_panel_ && viewport_panel_) {
-        stats_panel_->set_host_visible(viewport_panel_->visible_this_frame());
-    }
 
     panels_.on_render();
 
@@ -330,13 +187,6 @@ void EditLayer::on_imgui() {
         }
     }
 
-    if (stats_panel_) {
-        const float ms = std::chrono::duration<float, std::milli>(
-                             std::chrono::steady_clock::now() - ui_start)
-                             .count();
-        stats_panel_->submit("ui", ms);
-    }
-
     // The input gate is driven by the viewport focus sampled while drawing the
     // panel. If the panel did not draw this frame (closed, collapsed, or the
     // window hidden) nobody owns the keyboard, and a stale `true` here would
@@ -349,59 +199,10 @@ void EditLayer::on_imgui() {
     viewport_sampled_ = false;
 }
 
-void EditLayer::reload_scripts() {
-    IVX_PROFILE_FUNCTION();
-
-    // Non-blocking: the build runs on a worker thread and is picked up by
-    // poll_scripts() in on_update().
-    if (!scripts_.begin_build()) {
-        IVX_WARN("Script build already running");
-    }
-}
-
 void EditLayer::create_scene() {
-    // The old scene is about to be replaced, so everything tied to it goes with
-    // it:
-    //
-    //   * the script instances live in the DLL but are owned by the entities of
-    //   the old
-    //     scene, so they are released while the module is still around (~Scene
-    //     would do it as well, this just makes the order explicit);
-    //   * default_script_bound_ is *per scene* state - it means "the primary
-    //   camera of this
-    //     scene got its controller". Leaving it set made the second and every
-    //     later New skip the binding, which is why the WASD controls silently
-    //     died after a couple of new scenes;
-    //   * ScriptHost::set_scene() drops any binding a build in flight had
-    //   recorded for the
-    //     previous scene (entity handles overlap between scenes).
-    scripts_.release_all_scripts();
-    default_script_bound_ = false;
-
     scene_ = make_ref<Scene>();
     context_.scene = scene_;
     context_.clear_selection();
-
-    {
-        Entity camera_entity = scene_->create_entity("Camera");
-        auto &camera = camera_entity.add_component<CameraComponent>();
-        camera.camera.set_orthographic_size(static_cast<float>(HEIGHT));
-        camera.camera.set_projection_type(
-            SceneCamera::ProjectionType::Perspective);
-        camera.primary = true;
-
-        // Three-quarter view onto the cube: sitting at (500, 500, 500) with
-        // rotation zero the camera looks straight down -Z, so the cube ends up
-        // 500 units off to the side/below the view axis and only its near face
-        // fills the corner of the screen. Yaw 45 / pitch -35.26 aims the camera
-        // at the origin from that corner, and the distance stays inside the
-        // default far plane (1000).
-        auto &camera_transform =
-            camera_entity.get_component<TransformComponent>();
-        camera_transform.translation = glm::vec3{500.f};
-        camera_transform.rotation =
-            glm::vec3{glm::radians(-35.264f), glm::radians(45.f), 0.f};
-    }
 
     {
         Entity cube_entity = scene_->create_entity("Cube");
@@ -490,15 +291,6 @@ void EditLayer::create_scene() {
         scene_->set_parent(bottom, cube_entity);
     }
 
-    scripts_.set_scene(scene_.get());
-    bind_default_camera_script();
-
-    // The new scene's cameras start with SceneCamera's default 16:9 aspect.
-    // Nothing else tells them the real viewport size - on_update() only calls
-    // on_viewport_resize() when the framebuffer is resized, and that does not
-    // happen when the scene is swapped - so without this the cube renders
-    // squashed (the projection assumes a wider viewport than the panel has)
-    // until the layout is dragged.
     if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {
         scene_->on_viewport_resize(static_cast<uint32_t>(viewport_size_.x),
                                    static_cast<uint32_t>(viewport_size_.y));
@@ -518,21 +310,10 @@ void EditLayer::load_scene(const std::filesystem::path &filepath) {
     context_.scene = scene_;
     context_.clear_selection();
 
-    // Scripts and viewport have to be re-attached to the new scene: the
-    // serializer stores a Native Script by name only, and camera aspect ratios
-    // come from the viewport.
-    scripts_.set_scene(scene_.get());
-    scripts_.bind_scene_scripts();
-
     if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {
         scene_->on_viewport_resize(static_cast<uint32_t>(viewport_size_.x),
                                    static_cast<uint32_t>(viewport_size_.y));
     }
-
-    // Let bind_default_camera_script() run again for a camera that has no
-    // controller yet.
-    default_script_bound_ = false;
-    bind_default_camera_script();
 }
 
 void EditLayer::save_scene(const std::filesystem::path &filepath) {
@@ -540,69 +321,6 @@ void EditLayer::save_scene(const std::filesystem::path &filepath) {
         return;
     }
     Serializer::serialize(scene_, filepath);
-}
-
-void EditLayer::poll_scripts() {
-    if (!scripts_.is_building()) {
-        return;
-    }
-
-    scripts_.poll_build();
-    if (scripts_.is_building()) {
-        return; // still compiling
-    }
-
-    // A fresh tree has no DLL at startup, so the default camera binding could
-    // not happen yet: retry now that the module is loaded.
-    bind_default_camera_script();
-
-    // ScriptHost::poll_build() already logs the outcome ("Scripts: build ok in
-    // ..."). The compiler output itself lives in the Build tab, so it is not
-    // echoed here.
-
-    // The module just changed on disk: the "stale" hint is only true while the
-    // sources are newer than it, so re-evaluate instead of keeping the startup
-    // verdict.
-    refresh_scripts_staleness();
-}
-
-void EditLayer::refresh_scripts_staleness() {
-    if (scripts_.is_building() || !scripts_.is_loaded()) {
-        return; // nothing to compare against; keep the previous verdict
-    }
-    scripts_stale_ = scripts_.has_newer_sources();
-}
-
-void EditLayer::rebuild_if_headers_changed() {
-    if (scripts_.is_building() || !scripts_.is_loaded()) {
-        return;
-    }
-
-    // Engine headers are the module's *code*: inline functions such as the
-    // SceneCamera accessors are compiled into VXScripts.dll. A module built
-    // before them keeps the old behaviour without any fuss (a changed FOV
-    // setter once left the wheel zoom clamped to 1 degree), and a layout change
-    // reads the wrong offsets. So this rebuilds on its own instead of waiting
-    // for the user; a plain script edit still only shows a hint.
-    const std::filesystem::file_time_type newest =
-        scripts_.newest_engine_header();
-    if (newest == std::filesystem::file_time_type{} ||
-        newest <= headers_rebuild_mark_) {
-        return; // nothing new since the last attempt: a failing build must not
-                // loop
-    }
-    if (!scripts_.has_newer_engine_headers()) {
-        return;
-    }
-
-    headers_rebuild_mark_ = newest;
-    IVX_INFO("Scripts: engine headers changed, rebuilding {}",
-             std::filesystem::path{SCRIPTS_DLL}.filename().string());
-    // Clean: no script source changed, and Ninja's dependency database does not
-    // reliably track engine headers - an incremental build answers "no work to
-    // do", leaves the old module in place, and would rebuild again on every
-    // tick forever.
-    scripts_.begin_build(true);
 }
 
 void EditLayer::setup_panels() {
@@ -630,11 +348,6 @@ void EditLayer::setup_panels() {
 
     inspector_panel_ = panels_.add<InspectorPanel>(context_);
     console_panel_ = panels_.add<ConsolePanel>();
-    // Compiler output lives next to the Console (docked as a second tab in
-    // layout.cpp).
-    build_output_panel_ = panels_.add<BuildOutputPanel>(scripts_);
-    stats_panel_ = panels_.add<StatsPanel>();
-    script_panel_ = panels_.add<ScriptPanel>(scripts_);
 }
 
 void EditLayer::draw_menu_bar() {
@@ -682,12 +395,6 @@ void EditLayer::draw_menu_bar() {
         }
         if (ImGui::MenuItem("Scale", "3", gizmo_mode_ == GizmoMode::Scale)) {
             gizmo_mode_ = GizmoMode::Scale;
-        }
-        ImGui::EndMenu();
-    }
-    if (ImGui::BeginMenu("Scripts")) {
-        if (ImGui::MenuItem("Rebuild & Reload")) {
-            reload_scripts();
         }
         ImGui::EndMenu();
     }
@@ -755,36 +462,17 @@ void EditLayer::draw_status_bar() {
         ImGui::SameLine();
         ImGui::Text("%.0fx%.0f viewport", viewport_size_.x, viewport_size_.y);
 
-        // --- right: script module state, then frame timing
-        char scripts_text[128];
-        ImVec4 scripts_color = ImGui::GetStyleColorVec4(ImGuiCol_Text);
-        if (scripts_.is_building()) {
-            std::snprintf(scripts_text,
-                          sizeof(scripts_text),
-                          "Scripts: building... %.1f s",
-                          scripts_.build_seconds());
-        } else if (!scripts_.is_loaded()) {
-            std::snprintf(scripts_text, sizeof(scripts_text), "Scripts: none");
-        } else if (!scripts_.build_log().empty() && !scripts_.last_build_ok()) {
-            std::snprintf(
-                scripts_text, sizeof(scripts_text), "Scripts: build failed");
-        } else if (scripts_stale_) {
-            // A script source changed after the module was built, so the
-            // running scripts are the previous build of it. Engine-header
-            // changes do not show up here: they rebuild the module on their
-            // own.
-            std::snprintf(scripts_text,
-                          sizeof(scripts_text),
-                          "Scripts: %zu | sources changed (Scripts > Rebuild & "
-                          "Reload)",
-                          ScriptRegistry::get().entries().size());
-            scripts_color = ImVec4{0.95f, 0.78f, 0.35f, 1.f};
-        } else {
-            std::snprintf(scripts_text,
-                          sizeof(scripts_text),
-                          "Scripts: %zu",
-                          ScriptRegistry::get().entries().size());
-        }
+        // --- right: what the viewport is doing and how fast it is doing it
+        //
+        // Both blocks are laid out from the right edge so the left side can
+        // grow (a long entity name) without pushing them off screen. The gizmo
+        // mode lives here because it is the one piece of state with no other
+        // readout.
+        const char *const gizmo_name =
+            !context_.has_selection()             ? "None"
+            : gizmo_mode_ == GizmoMode::Translate ? "Move"
+            : gizmo_mode_ == GizmoMode::Rotate    ? "Rotate"
+                                                  : "Scale";
 
         const ImGuiIO &io = ImGui::GetIO();
         char fps_text[64];
@@ -794,29 +482,14 @@ void EditLayer::draw_status_bar() {
                       io.Framerate,
                       io.Framerate > 0.f ? 1000.f / io.Framerate : 0.f);
 
-        // The hint is informational on purpose: the editor never rebuilds on
-        // its own, and the status bar sits against the window edge where a
-        // button is awkward to hit. The rebuild entry points are the Scripts
-        // menu and Ctrl+B (which needs the Scripts tab focused).
-        const float right_width = ImGui::CalcTextSize(scripts_text).x +
+        const ImGuiStyle &style = ImGui::GetStyle();
+        const float separator_width = ImGui::CalcTextSize("|").x;
+        const float block_width = ImGui::CalcTextSize(gizmo_name).x +
                                   ImGui::CalcTextSize(fps_text).x +
-                                  ImGui::CalcTextSize("  |  ").x + 2.f;
-        const float right_x = ImGui::GetWindowWidth() - right_width - 10.f;
-        if (right_x > ImGui::GetCursorPosX() + 8.f) {
-            ImGui::SameLine(right_x);
-        } else {
-            ImGui::SameLine();
-        }
-
-        if (!scripts_.is_loaded()) {
-            ImGui::TextColored(
-                ImVec4{0.90f, 0.45f, 0.45f, 1.f}, "%s", scripts_text);
-        } else if (scripts_.is_building() || scripts_stale_) {
-            ImGui::TextColored(scripts_color, "%s", scripts_text);
-        } else {
-            ImGui::TextUnformatted(scripts_text);
-        }
-
+                                  2.f * separator_width +
+                                  4.f * style.ItemSpacing.x;
+        ImGui::SameLine(ImGui::GetWindowContentRegionMax().x - block_width);
+        ImGui::TextUnformatted(gizmo_name);
         ImGui::SameLine();
         ImGui::TextDisabled("|");
         ImGui::SameLine();
@@ -871,13 +544,15 @@ void EditLayer::draw_viewport_content() {
 
 int EditLayer::gizmo_operation() const {
     switch (gizmo_mode_) {
+    case GizmoMode::Translate:
+        return ImGuizmo::TRANSLATE;
     case GizmoMode::Rotate:
         return ImGuizmo::ROTATE;
     case GizmoMode::Scale:
         return ImGuizmo::SCALE;
-    case GizmoMode::Translate:
     default:
-        return ImGuizmo::TRANSLATE;
+        IVX_CORE_ASSERT(false, "Unsupported operation!");
+        return 0;
     }
 }
 
@@ -889,29 +564,27 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
     Entity selected = context_.selected_entity();
     auto &transform = selected.get_component<TransformComponent>();
 
-    // The viewport renders with the primary camera, so the gizmo has to use the
-    // same pair of matrices or the handles drift away from the geometry.
-    glm::mat4 view{1.f};
-    glm::mat4 projection{1.f};
-    bool orthographic = true;
-    bool found = false;
-    for (auto [handle, camera, camera_transform] :
-         scene_->registry()
-             .view<CameraComponent, TransformComponent>()
-             .each()) {
-        if (!camera.primary) {
-            continue;
-        }
-        projection = camera.camera.get_proj_matrix();
-        view = glm::inverse(camera_transform.world);
-        orthographic = camera.camera.get_projection_type() ==
-                       SceneCamera::ProjectionType::Orthographic;
-        found = true;
-        break;
-    }
-    if (!found) {
-        return;
-    }
+    // The viewport renders with the primary camera, so the gizmo has to use
+    // the same pair of matrices or the handles drift away from the
+    // geometry. glm::mat4 view{1.f}; glm::mat4 projection{1.f}; bool
+    // orthographic = true; bool found = false; for (auto [handle, camera,
+    // camera_transform] :
+    //      scene_->registry()
+    //          .view<CameraComponent, TransformComponent>()
+    //          .each()) {
+    //     if (!camera.primary) {
+    //         continue;
+    //     }
+    //     projection = camera.camera.get_proj_matrix();
+    //     view = glm::inverse(camera_transform.world);
+    //     orthographic = camera.camera.get_projection_type() ==
+    //                    SceneCamera::ProjectionType::Orthographic;
+    //     found = true;
+    //     break;
+    // }
+    // if (!found) {
+    //     return;
+    // }
 
     if (input_owned_) {
         if (Input::is_key_pressed(KeyCode::D1)) {
@@ -944,18 +617,27 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
         }
     }
 
-    ImGuizmo::SetOrthographic(orthographic);
+    ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(image_min.x, image_min.y, image_size.x, image_size.y);
 
+    // ImGuizmo wants the view and the projection separately; handing it a
+    // view-projection matrix applies the view twice and the handles drift
+    // off the entity.
+    glm::mat4 view = editor_camera_.get_view_matrix();
+    glm::mat4 projection = editor_camera_.get_proj_matrix();
+
     glm::mat4 model = transform.world;
-    ImGuizmo::Manipulate(glm::value_ptr(view),
-                         glm::value_ptr(projection),
-                         static_cast<ImGuizmo::OPERATION>(gizmo_operation()),
-                         ImGuizmo::LOCAL,
-                         glm::value_ptr(model),
-                         nullptr,
-                         snap_ptr);
+
+    if (int op = gizmo_operation()) {
+        ImGuizmo::Manipulate(glm::value_ptr(view),
+                             glm::value_ptr(projection),
+                             static_cast<ImGuizmo::OPERATION>(op),
+                             ImGuizmo::LOCAL,
+                             glm::value_ptr(model),
+                             nullptr,
+                             snap_ptr);
+    }
 
     if (ImGuizmo::IsUsing()) {
         apply_gizmo_matrix(selected, model);

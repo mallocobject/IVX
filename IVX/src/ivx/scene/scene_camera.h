@@ -1,26 +1,17 @@
 #pragma once
 
+#include "ivx/render/camera.h"
 #include <cstdint>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
 
 namespace ivx {
 
-// Camera parameters, modelled after Hazel's SceneCamera: the projection type is
-// an explicit switch and each type keeps its own parameters, so flipping the
-// type never destroys the other side's values.
-//
-// Near/far are *distances along the view direction*, never world coordinates:
-// the camera looks down -Z of its own view space, so the near plane sits at
-// z_view = -near. That is the same convention as
-// glm::perspective()/glm::ortho() and it is why near/far are always positive
-// even though the visible geometry has negative view-space z.
-class SceneCamera {
+class SceneCamera : public Camera {
   public:
     enum class ProjectionType { Perspective = 0, Orthographic = 1 };
 
     SceneCamera() = default;
-    virtual ~SceneCamera() = default;
 
     void set_projection_type(ProjectionType type);
     ProjectionType get_projection_type() const {
@@ -84,7 +75,7 @@ class SceneCamera {
     float get_orthographic_width() const;
     float get_orthographic_height() const;
 
-    glm::mat4 get_proj_matrix() const;
+    virtual glm::mat4 get_proj_matrix() const override;
 
   private:
     ProjectionType projection_type_{ProjectionType::Orthographic};

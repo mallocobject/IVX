@@ -299,6 +299,34 @@ void Scene::update_world_recursive(Entity entity,
     }
 }
 
+void Scene::on_render(Camera &camera) {
+    // Without this the sprites are drawn with whatever
+    // TransformComponent::world held last (identity on the first frame): every
+    // quad collapses onto the origin and the viewport shows a single flat card
+    // instead of the scene.
+    update_world_transforms();
+
+    Renderer2D::begin_scene(camera.get_proj_matrix(), camera.get_view_matrix());
+    for (auto [handle, transform, sprite] :
+         registry_.view<TransformComponent, SpriteRendererComponent>().each()) {
+        // The quad is unit sized, the sprite's own size is applied here so
+        // that a parent's TransformComponent::scale does not scale it.
+        const glm::mat4 model =
+            transform.world *
+            glm::scale(glm::mat4{1.f}, glm::vec3{sprite.size, 1.f});
+        if (sprite.sub_texture) {
+            Renderer2D::draw_quad(
+                model, sprite.sub_texture, sprite.tiling_factor, sprite.color);
+        } else if (sprite.texture) {
+            Renderer2D::draw_quad(
+                model, sprite.texture, sprite.tiling_factor, sprite.color);
+        } else {
+            Renderer2D::draw_quad(model, sprite.color);
+        }
+    }
+    Renderer2D::end_scene();
+}
+
 void Scene::on_render() {
     update_world_transforms();
 

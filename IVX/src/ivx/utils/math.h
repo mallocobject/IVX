@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <cmath>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
