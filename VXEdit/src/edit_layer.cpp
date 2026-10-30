@@ -116,6 +116,21 @@ void EditLayer::on_update(float dt) {
         }
     }
 
+    if (input_owned_) {
+        if (Input::is_key_pressed(KeyCode::D0)) {
+            gizmo_mode_ = GizmoMode::None;
+        }
+        if (Input::is_key_pressed(KeyCode::D1)) {
+            gizmo_mode_ = GizmoMode::Translate;
+        }
+        if (Input::is_key_pressed(KeyCode::D2)) {
+            gizmo_mode_ = GizmoMode::Rotate;
+        }
+        if (Input::is_key_pressed(KeyCode::D3)) {
+            gizmo_mode_ = GizmoMode::Scale;
+        }
+    }
+
     if (scene_) {
         scene_->on_update(dt);
     }
@@ -147,6 +162,26 @@ void EditLayer::on_event(Event &event) {
             scene_->on_event(event);
         }
         editor_camera_.on_event(event);
+
+        if (Input::is_mouse_button_pressed(MouseCode::ButtonLeft)) {
+            if (viewport_mouse_pos_.x >= 0.f && viewport_mouse_pos_.y >= 0.f &&
+                viewport_mouse_pos_.x < viewport_size_.x &&
+                viewport_mouse_pos_.y < viewport_size_.y) {
+                const auto fbo_x = static_cast<uint32_t>(viewport_mouse_pos_.x);
+                const auto fbo_y = static_cast<uint32_t>(viewport_size_.y -
+                                                         viewport_mouse_pos_.y);
+
+                if (uint32_t uid = frame_buffer_->read_pixel(1, fbo_x, fbo_y)) {
+                    Entity entity{static_cast<entt::entity>(uid - 1),
+                                  scene_.get()};
+                    editor_context_.select(entity);
+
+                    IVX_CORE_DEBUG("picked uid {} at {},{}", uid, fbo_x, fbo_y);
+                } else {
+                    editor_context_.clear_selection();
+                }
+            }
+        }
     }
 }
 
@@ -562,22 +597,8 @@ void EditLayer::draw_viewport_content() {
 
     const ImVec2 image_min = ImGui::GetItemRectMin();
     const ImVec2 mouse = ImGui::GetIO().MousePos;
-    const float local_x = mouse.x - image_min.x;
-    const float local_y = mouse.y - image_min.y;
-    if (ImGui::IsItemClicked() && local_x >= 0.f && local_y >= 0.f &&
-        local_x < w && local_y < h) {
-        const auto fbo_x = static_cast<uint32_t>(local_x);
-        const auto fbo_y = static_cast<uint32_t>(h - local_y);
-
-        if (uint32_t uid = frame_buffer_->read_pixel(1, fbo_x, fbo_y)) {
-            Entity entity{static_cast<entt::entity>(uid - 1), scene_.get()};
-            editor_context_.select(entity);
-
-            IVX_CORE_DEBUG("picked uid {} at {},{}", uid - 1, fbo_x, fbo_y);
-        } else {
-            editor_context_.clear_selection();
-        }
-    }
+    viewport_mouse_pos_.x = mouse.x - image_min.x;
+    viewport_mouse_pos_.y = mouse.y - image_min.y;
 
     // Gizmo handles go on top of the image, in its exact rectangle.
     draw_gizmo(image_min, ImGui::GetItemRectSize());
@@ -625,21 +646,6 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
     // if (!found) {
     //     return;
     // }
-
-    if (input_owned_) {
-        if (Input::is_key_pressed(KeyCode::D0)) {
-            gizmo_mode_ = GizmoMode::None;
-        }
-        if (Input::is_key_pressed(KeyCode::D1)) {
-            gizmo_mode_ = GizmoMode::Translate;
-        }
-        if (Input::is_key_pressed(KeyCode::D2)) {
-            gizmo_mode_ = GizmoMode::Rotate;
-        }
-        if (Input::is_key_pressed(KeyCode::D3)) {
-            gizmo_mode_ = GizmoMode::Scale;
-        }
-    }
 
     float snap_value[3]{0.f};
     float *snap_ptr = nullptr;

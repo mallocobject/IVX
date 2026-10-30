@@ -61,8 +61,8 @@ Entity Scene::create_entity(const std::string &name) {
     entity.add_component<TransformComponent>();
     entity.add_component<RelationshipComponent>();
     entity.add_component<TagComponent>(name);
-    entity.add_component<IdComponent>(
-        static_cast<uint32_t>(entity.handle())); // HACK
+    entity.add_component<IdComponent>(static_cast<uint32_t>(entity.handle()) +
+                                      1); // HACK
     return entity;
 }
 
@@ -322,15 +322,15 @@ void Scene::render(const Camera &camera) {
                                   sprite.sub_texture,
                                   sprite.tiling_factor,
                                   sprite.color,
-                                  id.uid + 1);
+                                  id.uid);
         } else if (sprite.texture) {
             Renderer2D::draw_quad(model,
                                   sprite.texture,
                                   sprite.tiling_factor,
                                   sprite.color,
-                                  id.uid + 1);
+                                  id.uid);
         } else {
-            Renderer2D::draw_quad(model, sprite.color, id.uid + 1);
+            Renderer2D::draw_quad(model, sprite.color, id.uid);
         }
     }
     Renderer2D::end_batch();
@@ -344,7 +344,7 @@ void Scene::render(const Camera &camera) {
             Renderer3D::submit(mesh_renderer.mesh,
                                transform.world,
                                mesh_renderer.color,
-                               id.uid + 1);
+                               id.uid);
         }
     }
     Renderer3D::end_batch();

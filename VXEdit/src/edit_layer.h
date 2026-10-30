@@ -80,6 +80,7 @@ class EditLayer : public Layer {
     bool viewport_sampled_{false};
     bool visible_{false};
     ImVec2 viewport_size_{0.f, 0.f};
+    ImVec2 viewport_mouse_pos_{0.f, 0.f};
 
     // Which handles the gizmo shows. Keys 1/2/3 switch it while the viewport
     // owns the input; the menu shows the same three entries.
