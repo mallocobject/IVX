@@ -26,12 +26,14 @@ class Renderer3D {
     static void submit(const Ref<Mesh> &mesh,
                        const Ref<Shader> &shader,
                        const glm::mat4 &transform,
-                       const glm::vec4 &tint = glm::vec4{1.f});
+                       const glm::vec4 &tint = glm::vec4{1.f},
+                       uint32_t uid = 0);
 
     // Uses the built in lit shader created in init().
     static void submit(const Ref<Mesh> &mesh,
                        const glm::mat4 &transform,
-                       const glm::vec4 &color = glm::vec4{1.f});
+                       const glm::vec4 &color = glm::vec4{1.f},
+                       uint32_t uid = 0);
 
     struct Statistics {
         uint32_t draw_calls{0};

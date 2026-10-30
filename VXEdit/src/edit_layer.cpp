@@ -60,7 +60,8 @@ void EditLayer::on_attach() {
     spec.width = WIDTH;
     spec.height = HEIGHT;
     spec.num_samples = 4;
-    spec.attachments = {{FrameBufferTextureFormat::RGBA8}};
+    spec.attachments = {{FrameBufferTextureFormat::RGBA8},
+                        {FrameBufferTextureFormat::RED_INTEGER}};
 
     frame_buffer_ = FrameBuffer::create(spec);
 
@@ -81,7 +82,7 @@ void EditLayer::on_attach() {
     // entities added to it had no file to belong to; the hierarchy panel
     // refuses to create entities until a scene exists.
     scene_.reset();
-    context_.scene.reset();
+    editor_context_.scene.reset();
 
     setup_panels();
 }
@@ -208,8 +209,8 @@ void EditLayer::on_imgui() {
 
 void EditLayer::create_scene() {
     scene_ = make_ref<Scene>();
-    context_.scene = scene_;
-    context_.clear_selection();
+    editor_context_.scene = scene_;
+    editor_context_.clear_selection();
 
     {
         Entity cube_entity = scene_->create_entity("Cube");
@@ -322,11 +323,11 @@ void EditLayer::load_scene(const std::filesystem::path &filepath) {
     }
 
     // The whole scene object is replaced: cameras, scripts and the selection
-    // all point into the old one. Panels read context_.scene, so they follow
-    // along.
+    // all point into the old one. Panels read editor_context_.scene, so they
+    // follow along.
     scene_ = std::move(loaded);
-    context_.scene = scene_;
-    context_.clear_selection();
+    editor_context_.scene = scene_;
+    editor_context_.clear_selection();
 
     if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {
         scene_->on_viewport_resize(static_cast<uint32_t>(viewport_size_.x),
@@ -347,7 +348,7 @@ void EditLayer::setup_panels() {
     register_all_components();
 
     // Deterministic draw order: Hierarchy -> Viewport -> Inspector -> Camera.
-    scene_hierarchy_panel_ = panels_.add<SceneHierarchyPanel>(context_);
+    scene_hierarchy_panel_ = panels_.add<SceneHierarchyPanel>(editor_context_);
 
     auto viewport = panels_.add<LambdaPanel>(
         "Viewport", [this]() { draw_viewport_content(); });
@@ -364,7 +365,7 @@ void EditLayer::setup_panels() {
         });
     viewport_panel_ = viewport;
 
-    inspector_panel_ = panels_.add<InspectorPanel>(context_);
+    inspector_panel_ = panels_.add<InspectorPanel>(editor_context_);
     console_panel_ = panels_.add<ConsolePanel>();
 }
 
@@ -404,6 +405,9 @@ void EditLayer::draw_menu_bar() {
         // Same three modes as the numeric shortcuts; the checkmark doubles as
         // the current state readout (there is no room for one in the status
         // bar).
+        if (ImGui::MenuItem("None", "0", gizmo_mode_ == GizmoMode::None)) {
+            gizmo_mode_ = GizmoMode::None;
+        }
         if (ImGui::MenuItem(
                 "Translate", "1", gizmo_mode_ == GizmoMode::Translate)) {
             gizmo_mode_ = GizmoMode::Translate;
@@ -459,8 +463,8 @@ void EditLayer::draw_status_bar() {
                                     ImGuiWindowFlags_NoScrollbar |
                                         ImGuiWindowFlags_NoSavedSettings)) {
         // --- left: what is selected, then how big the scene is
-        if (context_.has_selection()) {
-            const Entity selected = context_.selected_entity();
+        if (editor_context_.has_selection()) {
+            const Entity selected = editor_context_.selected_entity();
             const auto &tag = selected.get_component<TagComponent>();
             ImGui::TextUnformatted(tag.value.c_str());
 
@@ -487,7 +491,7 @@ void EditLayer::draw_status_bar() {
         // mode lives here because it is the one piece of state with no other
         // readout.
         const char *const gizmo_name =
-            !context_.has_selection()             ? "None"
+            gizmo_mode_ == GizmoMode::None        ? "None"
             : gizmo_mode_ == GizmoMode::Translate ? "Move"
             : gizmo_mode_ == GizmoMode::Rotate    ? "Rotate"
                                                   : "Scale";
@@ -551,13 +555,32 @@ void EditLayer::draw_viewport_content() {
     viewport_size_ = {w, h};
 
     ImGui::Image(
-        static_cast<ImTextureID>(frame_buffer_->get_color_attachment()),
+        static_cast<ImTextureID>(frame_buffer_->get_color_attachment(0)),
         viewport_size_,
         ImVec2{0.0f, 1.0f},
         ImVec2{1.0f, 0.0f});
 
+    const ImVec2 image_min = ImGui::GetItemRectMin();
+    const ImVec2 mouse = ImGui::GetIO().MousePos;
+    const float local_x = mouse.x - image_min.x;
+    const float local_y = mouse.y - image_min.y;
+    if (ImGui::IsItemClicked() && local_x >= 0.f && local_y >= 0.f &&
+        local_x < w && local_y < h) {
+        const auto fbo_x = static_cast<uint32_t>(local_x);
+        const auto fbo_y = static_cast<uint32_t>(h - local_y);
+
+        if (uint32_t uid = frame_buffer_->read_pixel(1, fbo_x, fbo_y)) {
+            Entity entity{static_cast<entt::entity>(uid - 1), scene_.get()};
+            editor_context_.select(entity);
+
+            IVX_CORE_DEBUG("picked uid {} at {},{}", uid - 1, fbo_x, fbo_y);
+        } else {
+            editor_context_.clear_selection();
+        }
+    }
+
     // Gizmo handles go on top of the image, in its exact rectangle.
-    draw_gizmo(ImGui::GetItemRectMin(), ImGui::GetItemRectSize());
+    draw_gizmo(image_min, ImGui::GetItemRectSize());
 }
 
 int EditLayer::gizmo_operation() const {
@@ -569,17 +592,16 @@ int EditLayer::gizmo_operation() const {
     case GizmoMode::Scale:
         return ImGuizmo::SCALE;
     default:
-        IVX_CORE_ASSERT(false, "Unsupported operation!");
         return 0;
     }
 }
 
 void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
-    if (!scene_ || !context_.has_selection()) {
+    if (!scene_ || !editor_context_.has_selection()) {
         return;
     }
 
-    Entity selected = context_.selected_entity();
+    Entity selected = editor_context_.selected_entity();
     auto &transform = selected.get_component<TransformComponent>();
 
     // The viewport renders with the primary camera, so the gizmo has to use
@@ -605,6 +627,9 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
     // }
 
     if (input_owned_) {
+        if (Input::is_key_pressed(KeyCode::D0)) {
+            gizmo_mode_ = GizmoMode::None;
+        }
         if (Input::is_key_pressed(KeyCode::D1)) {
             gizmo_mode_ = GizmoMode::Translate;
         }

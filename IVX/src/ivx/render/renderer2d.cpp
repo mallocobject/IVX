@@ -28,6 +28,7 @@ struct QuadVertex {
     glm::vec2 tex_coord;
     int32_t tex_index;
     float tiling_factor;
+    uint32_t uid{0u};
 };
 
 struct Renderer2DData {
@@ -68,7 +69,8 @@ void Renderer2D::init() {
                          {"a_Color", ShaderDataType::vec4, false},
                          {"a_TexCoord", ShaderDataType::vec2, false},
                          {"a_TexIndex", ShaderDataType::ivec, false},
-                         {"a_TilingFactor", ShaderDataType::vec, false}}};
+                         {"a_TilingFactor", ShaderDataType::vec, false},
+                         {"a_Uid", ShaderDataType::uvec, false}}};
 
     data.quad_vertex_buffer->set_buffer_layout(bl);
 
@@ -174,7 +176,9 @@ void Renderer2D::flush() {
     data.stats.num_draw_calls++;
 }
 
-void Renderer2D::draw_quad(const glm::mat4 &transform, const glm::vec4 &color) {
+void Renderer2D::draw_quad(const glm::mat4 &transform,
+                           const glm::vec4 &color,
+                           const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     if (data.quad_index_count >= Renderer2DData::max_num_indices) {
@@ -193,6 +197,7 @@ void Renderer2D::draw_quad(const glm::mat4 &transform, const glm::vec4 &color) {
         data.quad_vertex_buffer_ptr->tex_coord = tex_coords[i];
         data.quad_vertex_buffer_ptr->tex_index = tex_index;
         data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+        data.quad_vertex_buffer_ptr->uid = uid;
         data.quad_vertex_buffer_ptr++;
     }
 
@@ -204,7 +209,8 @@ void Renderer2D::draw_quad(const glm::mat4 &transform, const glm::vec4 &color) {
 void Renderer2D::draw_quad(const glm::mat4 &transform,
                            const Ref<Texture2D> &texture,
                            float tiling_factor,
-                           const glm::vec4 &tint_color) {
+                           const glm::vec4 &tint_color,
+                           const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     if (data.quad_index_count >= Renderer2DData::max_num_indices) {
@@ -233,6 +239,7 @@ void Renderer2D::draw_quad(const glm::mat4 &transform,
         data.quad_vertex_buffer_ptr->tex_coord = tex_coords[i];
         data.quad_vertex_buffer_ptr->tex_index = tex_index;
         data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+        data.quad_vertex_buffer_ptr->uid = uid;
         data.quad_vertex_buffer_ptr++;
     }
 
@@ -244,7 +251,8 @@ void Renderer2D::draw_quad(const glm::mat4 &transform,
 void Renderer2D::draw_quad(const glm::mat4 &transform,
                            const Ref<SubTexture2D> &sub_texture,
                            float tiling_factor,
-                           const glm::vec4 &tint_color) {
+                           const glm::vec4 &tint_color,
+                           const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     if (data.quad_index_count >= Renderer2DData::max_num_indices) {
@@ -273,6 +281,7 @@ void Renderer2D::draw_quad(const glm::mat4 &transform,
         data.quad_vertex_buffer_ptr->tex_coord = tex_coords[i];
         data.quad_vertex_buffer_ptr->tex_index = tex_index;
         data.quad_vertex_buffer_ptr->tiling_factor = tiling_factor;
+        data.quad_vertex_buffer_ptr->uid = uid;
         data.quad_vertex_buffer_ptr++;
     }
 
@@ -283,78 +292,94 @@ void Renderer2D::draw_quad(const glm::mat4 &transform,
 
 void Renderer2D::draw_quad(const glm::vec2 &position,
                            const glm::vec2 &size,
-                           const glm::vec4 &color) {
-    draw_quad(glm::vec3{position, 0.f}, size, color);
+                           const glm::vec4 &color,
+                           const uint32_t uid) {
+    draw_quad(glm::vec3{position, 0.f}, size, color, uid);
 }
 
 void Renderer2D::draw_quad(const glm::vec3 &position,
                            const glm::vec2 &size,
-                           const glm::vec4 &color) {
+                           const glm::vec4 &color,
+                           const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
 
-    draw_quad(transform, color);
+    draw_quad(transform, color, uid);
 }
 
 void Renderer2D::draw_quad(const glm::vec2 &position,
                            const glm::vec2 &size,
                            const Ref<Texture2D> &texture,
                            float tiling_factor,
-                           const glm::vec4 &tint_color) {
+                           const glm::vec4 &tint_color,
+                           const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
-    draw_quad(
-        glm::vec3{position, 0.f}, size, texture, tiling_factor, tint_color);
+    draw_quad(glm::vec3{position, 0.f},
+              size,
+              texture,
+              tiling_factor,
+              tint_color,
+              uid);
 }
 
 void Renderer2D::draw_quad(const glm::vec3 &position,
                            const glm::vec2 &size,
                            const Ref<Texture2D> &texture,
                            float tiling_factor,
-                           const glm::vec4 &tint_color) {
+                           const glm::vec4 &tint_color,
+                           const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
 
-    draw_quad(transform, texture, tiling_factor, tint_color);
+    draw_quad(transform, texture, tiling_factor, tint_color, uid);
 }
 
 void Renderer2D::draw_quad(const glm::vec2 &position,
                            const glm::vec2 &size,
                            const Ref<SubTexture2D> &sub_texture,
                            float tiling_factor,
-                           const glm::vec4 &tint_color) {
-    draw_quad(
-        glm::vec3{position, 0.f}, size, sub_texture, tiling_factor, tint_color);
+                           const glm::vec4 &tint_color,
+                           const uint32_t uid) {
+    draw_quad(glm::vec3{position, 0.f},
+              size,
+              sub_texture,
+              tiling_factor,
+              tint_color,
+              uid);
 }
 
 void Renderer2D::draw_quad(const glm::vec3 &position,
                            const glm::vec2 &size,
                            const Ref<SubTexture2D> &sub_texture,
                            float tiling_factor,
-                           const glm::vec4 &tint_color) {
+                           const glm::vec4 &tint_color,
+                           const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
 
-    draw_quad(transform, sub_texture, tiling_factor, tint_color);
+    draw_quad(transform, sub_texture, tiling_factor, tint_color, uid);
 }
 
 void Renderer2D::draw_rotated_quad(const glm::vec2 &position,
                                    const glm::vec2 &size,
                                    float rotation,
-                                   const glm::vec4 &color) {
-    draw_rotated_quad(glm::vec3{position, 0.f}, size, rotation, color);
+                                   const glm::vec4 &color,
+                                   const uint32_t uid) {
+    draw_rotated_quad(glm::vec3{position, 0.f}, size, rotation, color, uid);
 }
 
 void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
                                    const glm::vec2 &size,
                                    float rotation,
-                                   const glm::vec4 &color) {
+                                   const glm::vec4 &color,
+                                   const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
@@ -363,7 +388,7 @@ void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
                                       glm::vec3{0.f, 0.f, 1.f}) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
 
-    draw_quad(transform, color);
+    draw_quad(transform, color, uid);
 }
 
 void Renderer2D::draw_rotated_quad(const glm::vec2 &position,
@@ -371,13 +396,15 @@ void Renderer2D::draw_rotated_quad(const glm::vec2 &position,
                                    float rotation,
                                    const Ref<Texture2D> &texture,
                                    float tiling_factor,
-                                   const glm::vec4 &tint_color) {
+                                   const glm::vec4 &tint_color,
+                                   const uint32_t uid) {
     draw_rotated_quad(glm::vec3{position, 0.f},
                       size,
                       rotation,
                       texture,
                       tiling_factor,
-                      tint_color);
+                      tint_color,
+                      uid);
 }
 
 void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
@@ -385,7 +412,8 @@ void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
                                    float rotation,
                                    const Ref<Texture2D> &texture,
                                    float tiling_factor,
-                                   const glm::vec4 &tint_color) {
+                                   const glm::vec4 &tint_color,
+                                   const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
@@ -394,27 +422,30 @@ void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
                                       glm::vec3{0.f, 0.f, 1.f}) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
 
-    draw_quad(transform, texture, tiling_factor, tint_color);
+    draw_quad(transform, texture, tiling_factor, tint_color, uid);
 }
 void Renderer2D::draw_rotated_quad(const glm::vec2 &position,
                                    const glm::vec2 &size,
                                    float rotation,
                                    const Ref<SubTexture2D> &sub_texture,
                                    float tiling_factor,
-                                   const glm::vec4 &tint_color) {
+                                   const glm::vec4 &tint_color,
+                                   const uint32_t uid) {
     draw_rotated_quad(glm::vec3{position, 0.f},
                       size,
                       rotation,
                       sub_texture,
                       tiling_factor,
-                      tint_color);
+                      tint_color,
+                      uid);
 }
 void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
                                    const glm::vec2 &size,
                                    float rotation,
                                    const Ref<SubTexture2D> &sub_texture,
                                    float tiling_factor,
-                                   const glm::vec4 &tint_color) {
+                                   const glm::vec4 &tint_color,
+                                   const uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     glm::mat4 transform = glm::translate(glm::mat4{1.f}, position) *
@@ -423,7 +454,7 @@ void Renderer2D::draw_rotated_quad(const glm::vec3 &position,
                                       glm::vec3{0.f, 0.f, 1.f}) *
                           glm::scale(glm::mat4{1.f}, {size.x, size.y, 1.f});
 
-    draw_quad(transform, sub_texture, tiling_factor, tint_color);
+    draw_quad(transform, sub_texture, tiling_factor, tint_color, uid);
 }
 
 void Renderer2D::reset_stats() {

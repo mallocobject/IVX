@@ -10,9 +10,9 @@
 # changing CMakeLists (or after pulling).
 #
 # Usage:
-#   pwsh tools/gen-compile-db.ps1              # Debug, default build dir
-#   pwsh tools/gen-compile-db.ps1 -Config Release
-#   pwsh tools/gen-compile-db.ps1 -Fresh       # wipe the clangd build dir first
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-compile-db.ps1              # Debug, default build dir
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-compile-db.ps1 -Config Release
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools/gen-compile-db.ps1 -Fresh       # wipe the clangd build dir first
 
 [CmdletBinding()]
 param(

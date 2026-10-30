@@ -29,7 +29,7 @@ class EditLayer : public Layer {
     void draw_viewport_content();
 
     // ---- transform gizmo (ImGuizmo) ----
-    enum class GizmoMode { Translate = 1, Rotate, Scale };
+    enum class GizmoMode { None = 0, Translate, Rotate, Scale };
 
     // Draws the gizmo for the selected entity on top of the viewport image.
     // `image_min` and `image_size` come from the ImGui::Image() call, so the
@@ -60,7 +60,7 @@ class EditLayer : public Layer {
 
     // Shared editor state (scene + selection). Panels reference it, so it must
     // outlive them: declared before panels_ and never re-assigned afterwards.
-    EditorContext context_;
+    EditorContext editor_context_;
 
     Ref<Scene> scene_;
 
@@ -83,7 +83,7 @@ class EditLayer : public Layer {
 
     // Which handles the gizmo shows. Keys 1/2/3 switch it while the viewport
     // owns the input; the menu shows the same three entries.
-    GizmoMode gizmo_mode_{GizmoMode::Translate};
+    GizmoMode gizmo_mode_{GizmoMode::None};
 
     bool layout_initialized_{false};
     bool reset_layout_requested_{false};

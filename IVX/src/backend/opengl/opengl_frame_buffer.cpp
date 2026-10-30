@@ -247,12 +247,11 @@ uint32_t OpenGLFrameBuffer::get_color_attachment(uint32_t index) const {
     return color_attachments_[index];
 }
 
-int OpenGLFrameBuffer::read_pixel(uint32_t index,
-                                  uint32_t x,
-                                  uint32_t y) const {
+uint32_t
+OpenGLFrameBuffer::read_pixel(uint32_t index, uint32_t x, uint32_t y) const {
     if (index >= color_attachments_.size() || x >= spec_.width ||
         y >= spec_.height) {
-        return -1;
+        return 0;
     }
 
     // glGetTextureSubImage reads straight out of the texture: no read
@@ -272,7 +271,7 @@ int OpenGLFrameBuffer::read_pixel(uint32_t index,
                              GL_UNSIGNED_INT,
                              sizeof(value),
                              &value);
-        return static_cast<int>(value);
+        return value;
     }
 
     std::uint8_t rgba[4]{};

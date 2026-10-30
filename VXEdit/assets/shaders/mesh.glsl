@@ -22,15 +22,18 @@ void main() {
 #version 330 core
 
 layout(location = 0) out vec4 color;
+layout(location = 1) out uint uid;
 
 in vec3 v_Normal;
 in vec2 v_TexCoord;
 
 uniform vec3 u_LightDirection;
 uniform vec4 u_Color;
+uniform uint u_Uid;
 
 void main() {
     float ndotl = max(dot(normalize(v_Normal), -normalize(u_LightDirection)), 0.0);
     float ambient = 0.35;
     color = vec4(u_Color.rgb * (ambient + (1.0 - ambient) * ndotl), u_Color.a);
+    uid = u_Uid;
 }

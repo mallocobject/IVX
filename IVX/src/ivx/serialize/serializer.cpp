@@ -289,8 +289,8 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
         scene->set_name(name.as<std::string>());
     }
 
-    std::unordered_map<std::uint64_t, Entity> by_id;
-    std::uint64_t next_id = 0;
+    std::unordered_map<std::uint32_t, Entity> by_id;
+    std::uint32_t next_id = 0;
     std::size_t textured_sprites = 0;
 
     // Pass 1: entities and their components. Parent links are resolved
@@ -300,8 +300,8 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
             continue;
         }
 
-        const std::uint64_t uid =
-            read_scalar<std::uint64_t>(node["Entity"], next_id);
+        const std::uint32_t uid =
+            read_scalar<std::uint32_t>(node["Entity"], next_id);
         ++next_id;
 
         const std::string tag =

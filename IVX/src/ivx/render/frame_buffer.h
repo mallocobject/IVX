@@ -40,7 +40,10 @@ class FrameBuffer : public RefCounted {
 
     // Reads one pixel of an integer attachment (an entity id, normally). The
     // origin is bottom-left, like OpenGL's; an out-of-range read answers -1.
-    virtual int read_pixel(uint32_t index, uint32_t x, uint32_t y) const = 0;
+    // return value is uid + 1, so uid = value - 1
+    // if return value is 0, indicating it is invalid
+    virtual uint32_t
+    read_pixel(uint32_t index, uint32_t x, uint32_t y) const = 0;
 
     // Clears the attachments; the two halves are independent so a depth-only
     // pass can keep the colour that is already there. Integer attachments get 0

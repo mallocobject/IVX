@@ -63,7 +63,7 @@ struct TagComponent {
 };
 
 struct IdComponent {
-    uint64_t uid{0};
+    uint32_t uid{0};
 };
 
 struct TransformComponent {

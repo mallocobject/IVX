@@ -227,6 +227,12 @@ void OpenGLShader::set(const std::string &name, int val) {
     glProgramUniform1i(program_, location(name), val);
 }
 
+void OpenGLShader::set(const std::string &name, uint32_t val) {
+    IVX_PROFILE_FUNCTION();
+
+    glProgramUniform1ui(program_, location(name), val);
+}
+
 void OpenGLShader::set(const std::string &name, const glm::vec2 &val) {
     IVX_PROFILE_FUNCTION();
 

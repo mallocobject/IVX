@@ -32,11 +32,11 @@ class EditorCamera : public Camera {
 
     glm::mat4 get_view_matrix() const override;
     glm::mat4 get_proj_matrix() const override;
-    glm::mat4 get_view_projection() const {
+    glm::mat4 get_view_projection() const override {
         return get_proj_matrix() * get_view_matrix();
     }
 
-    glm::vec3 get_position() const {
+    glm::vec3 get_position() const override {
         return focal_point_ - get_forward() * distance_;
     }
 

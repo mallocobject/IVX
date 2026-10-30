@@ -28,6 +28,7 @@ class Shader : public RefCounted {
     virtual void set(const std::string &name, bool val) = 0;
     virtual void set(const std::string &name, float val) = 0;
     virtual void set(const std::string &name, int val) = 0;
+    virtual void set(const std::string &name, uint32_t val) = 0;
 
     virtual void set(const std::string &name, const glm::vec2 &val) = 0;
     virtual void set(const std::string &name, const glm::vec3 &val) = 0;

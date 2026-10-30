@@ -113,6 +113,17 @@ void OpenGLVertexArray::add_vertex_buffer(const Ref<VertexBuffer> &vertex_buf) {
             location++;
             break;
         }
+        case uvec: {
+            glEnableVertexArrayAttrib(vao_, location);
+            glVertexArrayAttribIFormat(vao_,
+                                       location,
+                                       count_of(element.type),
+                                       GL_UNSIGNED_INT,
+                                       static_cast<GLuint>(element.offset));
+            glVertexArrayAttribBinding(vao_, location, binding_index);
+            location++;
+            break;
+        }
         case mat3:
         case mat4: {
             const auto column_count = count_of(element.type); // 3 or 4

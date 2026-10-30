@@ -20,8 +20,6 @@ void Renderer3D::init() {
     IVX_PROFILE_FUNCTION();
 
     data.default_shader = Shader::create(SHADERS "mesh.glsl");
-    data.default_shader->bind();
-    data.default_shader->set("u_LightDirection", data.light_direction);
 }
 
 void Renderer3D::shutdown() {
@@ -34,9 +32,9 @@ void Renderer3D::begin_batch(const Camera &camera) {
     IVX_PROFILE_FUNCTION();
 
     data.view_projection = camera.get_proj_matrix() * camera.get_view_matrix();
-    data.default_shader->bind();
     data.default_shader->set("u_VP", data.view_projection);
     data.default_shader->set("u_LightDirection", data.light_direction);
+    data.default_shader->set("u_Uid", 0u);
     reset_stats();
 }
 
@@ -47,7 +45,8 @@ void Renderer3D::end_batch() {
 void Renderer3D::submit(const Ref<Mesh> &mesh,
                         const Ref<Shader> &shader,
                         const glm::mat4 &transform,
-                        const glm::vec4 &tint) {
+                        const glm::vec4 &tint,
+                        uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
     if (!mesh || !shader) {
@@ -62,6 +61,7 @@ void Renderer3D::submit(const Ref<Mesh> &mesh,
     shader->set("u_NormalMatrix",
                 glm::transpose(glm::inverse(glm::mat3{transform})));
     shader->set("u_Color", tint);
+    shader->set("u_Uid", uid);
 
     mesh->get_vertex_array()->bind();
     RenderCommand::draw(mesh->get_vertex_array(), mesh->get_index_count());
@@ -72,8 +72,9 @@ void Renderer3D::submit(const Ref<Mesh> &mesh,
 
 void Renderer3D::submit(const Ref<Mesh> &mesh,
                         const glm::mat4 &transform,
-                        const glm::vec4 &color) {
-    submit(mesh, data.default_shader, transform, color);
+                        const glm::vec4 &color,
+                        uint32_t uid) {
+    submit(mesh, data.default_shader, transform, color, uid);
 }
 
 void Renderer3D::reset_stats() {

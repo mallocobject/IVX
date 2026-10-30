@@ -26,6 +26,7 @@ class OpenGLShader : public Shader {
     virtual void set(const std::string &name, bool val) override;
     virtual void set(const std::string &name, float val) override;
     virtual void set(const std::string &name, int val) override;
+    virtual void set(const std::string &name, uint32_t val) override;
     virtual void set(const std::string &name, const glm::vec2 &val) override;
     virtual void set(const std::string &name, const glm::vec3 &val) override;
     virtual void set(const std::string &name, const glm::vec4 &val) override;

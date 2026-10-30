@@ -21,6 +21,7 @@ enum class ShaderDataType : uint8_t {
     ivec2,
     ivec3,
     ivec4,
+    uvec,
     mat3,
     mat4,
 };
@@ -46,6 +47,8 @@ inline constexpr uint32_t size_of(ShaderDataType type) {
         return 4 * 3;
     case ivec4:
         return 4 * 4;
+    case uvec:
+        return 4;
     case mat3:
         return 4 * 3 * 3;
     case mat4:
@@ -77,6 +80,8 @@ inline constexpr uint32_t count_of(ShaderDataType type) {
         return 3;
     case ivec4:
         return 4;
+    case uvec:
+        return 1;
     case mat3:
         return 3;
     case mat4:

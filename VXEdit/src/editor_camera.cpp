@@ -15,9 +15,7 @@ namespace ivx {
 
 void EditorCamera::set_viewport_size(uint32_t width, uint32_t height) {
     const glm::vec2 size{std::max(width, 1u), std::max(height, 1u)};
-    if (size == viewport_size_) {
-        return;
-    }
+    viewport_size_ = size;
 }
 
 void EditorCamera::on_update(float /*delta_time*/) {

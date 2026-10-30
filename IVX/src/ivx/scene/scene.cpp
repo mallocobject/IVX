@@ -62,7 +62,7 @@ Entity Scene::create_entity(const std::string &name) {
     entity.add_component<RelationshipComponent>();
     entity.add_component<TagComponent>(name);
     entity.add_component<IdComponent>(
-        static_cast<uint64_t>(entity.handle())); // HACK
+        static_cast<uint32_t>(entity.handle())); // HACK
     return entity;
 }
 
@@ -308,31 +308,43 @@ void Scene::render(const Camera &camera) {
     update_world_transforms();
 
     Renderer2D::begin_batch(camera);
-    for (auto [handle, transform, sprite] :
-         registry_.view<TransformComponent, SpriteRendererComponent>().each()) {
+    for (auto [handle, id, transform, sprite] :
+         registry_
+             .view<IdComponent, TransformComponent, SpriteRendererComponent>()
+             .each()) {
         // The quad is unit sized, the sprite's own size is applied here so
         // that a parent's TransformComponent::scale does not scale it.
         const glm::mat4 model =
             transform.world *
             glm::scale(glm::mat4{1.f}, glm::vec3{sprite.size, 1.f});
         if (sprite.sub_texture) {
-            Renderer2D::draw_quad(
-                model, sprite.sub_texture, sprite.tiling_factor, sprite.color);
+            Renderer2D::draw_quad(model,
+                                  sprite.sub_texture,
+                                  sprite.tiling_factor,
+                                  sprite.color,
+                                  id.uid + 1);
         } else if (sprite.texture) {
-            Renderer2D::draw_quad(
-                model, sprite.texture, sprite.tiling_factor, sprite.color);
+            Renderer2D::draw_quad(model,
+                                  sprite.texture,
+                                  sprite.tiling_factor,
+                                  sprite.color,
+                                  id.uid + 1);
         } else {
-            Renderer2D::draw_quad(model, sprite.color);
+            Renderer2D::draw_quad(model, sprite.color, id.uid + 1);
         }
     }
     Renderer2D::end_batch();
 
     Renderer3D::begin_batch(camera);
-    for (auto [handle, transform, mesh_renderer] :
-         registry_.view<TransformComponent, MeshRendererComponent>().each()) {
+    for (auto [handle, id, transform, mesh_renderer] :
+         registry_
+             .view<IdComponent, TransformComponent, MeshRendererComponent>()
+             .each()) {
         if (mesh_renderer.mesh) {
-            Renderer3D::submit(
-                mesh_renderer.mesh, transform.world, mesh_renderer.color);
+            Renderer3D::submit(mesh_renderer.mesh,
+                               transform.world,
+                               mesh_renderer.color,
+                               id.uid + 1);
         }
     }
     Renderer3D::end_batch();

@@ -18,7 +18,7 @@ class OpenGLFrameBuffer : public FrameBuffer {
 
     // Reads the last resolved frame (see unbind()). Coordinates start
     // bottom-left.
-    virtual int
+    virtual uint32_t
     read_pixel(uint32_t index, uint32_t x, uint32_t y) const override;
 
     virtual void clear(const glm::vec4 &clear_color,

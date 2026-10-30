@@ -4,8 +4,8 @@
 # third-party code would bury real changes in noise.
 #
 # Usage:
-#   pwsh tools/format.ps1            # rewrite files in place
-#   pwsh tools/format.ps1 -Check     # only report files that need formatting
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools/format.ps1            # rewrite files in place
+#   powershell -NoProfile -ExecutionPolicy Bypass -File tools/format.ps1 -Check     # only report files that need formatting
 
 [CmdletBinding()]
 param(
