@@ -76,9 +76,38 @@ void OpenGLRendererAPI::set_depth_test(bool enabled) {
     }
 }
 
-void OpenGLRendererAPI::clear() {
+void OpenGLRendererAPI::set_depth_write(bool enabled) {
+    glDepthMask(enabled ? GL_TRUE : GL_FALSE);
+}
+
+void OpenGLRendererAPI::set_blend(bool enabled) {
+    if (enabled) {
+        glEnable(GL_BLEND);
+    } else {
+        glDisable(GL_BLEND);
+    }
+}
+
+void OpenGLRendererAPI::set_cull_faces(bool enabled) {
+    if (enabled) {
+        glEnable(GL_CULL_FACE);
+    } else {
+        glDisable(GL_CULL_FACE);
+    }
+}
+
+void OpenGLRendererAPI::clear(bool clear_color, bool clear_depth) {
     glClearDepth(0.0); // reverse-z
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
+    GLbitfield mask = 0;
+    if (clear_color) {
+        mask |= GL_COLOR_BUFFER_BIT;
+    }
+    if (clear_depth) {
+        mask |= GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT;
+    }
+    if (mask != 0) {
+        glClear(mask);
+    }
 }
 
 void OpenGLRendererAPI::draw(const Ref<VertexArray> &vertex_array) {

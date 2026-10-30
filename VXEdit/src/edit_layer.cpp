@@ -64,6 +64,15 @@ void EditLayer::on_attach() {
 
     frame_buffer_ = FrameBuffer::create(spec);
 
+    // One pass per viewport frame: the target, the clear values and the
+    // pipeline state used to be spread over bind()/clear()/unbind() calls in
+    // on_update(). Keeping them in a pass is also what makes a second pass
+    // (picking ids, outline) possible without repeating the state bookkeeping.
+    RenderPassSpecification pass_spec;
+    pass_spec.target = frame_buffer_;
+    pass_spec.clear_color = glm::vec4{0.1f, 0.1f, 0.1f, 1.f};
+    render_pass_ = make_ref<RenderPass>(std::move(pass_spec));
+
     // The editor starts without a scene: the user picks File > New or File >
     // Open. An auto-created empty scene looks the same as a broken one, and
     // entities added to it had no file to belong to; the hierarchy panel
@@ -112,21 +121,16 @@ void EditLayer::on_update(float dt) {
     // render
     Renderer2D::reset_stats();
 
-    frame_buffer_->bind();
-
-    {
-        IVX_PROFILE_SCOPE("Renderer prep");
-        frame_buffer_->clear(glm::vec4{0.1f, 0.1f, 0.1f, 1.f});
-    }
+    // The pass owns the target binding, the clear and the pipeline state; the
+    // profile scope for the clear lives inside RenderPass::begin().
+    render_pass_->begin();
 
     if (scene_) {
-        // draw
         IVX_PROFILE_SCOPE("Renderer draw");
-
-        scene_->on_render(editor_camera_);
+        scene_->render(editor_camera_);
     }
 
-    frame_buffer_->unbind();
+    render_pass_->end();
 }
 
 void EditLayer::on_event(Event &event) {

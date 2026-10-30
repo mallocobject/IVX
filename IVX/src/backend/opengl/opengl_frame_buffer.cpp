@@ -291,21 +291,32 @@ int OpenGLFrameBuffer::read_pixel(uint32_t index,
     return rgba[0];
 }
 
-void OpenGLFrameBuffer::clear(const glm::vec4 &clear_color) {
-    for (std::size_t i = 0; i < color_attachments_.size(); ++i) {
-        if (color_formats_[i] == FrameBufferTextureFormat::RED_INTEGER) {
-            const GLuint zero[4]{0u, 0u, 0u, 0u};
-            glClearNamedFramebufferuiv(
-                fbo_, GL_COLOR, static_cast<GLint>(i), zero);
-        } else {
-            glClearNamedFramebufferfv(fbo_,
-                                      GL_COLOR,
-                                      static_cast<GLint>(i),
-                                      glm::value_ptr(clear_color));
+void OpenGLFrameBuffer::clear(const glm::vec4 &clear_color,
+                              bool clear_color_attachments,
+                              bool clear_depth) {
+    if (clear_color_attachments) {
+        for (std::size_t i = 0; i < color_attachments_.size(); ++i) {
+            if (color_formats_[i] == FrameBufferTextureFormat::RED_INTEGER) {
+                const GLuint zero[4]{0u, 0u, 0u, 0u};
+                glClearNamedFramebufferuiv(
+                    fbo_, GL_COLOR, static_cast<GLint>(i), zero);
+            } else {
+                glClearNamedFramebufferfv(fbo_,
+                                          GL_COLOR,
+                                          static_cast<GLint>(i),
+                                          glm::value_ptr(clear_color));
+            }
         }
     }
 
-    glClearNamedFramebufferfi(fbo_, GL_DEPTH_STENCIL, 0, 0.f, 0);
+    if (clear_depth) {
+        // Reverse-Z with GL_GREATER: depth 1.0 is the *near* plane and 0.0 the
+        // far one, so the clear value is 0.0 - the same convention
+        // OpenGLRendererAPI::clear() uses. Clearing to 1.0 would put every
+        // fragment "behind" the cleared plane and the whole scene would be
+        // discarded by the depth test.
+        glClearNamedFramebufferfi(fbo_, GL_DEPTH_STENCIL, 0, 0.f, 0);
+    }
 }
 
 void OpenGLFrameBuffer::bind() {

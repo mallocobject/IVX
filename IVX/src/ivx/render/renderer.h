@@ -17,8 +17,6 @@ class Renderer {
     static void shutdown();
     static void on_window_resize(WindowResizeEvent &event);
 
-    // static void begin_scene(/* something */);
-    // static void end_scene();
     static void submit(const Ref<Shader> &shader,
                        const Ref<VertexArray> &vertex_array,
                        const glm::mat4 &transform = glm::mat4{1.f});

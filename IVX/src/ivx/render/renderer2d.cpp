@@ -119,18 +119,18 @@ void Renderer2D::init() {
 void Renderer2D::shutdown() {
     IVX_PROFILE_FUNCTION();
 }
-void Renderer2D::begin_scene(const glm::mat4 &projection,
-                             const glm::mat4 &view) {
+void Renderer2D::begin_pass(const Camera &camera) {
     IVX_PROFILE_FUNCTION();
 
     // RenderCommand::set_depth_test(false); // glDisable(GL_DEPTH_TEST)
 
-    // `view` is already the inverse of the camera world transform: inverting it
-    // here as well would turn the camera transform into a model transform,
-    // which is invisible while the camera sits at the origin and completely
-    // wrong once it moves (sprites end up behind the eye and get clipped).
-    auto vp = projection * view;
-    data.texture_shader->set("u_VP", vp);
+    // The camera hands out the view matrix (inverse of its world transform):
+    // inverting it here as well would turn the camera transform into a model
+    // transform, which is invisible while the camera sits at the origin and
+    // completely wrong once it moves (sprites end up behind the eye and get
+    // clipped).
+    data.texture_shader->set(
+        "u_VP", camera.get_proj_matrix() * camera.get_view_matrix());
 
     data.quad_index_count = 0;
     data.quad_vertex_buffer_ptr = data.quad_vertex_buffer_base;
@@ -138,7 +138,7 @@ void Renderer2D::begin_scene(const glm::mat4 &projection,
     data.tex_slot_index = 1;
 }
 
-void Renderer2D::end_scene() {
+void Renderer2D::end_pass() {
     IVX_PROFILE_FUNCTION();
 
     flush();

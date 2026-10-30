@@ -42,8 +42,13 @@ class FrameBuffer : public RefCounted {
     // origin is bottom-left, like OpenGL's; an out-of-range read answers -1.
     virtual int read_pixel(uint32_t index, uint32_t x, uint32_t y) const = 0;
 
-    virtual void clear(const glm::vec4 &clear_color = glm::vec4{
-                           0.1f, 0.1f, 0.1f, 1.f}) = 0;
+    // Clears the attachments; the two halves are independent so a depth-only
+    // pass can keep the colour that is already there. Integer attachments get 0
+    // ("no entity"), depth gets 0.0, the far plane under reverse-Z.
+    virtual void
+    clear(const glm::vec4 &clear_color = glm::vec4{0.1f, 0.1f, 0.1f, 1.f},
+          bool clear_color_attachments = true,
+          bool clear_depth = true) = 0;
 
     virtual const FrameBufferSpecification &get_specification() const = 0;
 

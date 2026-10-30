@@ -96,6 +96,12 @@ class EditLayer : public Layer {
     // the viewport tab is the one currently on screen.
     Ref<Panel> viewport_panel_;
 
+    // The viewport's pass: target, clear values and pipeline state in one
+    // object. Declared before editor_camera_ so it is destroyed after it (the
+    // pass does not reference the camera, but keeping the render state objects
+    // together reads better).
+    Ref<RenderPass> render_pass_;
+
     EditorCamera editor_camera_;
 };
 } // namespace ivx

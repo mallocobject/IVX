@@ -1,5 +1,6 @@
 #pragma once
 
+#include "camera.h"
 #include "glm/ext/matrix_float4x4.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "sub_texture2d.h"
@@ -12,10 +13,11 @@ class Renderer2D {
   public:
     static void init();
     static void shutdown();
-    // `view` is a view matrix (inverse of the camera's world transform), the
-    // same convention as the OrthoGraphicCamera overload below.
-    static void begin_scene(const glm::mat4 &projection, const glm::mat4 &view);
-    static void end_scene();
+    // Starts / ends one 2D batch. The render pass (target, clear, pipeline
+    // state) is already open when this is called - RenderPass owns that, this
+    // only owns the batching.
+    static void begin_pass(const Camera &camera);
+    static void end_pass();
     static void flush();
 
     // Primitives

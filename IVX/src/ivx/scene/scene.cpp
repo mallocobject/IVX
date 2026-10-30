@@ -299,14 +299,14 @@ void Scene::update_world_recursive(Entity entity,
     }
 }
 
-void Scene::on_render(Camera &camera) {
+void Scene::render(const Camera &camera) {
     // Without this the sprites are drawn with whatever
     // TransformComponent::world held last (identity on the first frame): every
     // quad collapses onto the origin and the viewport shows a single flat card
     // instead of the scene.
     update_world_transforms();
 
-    Renderer2D::begin_scene(camera.get_proj_matrix(), camera.get_view_matrix());
+    Renderer2D::begin_pass(camera);
     for (auto [handle, transform, sprite] :
          registry_.view<TransformComponent, SpriteRendererComponent>().each()) {
         // The quad is unit sized, the sprite's own size is applied here so
@@ -324,52 +324,7 @@ void Scene::on_render(Camera &camera) {
             Renderer2D::draw_quad(model, sprite.color);
         }
     }
-    Renderer2D::end_scene();
-}
-
-void Scene::on_render() {
-    update_world_transforms();
-
-    glm::mat4 camera_projection{1.f};
-    glm::mat4 camera_view{1.f};
-    bool has_main_camera = false;
-
-    for (auto [handle, camera, transform] :
-         registry_.view<CameraComponent, TransformComponent>().each()) {
-        if (camera.primary) {
-            camera_projection = camera.camera.get_proj_matrix();
-            // The camera entity stores its pose as a world transform, the view
-            // matrix is its inverse.
-            camera_view = glm::inverse(transform.world);
-            has_main_camera = true;
-            break;
-        }
-    }
-
-    if (has_main_camera) {
-        Renderer2D::begin_scene(camera_projection, camera_view);
-        for (auto [handle, transform, sprite] :
-             registry_.view<TransformComponent, SpriteRendererComponent>()
-                 .each()) {
-            // The quad is unit sized, the sprite's own size is applied here so
-            // that a parent's TransformComponent::scale does not scale it.
-            const glm::mat4 model =
-                transform.world *
-                glm::scale(glm::mat4{1.f}, glm::vec3{sprite.size, 1.f});
-            if (sprite.sub_texture) {
-                Renderer2D::draw_quad(model,
-                                      sprite.sub_texture,
-                                      sprite.tiling_factor,
-                                      sprite.color);
-            } else if (sprite.texture) {
-                Renderer2D::draw_quad(
-                    model, sprite.texture, sprite.tiling_factor, sprite.color);
-            } else {
-                Renderer2D::draw_quad(model, sprite.color);
-            }
-        }
-        Renderer2D::end_scene();
-    }
+    Renderer2D::end_pass();
 }
 
 void Scene::on_viewport_resize(uint32_t width, uint32_t height) {

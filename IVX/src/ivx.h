@@ -17,6 +17,7 @@
 #include "ivx/render/camera.h"
 #include "ivx/render/frame_buffer.h"
 #include "ivx/render/render_command.h"
+#include "ivx/render/render_pass.h"
 #include "ivx/render/renderer.h"
 #include "ivx/render/renderer2d.h"
 #include "ivx/render/shader.h"

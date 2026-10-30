@@ -40,8 +40,12 @@ class Scene : public RefCounted {
 
     void on_event(Event &event);
 
-    void on_render(Camera &camera);
-    void on_render();
+    // Draws the scene into whatever pass is currently open. The pass (target,
+    // clear values, pipeline state) belongs to the caller: RenderPass::begin()
+    // has already bound and cleared it, so drawing only needs the camera.
+    // Keeping the pass out of here means Scene never has to care whether it
+    // draws into the viewport framebuffer, an id target or the screen.
+    void render(const Camera &camera);
 
     void update_world_transforms();
 

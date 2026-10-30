@@ -21,7 +21,9 @@ class OpenGLFrameBuffer : public FrameBuffer {
     virtual int
     read_pixel(uint32_t index, uint32_t x, uint32_t y) const override;
 
-    virtual void clear(const glm::vec4 &clear_color) override;
+    virtual void clear(const glm::vec4 &clear_color,
+                       bool clear_color_attachments = true,
+                       bool clear_depth = true) override;
 
     virtual const FrameBufferSpecification &get_specification() const override {
         return spec_;
