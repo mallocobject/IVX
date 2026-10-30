@@ -30,7 +30,7 @@ void Renderer3D::shutdown() {
     data.default_shader.reset();
 }
 
-void Renderer3D::begin_pass(const Camera &camera) {
+void Renderer3D::begin_batch(const Camera &camera) {
     IVX_PROFILE_FUNCTION();
 
     data.view_projection = camera.get_proj_matrix() * camera.get_view_matrix();
@@ -40,7 +40,7 @@ void Renderer3D::begin_pass(const Camera &camera) {
     reset_stats();
 }
 
-void Renderer3D::end_pass() {
+void Renderer3D::end_batch() {
     IVX_PROFILE_FUNCTION();
 }
 

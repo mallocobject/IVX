@@ -9,6 +9,7 @@
 #include "ivx/event/application_event.h"
 #include "ivx/imgui/imgui_layer.h"
 #include "ivx/render/render_command.h"
+#include "ivx/render/render_pass.h"
 #include "ivx/render/renderer.h"
 #include <glm/glm.hpp>
 #include <memory>
@@ -60,9 +61,21 @@ void Application::run() {
             }
         }
 
-        // clear
-        ivx::RenderCommand::set_clear_color(glm::vec4{0.1f, 0.1f, 0.1f, 1});
-        ivx::RenderCommand::clear();
+        // The default framebuffer pass. Layers that render do it in on_update()
+        // into their own framebuffer, so this pass owns the screen and nothing
+        // else; the UI is drawn into it by ImGuiLayer::end() below. Clearing
+        // here instead of through RenderCommand keeps a single owner for
+        // "clear" - a pass - whether the target is a framebuffer or the screen.
+        RenderPassSpecification screen_spec;
+        screen_spec.clear_color = glm::vec4{0.1f, 0.1f, 0.1f, 1.f};
+        // The values RendererAPI::init() starts with, so the first pass that
+        // snapshots the state sees the engine defaults.
+        screen_spec.depth_test = true;
+        screen_spec.depth_write = true;
+        screen_spec.blend = true;
+        screen_spec.cull_faces = true;
+        RenderPass screen_pass{screen_spec};
+        screen_pass.begin();
 
         // UI phase: the layers only build ImGui commands here, the backend
         // submits them from ImGuiLayer::end() below. Rendering happens in
@@ -76,6 +89,8 @@ void Application::run() {
             }
         }
         imgui_layer_->end();
+
+        screen_pass.end();
 
         // roll and swap buffer
         window_->on_update();

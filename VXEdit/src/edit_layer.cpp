@@ -629,7 +629,7 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
             snap_ptr = snap_value;
             break;
         case ImGuizmo::SCALE:
-            snap_value[0] = 0.1f;
+            snap_value[0] = 0.5f;
             snap_ptr = snap_value;
             break;
         }

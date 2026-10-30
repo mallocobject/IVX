@@ -307,7 +307,7 @@ void Scene::render(const Camera &camera) {
     // instead of the scene.
     update_world_transforms();
 
-    Renderer2D::begin_pass(camera);
+    Renderer2D::begin_batch(camera);
     for (auto [handle, transform, sprite] :
          registry_.view<TransformComponent, SpriteRendererComponent>().each()) {
         // The quad is unit sized, the sprite's own size is applied here so
@@ -325,9 +325,9 @@ void Scene::render(const Camera &camera) {
             Renderer2D::draw_quad(model, sprite.color);
         }
     }
-    Renderer2D::end_pass();
+    Renderer2D::end_batch();
 
-    Renderer3D::begin_pass(camera);
+    Renderer3D::begin_batch(camera);
     for (auto [handle, transform, mesh_renderer] :
          registry_.view<TransformComponent, MeshRendererComponent>().each()) {
         if (mesh_renderer.mesh) {
@@ -335,7 +335,7 @@ void Scene::render(const Camera &camera) {
                 mesh_renderer.mesh, transform.world, mesh_renderer.color);
         }
     }
-    Renderer3D::end_pass();
+    Renderer3D::end_batch();
 }
 
 void Scene::on_viewport_resize(uint32_t width, uint32_t height) {

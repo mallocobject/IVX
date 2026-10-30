@@ -8,6 +8,7 @@
 #include "glm/ext/vector_float4.hpp"
 #include "glm/matrix.hpp"
 #include "glm/trigonometric.hpp"
+#include "ivx/render/render_command.h"
 #include "ivx/render/renderer.h"
 #include "ivx/render/shader.h"
 #include "ivx/render/sub_texture2d.h"
@@ -119,7 +120,7 @@ void Renderer2D::init() {
 void Renderer2D::shutdown() {
     IVX_PROFILE_FUNCTION();
 }
-void Renderer2D::begin_pass(const Camera &camera) {
+void Renderer2D::begin_batch(const Camera &camera) {
     IVX_PROFILE_FUNCTION();
 
     // RenderCommand::set_depth_test(false); // glDisable(GL_DEPTH_TEST)
@@ -138,7 +139,7 @@ void Renderer2D::begin_pass(const Camera &camera) {
     data.tex_slot_index = 1;
 }
 
-void Renderer2D::end_pass() {
+void Renderer2D::end_batch() {
     IVX_PROFILE_FUNCTION();
 
     flush();

@@ -14,8 +14,11 @@ class Renderer3D {
     static void init();
     static void shutdown();
 
-    static void begin_pass(const Camera &camera);
-    static void end_pass();
+    // Submission scope of the current pass. Named like Renderer2D::begin_batch
+    // so both renderers read the same way; 3D submits immediately today, so no
+    // batch is accumulated.
+    static void begin_batch(const Camera &camera);
+    static void end_batch();
 
     // Per object submit: binds the shader, uploads the per object uniforms and
     // draws. No batching yet, which keeps the path honest for arbitrary meshes

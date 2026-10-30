@@ -1,15 +1,11 @@
 #include "ivxpch.h"
 #include "renderer.h"
-#include "glm/ext/matrix_float4x4.hpp"
-#include "ivx/core/ref.hpp"
+
 #include "ivx/render/render_command.h"
 #include "renderer2d.h"
 #include "renderer3d.h"
 
 namespace ivx {
-Renderer::SceneData *Renderer::scene_data_ = new Renderer::SceneData{
-    .view_proj_matrix = glm::mat4{1.f},
-};
 
 void Renderer::init() {
     IVX_PROFILE_FUNCTION();
@@ -20,22 +16,14 @@ void Renderer::init() {
 }
 
 void Renderer::shutdown() {
+    IVX_PROFILE_FUNCTION();
+
     Renderer3D::shutdown();
     Renderer2D::shutdown();
 }
 
 void Renderer::on_window_resize(WindowResizeEvent &event) {
     RenderCommand::set_viewport(0, 0, event.get_width(), event.get_height());
-}
-
-void Renderer::submit(const Ref<Shader> &shader,
-                      const Ref<VertexArray> &vertex_array,
-                      const glm::mat4 &transform) {
-    auto vp = scene_data_->view_proj_matrix * transform;
-    shader->set("u_VP", vp);
-    shader->bind();
-    vertex_array->bind();
-    RenderCommand::draw(vertex_array);
 }
 
 } // namespace ivx

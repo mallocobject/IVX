@@ -16,8 +16,8 @@ class Renderer2D {
     // Starts / ends one 2D batch. The render pass (target, clear, pipeline
     // state) is already open when this is called - RenderPass owns that, this
     // only owns the batching.
-    static void begin_pass(const Camera &camera);
-    static void end_pass();
+    static void begin_batch(const Camera &camera);
+    static void end_batch();
     static void flush();
 
     // Primitives
