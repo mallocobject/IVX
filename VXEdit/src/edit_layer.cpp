@@ -59,6 +59,8 @@ void EditLayer::on_attach() {
     FrameBufferSpecification spec;
     spec.width = WIDTH;
     spec.height = HEIGHT;
+    spec.num_samples = 4;
+    spec.attachments = {{FrameBufferTextureFormat::RGBA8}};
 
     frame_buffer_ = FrameBuffer::create(spec);
 
@@ -113,10 +115,8 @@ void EditLayer::on_update(float dt) {
     frame_buffer_->bind();
 
     {
-        // clear
         IVX_PROFILE_SCOPE("Renderer prep");
-        RenderCommand::set_clear_color(glm::vec4{0.1f, 0.1f, 0.1f, 1.f});
-        RenderCommand::clear();
+        frame_buffer_->clear(glm::vec4{0.1f, 0.1f, 0.1f, 1.f});
     }
 
     if (scene_) {
