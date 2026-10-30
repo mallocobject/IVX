@@ -5,6 +5,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/ref.hpp"
+#include "ivx/render/mesh.h"
 #include "ivx/render/sub_texture2d.h"
 #include "ivx/render/texture.h"
 #include "ivx/scene/scene_camera.h"
@@ -111,6 +112,11 @@ struct CameraComponent {
     bool fixed_aspect_ratio{false};
 };
 
+struct MeshRendererComponent {
+    Ref<Mesh> mesh;
+    glm::vec4 color{1.f};
+};
+
 struct NativeScriptComponent;
 
 // Every component type that may cross the script boundary. Scripts call
@@ -128,6 +134,7 @@ struct NativeScriptComponent;
     X(TransformComponent)                                                      \
     X(RelationshipComponent)                                                   \
     X(SpriteRendererComponent)                                                 \
+    X(MeshRendererComponent)                                                   \
     X(CameraComponent)                                                         \
     X(NativeScriptComponent)
 

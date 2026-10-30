@@ -6,6 +6,7 @@
 #include "ivx/event/key_event.h"
 #include "ivx/event/mouse_event.h"
 #include "ivx/render/renderer2d.h"
+#include "ivx/render/renderer3d.h"
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scriptable_entity.h"
@@ -325,6 +326,16 @@ void Scene::render(const Camera &camera) {
         }
     }
     Renderer2D::end_pass();
+
+    Renderer3D::begin_pass(camera);
+    for (auto [handle, transform, mesh_renderer] :
+         registry_.view<TransformComponent, MeshRendererComponent>().each()) {
+        if (mesh_renderer.mesh) {
+            Renderer3D::submit(
+                mesh_renderer.mesh, transform.world, mesh_renderer.color);
+        }
+    }
+    Renderer3D::end_pass();
 }
 
 void Scene::on_viewport_resize(uint32_t width, uint32_t height) {

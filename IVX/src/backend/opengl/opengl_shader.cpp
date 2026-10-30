@@ -53,12 +53,18 @@ compile_and_link_shader(GLuint program,
             GLint max_length = 0;
             glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &max_length);
 
-            std::vector<GLchar> info_log(max_length);
-            glGetShaderInfoLog(shader, max_length, &max_length, &info_log[0]);
+            // A driver may report a zero length log; sizing by it and then
+            // taking &info_log[0] would index an empty vector and crash on the
+            // very path that is supposed to report the error.
+            std::vector<GLchar> info_log(max_length > 1 ? max_length : 1, '\0');
+            glGetShaderInfoLog(shader,
+                               static_cast<GLsizei>(info_log.size()),
+                               nullptr,
+                               info_log.data());
 
             glDeleteShader(shader);
 
-            IVX_CORE_ERROR("{}", info_log.data());
+            IVX_CORE_ERROR("Shader compile failure: {}", info_log.data());
             IVX_CORE_ASSERT(false, "Vertex shader compile failure!");
 
             break;
@@ -75,8 +81,11 @@ compile_and_link_shader(GLuint program,
         GLint max_length = 0;
         glGetProgramiv(program, GL_INFO_LOG_LENGTH, &max_length);
 
-        std::vector<GLchar> infoLog(max_length);
-        glGetProgramInfoLog(program, max_length, &max_length, &infoLog[0]);
+        std::vector<GLchar> info_log(max_length > 1 ? max_length : 1, '\0');
+        glGetProgramInfoLog(program,
+                            static_cast<GLsizei>(info_log.size()),
+                            nullptr,
+                            info_log.data());
 
         glDeleteProgram(program);
 
@@ -84,7 +93,7 @@ compile_and_link_shader(GLuint program,
             glDeleteShader(shader);
         }
 
-        IVX_CORE_ERROR("{}", infoLog.data());
+        IVX_CORE_ERROR("Program link failure: {}", info_log.data());
         IVX_CORE_ASSERT(false, "Program link failure!");
         return;
     }

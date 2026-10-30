@@ -71,6 +71,9 @@ void EditLayer::on_attach() {
     RenderPassSpecification pass_spec;
     pass_spec.target = frame_buffer_;
     pass_spec.clear_color = glm::vec4{0.1f, 0.1f, 0.1f, 1.f};
+    // Culling was on globally before passes existed, and the 2D demo cube
+    // depends on it: without it the back faces would render too.
+    pass_spec.cull_faces = true;
     render_pass_ = make_ref<RenderPass>(std::move(pass_spec));
 
     // The editor starts without a scene: the user picks File > New or File >
@@ -293,6 +296,17 @@ void EditLayer::create_scene() {
         scene_->set_parent(right, cube_entity);
         scene_->set_parent(top, cube_entity);
         scene_->set_parent(bottom, cube_entity);
+    }
+
+    {
+        Entity mesh_cube = scene_->create_entity("3D Cube");
+        auto &tf = mesh_cube.get_component<TransformComponent>();
+        tf.translation = glm::vec3{-340.f, -230.f, 250.f};
+        tf.scale = glm::vec3{160.f};
+
+        auto &mesh_renderer = mesh_cube.add_component<MeshRendererComponent>();
+        mesh_renderer.mesh = Mesh::create_cube();
+        mesh_renderer.color = glm::vec4{0.92f, 0.55f, 0.32f, 1.f};
     }
 
     if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {

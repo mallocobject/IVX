@@ -3,8 +3,8 @@
 #include "glm/ext/matrix_float4x4.hpp"
 #include "ivx/core/ref.hpp"
 #include "ivx/render/render_command.h"
-#include "renderer2D.h"
 #include "renderer2d.h"
+#include "renderer3d.h"
 
 namespace ivx {
 Renderer::SceneData *Renderer::scene_data_ = new Renderer::SceneData{
@@ -16,9 +16,11 @@ void Renderer::init() {
 
     RenderCommand::init();
     Renderer2D::init();
+    Renderer3D::init();
 }
 
 void Renderer::shutdown() {
+    Renderer3D::shutdown();
     Renderer2D::shutdown();
 }
 
