@@ -20,7 +20,8 @@ endif()
 
 set(DEPS_DIR "${CMAKE_SOURCE_DIR}/deps")
 
-if (NOT EXISTS "${DEPS_DIR}/glm"  OR
+if (NOT EXISTS "${DEPS_DIR}/BqLog"  OR
+    NOT EXISTS "${DEPS_DIR}/glm"  OR
     NOT EXISTS "${DEPS_DIR}/imgui" OR
     NOT EXISTS "${DEPS_DIR}/ImGuizmo" OR
     NOT EXISTS "${DEPS_DIR}/SDL" OR
