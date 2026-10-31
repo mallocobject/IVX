@@ -11,6 +11,11 @@
 #include "ivx/core/mouse_codes.h"
 #include "ivx/core/ref.hpp"
 
+#include "ivx/event/application_event.h"
+#include "ivx/event/event.h"
+#include "ivx/event/key_event.h"
+#include "ivx/event/mouse_event.h"
+
 #include "ivx/debug/instrumentor.h"
 
 #include "ivx/render/buffer.h"

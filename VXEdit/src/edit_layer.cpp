@@ -116,21 +116,6 @@ void EditLayer::on_update(float dt) {
         }
     }
 
-    if (input_owned_) {
-        if (Input::is_key_pressed(KeyCode::D0)) {
-            gizmo_mode_ = GizmoMode::None;
-        }
-        if (Input::is_key_pressed(KeyCode::D1)) {
-            gizmo_mode_ = GizmoMode::Translate;
-        }
-        if (Input::is_key_pressed(KeyCode::D2)) {
-            gizmo_mode_ = GizmoMode::Rotate;
-        }
-        if (Input::is_key_pressed(KeyCode::D3)) {
-            gizmo_mode_ = GizmoMode::Scale;
-        }
-    }
-
     if (scene_) {
         scene_->on_update(dt);
     }
@@ -162,8 +147,39 @@ void EditLayer::on_event(Event &event) {
             scene_->on_event(event);
         }
         editor_camera_.on_event(event);
+    }
 
-        if (Input::is_mouse_button_pressed(MouseCode::ButtonLeft)) {
+    EventDispatcher dispatcher{event};
+    dispatcher.dispatch([this](KeyPressedEvent &e) {
+        if (!input_owned_) {
+            return true;
+        }
+
+        if (editor_context_.has_selection()) {
+            switch (e.get_key_code()) {
+            case KeyCode::D1:
+                gizmo_mode_ = GizmoMode::Translate;
+                return true;
+            case KeyCode::D2:
+                gizmo_mode_ = GizmoMode::Rotate;
+                return true;
+            case KeyCode::D3:
+                gizmo_mode_ = GizmoMode::Scale;
+                return true;
+            default:
+                break;
+            }
+        }
+
+        return true;
+    });
+    dispatcher.dispatch([this](MouseButtonPressedEvent &e) {
+        if (!input_owned_) {
+            return true;
+        }
+
+        if (e.get_mouse_button() == MouseCode::ButtonLeft &&
+            !ImGuizmo::IsOver() && !Input::is_key_pressed(KeyCode::LeftAlt)) {
             if (viewport_mouse_pos_.x >= 0.f && viewport_mouse_pos_.y >= 0.f &&
                 viewport_mouse_pos_.x < viewport_size_.x &&
                 viewport_mouse_pos_.y < viewport_size_.y) {
@@ -182,7 +198,9 @@ void EditLayer::on_event(Event &event) {
                 }
             }
         }
-    }
+
+        return true;
+    });
 }
 
 void EditLayer::on_imgui() {
@@ -237,6 +255,7 @@ void EditLayer::on_imgui() {
     if (!viewport_sampled_) {
         viewport_focused_ = false;
         viewport_hovered_ = false;
+        input_owned_ = false;
         Input::set_enabled(false);
     }
     viewport_sampled_ = false;
@@ -440,9 +459,6 @@ void EditLayer::draw_menu_bar() {
         // Same three modes as the numeric shortcuts; the checkmark doubles as
         // the current state readout (there is no room for one in the status
         // bar).
-        if (ImGui::MenuItem("None", "0", gizmo_mode_ == GizmoMode::None)) {
-            gizmo_mode_ = GizmoMode::None;
-        }
         if (ImGui::MenuItem(
                 "Translate", "1", gizmo_mode_ == GizmoMode::Translate)) {
             gizmo_mode_ = GizmoMode::Translate;
@@ -526,10 +542,9 @@ void EditLayer::draw_status_bar() {
         // mode lives here because it is the one piece of state with no other
         // readout.
         const char *const gizmo_name =
-            gizmo_mode_ == GizmoMode::None        ? "None"
-            : gizmo_mode_ == GizmoMode::Translate ? "Move"
-            : gizmo_mode_ == GizmoMode::Rotate    ? "Rotate"
-                                                  : "Scale";
+            gizmo_mode_ == GizmoMode::Translate ? "Move"
+            : gizmo_mode_ == GizmoMode::Rotate  ? "Rotate"
+                                                : "Scale";
 
         const ImGuiIO &io = ImGui::GetIO();
         char fps_text[64];
@@ -563,13 +578,8 @@ void EditLayer::draw_viewport_content() {
     viewport_hovered_ = ImGui::IsWindowHovered();
     viewport_sampled_ = true;
 
-    // The game view owns the input while it is focused OR hovered (and no text
-    // field is active), the way Unity behaves. Focus-only was too strict:
-    // clicking the console, the inspector or a script silently killed WASD
-    // *and* the wheel until the viewport was clicked again.
-    const bool hover_owns_input =
-        viewport_hovered_ && !ImGui::GetIO().WantTextInput;
-    const bool owns_input = viewport_focused_ || hover_owns_input;
+    const bool owns_input = (viewport_focused_ || viewport_hovered_) &&
+                            !ImGui::GetIO().WantTextInput;
 
     Input::set_enabled(owns_input);
     // Latched for on_event(): the event path runs before this frame's UI, so it
@@ -592,8 +602,8 @@ void EditLayer::draw_viewport_content() {
     ImGui::Image(
         static_cast<ImTextureID>(frame_buffer_->get_color_attachment(0)),
         viewport_size_,
-        ImVec2{0.0f, 1.0f},
-        ImVec2{1.0f, 0.0f});
+        ImVec2{0.f, 1.f},
+        ImVec2{1.f, 0.f});
 
     const ImVec2 image_min = ImGui::GetItemRectMin();
     const ImVec2 mouse = ImGui::GetIO().MousePos;
@@ -647,25 +657,6 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
     //     return;
     // }
 
-    float snap_value[3]{0.f};
-    float *snap_ptr = nullptr;
-    if (Input::is_key_pressed(KeyCode::LeftControl)) {
-        switch (gizmo_operation()) {
-        case ImGuizmo::TRANSLATE:
-            snap_value[0] = snap_value[1] = snap_value[2] = 50.f;
-            snap_ptr = snap_value;
-            break;
-        case ImGuizmo::ROTATE:
-            snap_value[0] = 45.0f;
-            snap_ptr = snap_value;
-            break;
-        case ImGuizmo::SCALE:
-            snap_value[0] = 0.5f;
-            snap_ptr = snap_value;
-            break;
-        }
-    }
-
     ImGuizmo::SetOrthographic(false);
     ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
     ImGuizmo::SetRect(image_min.x, image_min.y, image_size.x, image_size.y);
@@ -678,6 +669,24 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
 
     glm::mat4 model = transform.world;
 
+    const bool camera_modifier = Input::is_key_pressed(KeyCode::LeftAlt);
+    ImGuizmo::Enable(!camera_modifier);
+
+    float snap_value[3]{0.f};
+    if (Input::is_key_pressed(KeyCode::LeftControl) && !camera_modifier) {
+        switch (gizmo_operation()) {
+        case ImGuizmo::TRANSLATE:
+            snap_value[0] = snap_value[1] = snap_value[2] = 50.f;
+            break;
+        case ImGuizmo::ROTATE:
+            snap_value[0] = 45.0f;
+            break;
+        case ImGuizmo::SCALE:
+            snap_value[0] = 0.5f;
+            break;
+        }
+    }
+
     if (int op = gizmo_operation()) {
         ImGuizmo::Manipulate(glm::value_ptr(view),
                              glm::value_ptr(projection),
@@ -685,7 +694,7 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
                              ImGuizmo::LOCAL,
                              glm::value_ptr(model),
                              nullptr,
-                             snap_ptr);
+                             snap_value);
     }
 
     if (ImGuizmo::IsUsing()) {
