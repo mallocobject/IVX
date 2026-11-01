@@ -270,97 +270,10 @@ void EditLayer::create_scene() {
     editor_context_.clear_selection();
 
     {
-        Entity cube_entity = scene_->create_entity("Cube");
-        auto &tf = cube_entity.get_component<TransformComponent>();
-        tf.translation = glm::vec3{0.f};
-        tf.rotation = glm::vec3{0.f};
-        tf.scale = glm::vec3{1.f};
-
-        // front
-        Entity front = scene_->create_entity("front piece");
-        {
-            auto &tf = front.get_component<TransformComponent>();
-            tf.translation = glm::vec3{0.f, 0.f, 200.f};
-            tf.rotation = glm::vec3{0.f};
-            tf.scale = glm::vec3{1.f};
-            auto &sr = front.add_component<SpriteRendererComponent>();
-            sr.color = glm::vec4{0.95f};
-            sr.size = glm::vec2{400.f};
-        }
-
-        // back
-        Entity back = scene_->create_entity("back piece");
-        {
-            auto &tf = back.get_component<TransformComponent>();
-            tf.translation = glm::vec3{0.f, 0.f, -200.f};
-            tf.rotation = glm::vec3{0.f, glm::radians(180.f), 0.f};
-            tf.scale = glm::vec3{1.f};
-            auto &sr = back.add_component<SpriteRendererComponent>();
-            sr.color = glm::vec4{0.55f};
-            sr.size = glm::vec2{400.f};
-        }
-
-        // left
-        Entity left = scene_->create_entity("left piece");
-        {
-            auto &tf = left.get_component<TransformComponent>();
-            tf.translation = glm::vec3{-200.f, 0.f, 0.f};
-            tf.rotation = glm::vec3{0.f, glm::radians(-90.f), 0.f};
-            tf.scale = glm::vec3{1.f};
-            auto &sr = left.add_component<SpriteRendererComponent>();
-            sr.color = glm::vec4{0.70f};
-            sr.size = glm::vec2{400.f};
-        }
-
-        // right
-        Entity right = scene_->create_entity("right piece");
-        {
-            auto &tf = right.get_component<TransformComponent>();
-            tf.translation = glm::vec3{200.f, 0.f, 0.f};
-            tf.rotation = glm::vec3{0.f, glm::radians(90.f), 0.f};
-            tf.scale = glm::vec3{1.f};
-            auto &sr = right.add_component<SpriteRendererComponent>();
-            sr.color = glm::vec4{0.85f};
-            sr.size = glm::vec2{400.f};
-        }
-
-        // top
-        Entity top = scene_->create_entity("top piece");
-        {
-            auto &tf = top.get_component<TransformComponent>();
-            tf.translation = glm::vec3{0.f, 200.f, 0.f};
-            tf.rotation = glm::vec3{glm::radians(-90.f), 0.f, 0.f};
-            tf.scale = glm::vec3{1.f};
-            auto &sr = top.add_component<SpriteRendererComponent>();
-            sr.color = glm::vec4{1.00f};
-            sr.size = glm::vec2{400.f};
-        }
-
-        // bottom
-        Entity bottom = scene_->create_entity("bottom piece");
-        {
-            auto &tf = bottom.get_component<TransformComponent>();
-            tf.translation = glm::vec3{0.f, -200.f, 0.f};
-            tf.rotation = glm::vec3{glm::radians(90.f), 0.f, 0.f};
-            tf.scale = glm::vec3{1.f};
-            auto &sr = bottom.add_component<SpriteRendererComponent>();
-            sr.color = glm::vec4{0.40f};
-            sr.size = glm::vec2{400.f};
-        }
-
-        scene_->set_parent(front, cube_entity);
-        scene_->set_parent(back, cube_entity);
-        scene_->set_parent(left, cube_entity);
-        scene_->set_parent(right, cube_entity);
-        scene_->set_parent(top, cube_entity);
-        scene_->set_parent(bottom, cube_entity);
-    }
-
-    {
         Entity mesh_cube = scene_->create_entity("3D Cube");
         auto &tf = mesh_cube.get_component<TransformComponent>();
-        tf.translation = glm::vec3{-340.f, -230.f, 250.f};
-        tf.scale = glm::vec3{160.f};
+        tf.translation = glm::vec3{0.f};
+        tf.scale = glm::vec3{200.f};
 
         auto &mesh_renderer = mesh_cube.add_component<MeshRendererComponent>();
         mesh_renderer.mesh = Mesh::create_cube();

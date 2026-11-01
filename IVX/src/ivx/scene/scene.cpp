@@ -324,6 +324,23 @@ void Scene::render() {
     // instead of the scene.
     update_world_transforms();
 
+    Renderer3D::begin_batch();
+    for (auto [handle, id, transform, mesh_renderer] :
+         registry_
+             .view<IdComponent, TransformComponent, MeshRendererComponent>()
+             .each()) {
+        if (mesh_renderer.mesh) {
+            Renderer3D::submit(mesh_renderer.mesh,
+                               transform.world,
+                               mesh_renderer.color,
+                               id.uid);
+        }
+    }
+    Renderer3D::end_batch();
+}
+void Scene::render_sprites() {
+    update_world_transforms();
+
     Renderer2D::begin_batch();
     for (auto [handle, id, transform, sprite] :
          registry_
@@ -351,19 +368,6 @@ void Scene::render() {
         }
     }
     Renderer2D::end_batch();
-    Renderer3D::begin_batch();
-    for (auto [handle, id, transform, mesh_renderer] :
-         registry_
-             .view<IdComponent, TransformComponent, MeshRendererComponent>()
-             .each()) {
-        if (mesh_renderer.mesh) {
-            Renderer3D::submit(mesh_renderer.mesh,
-                               transform.world,
-                               mesh_renderer.color,
-                               id.uid);
-        }
-    }
-    Renderer3D::end_batch();
 }
 
 void Scene::on_viewport_resize(uint32_t width, uint32_t height) {
