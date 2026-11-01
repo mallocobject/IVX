@@ -123,7 +123,13 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
         << (primitive == MeshPrimitive::kCube ? "Cube" : "Custom");
     out << YAML::Key << "PrimitiveSize" << YAML::Value
         << (mesh ? mesh->get_primitive_size() : 0.f);
-    out << YAML::Key << "Color" << YAML::Value << mesh_renderer.color;
+    out << YAML::Key << "Albedo" << YAML::Value
+        << mesh_renderer.material.albedo;
+    out << YAML::Key << "TilingFactor" << YAML::Value
+        << mesh_renderer.material.tiling_factor;
+    // Informational only: the texture is a device handle with no path yet.
+    out << YAML::Key << "HasAlbedoMap" << YAML::Value
+        << static_cast<bool>(mesh_renderer.material.albedo_map);
     out << YAML::EndMap;
 
     return out;
@@ -271,7 +277,12 @@ void read_mesh_renderer(const YAML::Node &node,
     if (!node) {
         return;
     }
-    mesh_renderer.color = read_vec4(node["Color"], mesh_renderer.color);
+    Material &material = mesh_renderer.material;
+    // "Color" is the pre material field name.
+    material.albedo =
+        read_vec4(node["Albedo"], read_vec4(node["Color"], material.albedo));
+    material.tiling_factor =
+        read_scalar(node["TilingFactor"], material.tiling_factor);
 
     // Only primitives are stored; a mesh built from raw vertex data has nothing
     // to reload.

@@ -8,6 +8,8 @@ namespace ivx {
 namespace {
 struct Renderer3DData {
     Ref<Shader> default_shader;
+    // Stands in for a missing albedo map.
+    Ref<Texture2D> white_texture;
     glm::vec3 light_direction{-0.4f, -1.f, -0.6f};
     float light_ambient{0.35f};
     Renderer3D::Statistics stats;
@@ -20,11 +22,16 @@ void Renderer3D::init() {
     IVX_PROFILE_FUNCTION();
 
     data.default_shader = Shader::create(SHADERS "mesh.glsl");
+
+    data.white_texture = Texture2D::create(1, 1);
+    const uint32_t white = 0xffffffffu;
+    data.white_texture->set_data(&white, sizeof(white));
 }
 
 void Renderer3D::shutdown() {
     IVX_PROFILE_FUNCTION();
 
+    data.white_texture.reset();
     data.default_shader.reset();
 }
 
@@ -41,35 +48,34 @@ void Renderer3D::end_batch() {
 }
 
 void Renderer3D::submit(const Ref<Mesh> &mesh,
-                        const Ref<Shader> &shader,
+                        const Material &material,
                         const glm::mat4 &transform,
-                        const glm::vec4 &tint,
                         uint32_t uid) {
     IVX_PROFILE_FUNCTION();
 
-    if (!mesh || !shader) {
+    if (!mesh) {
         return;
     }
 
+    const Ref<Shader> &shader =
+        material.shader ? material.shader : data.default_shader;
     shader->bind();
     shader->set("u_Object.model", transform);
     shader->set("u_Object.normal_matrix",
                 glm::transpose(glm::inverse(glm::mat3{transform})));
-    shader->set("u_Object.color", tint);
+    shader->set("u_Object.albedo", material.albedo);
+    shader->set("u_Object.tiling", material.tiling_factor);
     shader->set("u_Object.uid", uid);
+
+    const Ref<Texture2D> &albedo_map =
+        material.albedo_map ? material.albedo_map : data.white_texture;
+    albedo_map->bind(0);
 
     mesh->get_vertex_array()->bind();
     RenderCommand::draw(mesh->get_vertex_array(), mesh->get_index_count());
 
     data.stats.draw_calls++;
     data.stats.triangles += mesh->get_index_count() / 3;
-}
-
-void Renderer3D::submit(const Ref<Mesh> &mesh,
-                        const glm::mat4 &transform,
-                        const glm::vec4 &color,
-                        uint32_t uid) {
-    submit(mesh, data.default_shader, transform, color, uid);
 }
 
 void Renderer3D::reset_stats() {

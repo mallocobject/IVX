@@ -9,6 +9,9 @@
 
 namespace ivx {
 namespace {
+// Images loaded from disk are colour maps authored in sRGB, so sample them
+// linearised. A normal/roughness map needs the unorm variants once materials
+// carry those.
 static GLenum channels_to_internal_format(int channels) {
     switch (channels) {
     case 1:
@@ -16,12 +19,12 @@ static GLenum channels_to_internal_format(int channels) {
     case 2:
         return GL_RG8;
     case 3:
-        return GL_RGB8;
+        return GL_SRGB8;
     case 4:
-        return GL_RGBA8;
+        return GL_SRGB8_ALPHA8;
     default:
         IVX_CORE_ASSERT(false, "Unsupported channel count!");
-        return GL_RGB8;
+        return GL_SRGB8;
     }
 }
 

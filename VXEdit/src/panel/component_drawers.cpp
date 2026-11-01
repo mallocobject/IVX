@@ -170,6 +170,44 @@ void draw_sprite(Entity /*entity*/,
     }
 }
 
+// ---- mesh renderer ---------------------------------------------------------
+
+void draw_mesh_renderer(Entity /*entity*/,
+                        MeshRendererComponent &mesh_renderer,
+                        EditorContext & /*context*/) {
+    const Mesh *mesh = mesh_renderer.mesh.get();
+    if (mesh != nullptr) {
+        const char *primitive =
+            mesh->get_primitive() == MeshPrimitive::kCube ? "Cube" : "Custom";
+        ImGui::Text(
+            "Mesh: %s, %u triangles", primitive, mesh->get_index_count() / 3);
+    } else {
+        ImGui::TextDisabled("No mesh");
+    }
+
+    Material &material = mesh_renderer.material;
+    label_row("Albedo", [&] {
+        ImGui::ColorEdit4("##albedo", glm::value_ptr(material.albedo));
+    });
+    label_row("Tiling", [&] {
+        ImGui::DragFloat(
+            "##mesh_tiling", &material.tiling_factor, 0.05f, 0.01f, 64.f);
+    });
+
+    // No asset browser yet, so the map is reported and can only be cleared.
+    if (material.albedo_map) {
+        ImGui::TextDisabled("Albedo map (id %u, %ux%u)",
+                            material.albedo_map->get_id(),
+                            material.albedo_map->get_width(),
+                            material.albedo_map->get_height());
+        if (ImGui::Button("Clear albedo map")) {
+            material.albedo_map.reset();
+        }
+    } else {
+        ImGui::TextDisabled("No albedo map (flat albedo)");
+    }
+}
+
 // ---- camera ----------------------------------------------------------------
 // A camera is just a component, so everything about it lives here instead of in
 // a dedicated panel: projection parameters, primary-camera exclusivity, the
@@ -456,6 +494,7 @@ void register_all_components() {
         draw_transform,
         {.removable = false, .addable = false, .draw_in_inspector = true});
     registry.add<SpriteRendererComponent>("Sprite Renderer", draw_sprite);
+    registry.add<MeshRendererComponent>("Mesh Renderer", draw_mesh_renderer);
     // A camera is just a component: it can be added, edited and removed like
     // any other. Scene Hierarchy's "+ Entity" menu is the shortcut for a fresh
     // camera entity.

@@ -16,10 +16,12 @@ layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
 layout(location = 2) in vec2 a_TexCoord;
 
+// Per object state, declared identically in both stages.
 struct Object {
     mat4 model;
     mat3 normal_matrix;
-    vec4 color;
+    vec4 albedo;
+    float tiling;
     uint uid;
 };
 
@@ -46,11 +48,15 @@ layout(location = 1) in vec2 v_TexCoord;
 struct Object {
     mat4 model;
     mat3 normal_matrix;
-    vec4 color;
+    vec4 albedo;
+    float tiling;
     uint uid;
 };
 
 uniform Object u_Object;
+
+// Unit 0; a missing map binds a white 1x1 texture, so no branch is needed.
+layout(binding = 0) uniform sampler2D u_AlbedoMap;
 
 struct DirectionalLight {
     vec3 direction; // direction the light travels in
@@ -60,9 +66,13 @@ struct DirectionalLight {
 uniform DirectionalLight u_Light;
 
 void main() {
+    vec3 albedo =
+        texture(u_AlbedoMap, v_TexCoord * u_Object.tiling).rgb * u_Object.albedo.rgb;
     float ndotl = max(dot(normalize(v_Normal), -normalize(u_Light.direction)), 0.0);
     float ambient = clamp(u_Light.ambient, 0.0, 1.0);
-    color = vec4(u_Object.color.rgb * (ambient + (1.0 - ambient) * ndotl),
-                 u_Object.color.a);
+    vec3 lit = albedo * (ambient + (1.0 - ambient) * ndotl);
+
+    // Albedo maps are sampled as sRGB, so lighting is linear; encode back for an RGBA8 target.
+    color = vec4(pow(lit, vec3(1.0 / 2.2)), u_Object.albedo.a);
     uid = u_Object.uid;
 }

@@ -331,8 +331,8 @@ void Scene::render() {
              .each()) {
         if (mesh_renderer.mesh) {
             Renderer3D::submit(mesh_renderer.mesh,
+                               mesh_renderer.material,
                                transform.world,
-                               mesh_renderer.color,
                                id.uid);
         }
     }

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "camera.h"
 #include "ivx/core/ref.hpp"
+#include "material.h"
 #include "mesh.h"
 #include "shader.h"
 #include <cstdint>
@@ -19,19 +19,12 @@ class Renderer3D {
     static void begin_batch();
     static void end_batch();
 
-    // Per object submit: binds the shader, uploads the per object uniforms and
-    // draws. No batching yet, which keeps the path honest for arbitrary meshes
-    // and materials.
+    // Binds the material's shader (or the built in one), uploads the per object
+    // uniforms and draws. No batching yet, which keeps the path honest for
+    // arbitrary meshes and materials.
     static void submit(const Ref<Mesh> &mesh,
-                       const Ref<Shader> &shader,
+                       const Material &material,
                        const glm::mat4 &transform,
-                       const glm::vec4 &tint = glm::vec4{1.f},
-                       uint32_t uid = 0);
-
-    // Uses the built in lit shader created in init().
-    static void submit(const Ref<Mesh> &mesh,
-                       const glm::mat4 &transform,
-                       const glm::vec4 &color = glm::vec4{1.f},
                        uint32_t uid = 0);
 
     struct Statistics {

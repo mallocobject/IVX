@@ -5,6 +5,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/ref.hpp"
+#include "ivx/render/material.h"
 #include "ivx/render/mesh.h"
 #include "ivx/render/sub_texture2d.h"
 #include "ivx/render/texture.h"
@@ -114,7 +115,7 @@ struct CameraComponent {
 
 struct MeshRendererComponent {
     Ref<Mesh> mesh;
-    glm::vec4 color{1.f};
+    Material material;
 };
 
 struct NativeScriptComponent;
