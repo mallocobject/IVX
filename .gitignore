@@ -18,3 +18,6 @@ imgui.ini
 
 # clangd database: generated per machine by tools/gen-compile-db.ps1
 compile_commands.json
+
+# Write-tool leftovers (an unreadable leftover blocks git add -A)
+*.tmp0

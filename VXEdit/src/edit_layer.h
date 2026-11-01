@@ -3,6 +3,7 @@
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
 #include "panel/console_panel.h"
+#include "panel/content_browser_panel.h"
 #include "panel/editor_context.h"
 #include "panel/inspector_panel.h"
 #include "panel/panel.h"
@@ -93,6 +94,7 @@ class EditLayer : public Layer {
     Ref<SceneHierarchyPanel> scene_hierarchy_panel_;
     Ref<InspectorPanel> inspector_panel_;
     Ref<ConsolePanel> console_panel_;
+    Ref<ContentBrowserPanel> content_browser_panel_;
     // The viewport is a LambdaPanel; kept so the input gate can tell whether
     // the viewport tab is the one currently on screen.
     Ref<Panel> viewport_panel_;

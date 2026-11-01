@@ -1,5 +1,8 @@
 #include "component_registry.h"
 
+#include "asset/asset_manager.h"
+#include "asset/asset_payload.h"
+
 #include "ivx/core/logger.h"
 #include "ivx/scene/components.h"
 #include "ivx/scene/scriptable_entity.h"
@@ -172,6 +175,95 @@ void draw_sprite(Entity /*entity*/,
 
 // ---- mesh renderer ---------------------------------------------------------
 
+namespace {
+// Preview box for a texture slot: shows the map scaled into a square, enlarges
+// it on hover, and accepts a texture dragged from the content browser.
+void draw_texture_slot(const char *id, Ref<Texture2D> &texture) {
+    constexpr float k_box = 48.f;
+    constexpr float k_padding = 4.f;
+    constexpr float k_zoom = 256.f;
+
+    const ImVec2 origin = ImGui::GetCursorScreenPos();
+    ImGui::InvisibleButton(id, ImVec2{k_box, k_box});
+
+    const bool hovered = ImGui::IsItemHovered();
+    const bool has_texture = static_cast<bool>(texture);
+    ImDrawList *draw = ImGui::GetWindowDrawList();
+    const ImVec2 box_max{origin.x + k_box, origin.y + k_box};
+
+    draw->AddRectFilled(origin, box_max, ImGui::GetColorU32(ImGuiCol_FrameBg));
+
+    if (has_texture) {
+        // Fit the map inside the box without distorting it.
+        const auto width = static_cast<float>(texture->get_width());
+        const auto height = static_cast<float>(texture->get_height());
+        const float fit = std::min((k_box - k_padding * 2.f) / width,
+                                   (k_box - k_padding * 2.f) / height);
+        const ImVec2 image_size{width * fit, height * fit};
+        const ImVec2 image_min{origin.x + (k_box - image_size.x) * 0.5f,
+                               origin.y + (k_box - image_size.y) * 0.5f};
+        draw->AddImage(
+            static_cast<ImTextureID>(texture->get_id()),
+            image_min,
+            ImVec2{image_min.x + image_size.x, image_min.y + image_size.y});
+    } else {
+        const char *hint = "none";
+        const ImVec2 text_size = ImGui::CalcTextSize(hint);
+        draw->AddText(ImVec2{origin.x + (k_box - text_size.x) * 0.5f,
+                             origin.y + (k_box - text_size.y) * 0.5f},
+                      ImGui::GetColorU32(ui::text_muted()),
+                      hint);
+    }
+
+    draw->AddRect(origin,
+                  box_max,
+                  hovered ? ImGui::GetColorU32(ui::accent())
+                          : ImGui::GetColorU32(ImGuiCol_Border),
+                  0.f,
+                  0,
+                  hovered ? 2.f : 1.f);
+
+    if (ImGui::BeginDragDropTarget()) {
+        if (const ImGuiPayload *payload =
+                ImGui::AcceptDragDropPayload(k_asset_payload_type)) {
+            const auto *dropped =
+                static_cast<const AssetPayload *>(payload->Data);
+            if (dropped->type == AssetType::kTexture) {
+                if (Ref<Texture2D> loaded =
+                        AssetManager::load_texture(dropped->path)) {
+                    texture = std::move(loaded);
+                }
+            }
+        }
+        ImGui::EndDragDropTarget();
+    }
+
+    if (!hovered) {
+        return;
+    }
+
+    if (!has_texture) {
+        ImGui::SetTooltip("Drag a texture here from the Content Browser");
+        return;
+    }
+
+    ImGui::BeginTooltip();
+    const auto width = static_cast<float>(texture->get_width());
+    const auto height = static_cast<float>(texture->get_height());
+    // Scales small maps up as well, so a 32x32 tile is readable at a glance.
+    const float fit = std::min(k_zoom / width, k_zoom / height);
+    const ImVec2 image_size{width * fit, height * fit};
+    const ImVec2 image_pos = ImGui::GetCursorScreenPos();
+    ImGui::GetWindowDrawList()->AddImage(
+        static_cast<ImTextureID>(texture->get_id()),
+        image_pos,
+        ImVec2{image_pos.x + image_size.x, image_pos.y + image_size.y});
+    ImGui::Dummy(image_size);
+    ImGui::TextDisabled("%ux%u", texture->get_width(), texture->get_height());
+    ImGui::EndTooltip();
+}
+} // namespace
+
 void draw_mesh_renderer(Entity /*entity*/,
                         MeshRendererComponent &mesh_renderer,
                         EditorContext & /*context*/) {
@@ -193,19 +285,15 @@ void draw_mesh_renderer(Entity /*entity*/,
         ImGui::DragFloat(
             "##mesh_tiling", &material.tiling_factor, 0.05f, 0.01f, 64.f);
     });
-
-    // No asset browser yet, so the map is reported and can only be cleared.
-    if (material.albedo_map) {
-        ImGui::TextDisabled("Albedo map (id %u, %ux%u)",
-                            material.albedo_map->get_id(),
-                            material.albedo_map->get_width(),
-                            material.albedo_map->get_height());
-        if (ImGui::Button("Clear albedo map")) {
-            material.albedo_map.reset();
+    label_row("Albedo map", [&] {
+        draw_texture_slot("##albedo_map", material.albedo_map);
+        if (material.albedo_map) {
+            ImGui::SameLine();
+            if (ImGui::Button("Clear")) {
+                material.albedo_map.reset();
+            }
         }
-    } else {
-        ImGui::TextDisabled("No albedo map (flat albedo)");
-    }
+    });
 }
 
 // ---- camera ----------------------------------------------------------------

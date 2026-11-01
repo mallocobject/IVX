@@ -30,6 +30,7 @@ if(NOT EXISTS "${VX_VCVARS}")
 endif()
 
 target_compile_definitions(VXEdit PRIVATE
+    ASSETS="${CMAKE_CURRENT_SOURCE_DIR}/assets/"
     TEXTURES="${CMAKE_CURRENT_SOURCE_DIR}/assets/textures/"
     SHADERS="${CMAKE_CURRENT_SOURCE_DIR}/assets/shaders/"
     FONTS="${CMAKE_CURRENT_SOURCE_DIR}/assets/fonts/"

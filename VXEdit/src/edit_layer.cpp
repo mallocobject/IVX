@@ -278,8 +278,6 @@ void EditLayer::create_scene() {
         auto &mesh_renderer = mesh_cube.add_component<MeshRendererComponent>();
         mesh_renderer.mesh = Mesh::create_cube();
         mesh_renderer.material.albedo = glm::vec4{0.92f, 0.55f, 0.32f, 1.f};
-        mesh_renderer.material.albedo_map =
-            Texture2D::create(TEXTURES "checkerboard.png");
     }
 
     if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {
@@ -339,6 +337,7 @@ void EditLayer::setup_panels() {
 
     inspector_panel_ = panels_.add<InspectorPanel>(editor_context_);
     console_panel_ = panels_.add<ConsolePanel>();
+    content_browser_panel_ = panels_.add<ContentBrowserPanel>();
 }
 
 void EditLayer::draw_menu_bar() {
