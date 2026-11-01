@@ -9,6 +9,10 @@ Entities:
       Scale: [160, 160, 160]
     Relationship:
       Parent: ~
+    MeshRenderer:
+      Primitive: Cube
+      PrimitiveSize: 1
+      Color: [0.92, 0.55, 0.32, 1]
   - Entity: 1
     Tag: Cube
     Transform:

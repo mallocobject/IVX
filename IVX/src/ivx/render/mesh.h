@@ -9,6 +9,14 @@
 
 namespace ivx {
 
+// What a Mesh was built from. Scene files store this instead of vertex data, so
+// only procedurally generated primitives survive a save/load round trip for
+// now.
+enum class MeshPrimitive : uint8_t {
+    kCustom = 0,
+    kCube,
+};
+
 struct Vertex3D {
     glm::vec3 position{0.f};
     glm::vec3 normal{0.f, 0.f, 1.f};
@@ -45,12 +53,22 @@ class Mesh : public RefCounted {
         return index_count_;
     }
 
+    MeshPrimitive get_primitive() const {
+        return primitive_;
+    }
+    // Only meaningful for primitives: the size the mesh was generated with.
+    float get_primitive_size() const {
+        return primitive_size_;
+    }
+
   private:
     Mesh(std::vector<Vertex3D> vertices, const std::vector<uint32_t> &indices);
 
     Ref<VertexArray> vertex_array_;
     Bounds bounds_;
     uint32_t index_count_{0};
+    MeshPrimitive primitive_{MeshPrimitive::kCustom};
+    float primitive_size_{0.f};
 };
 
 } // namespace ivx

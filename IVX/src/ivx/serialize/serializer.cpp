@@ -112,6 +112,23 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
     return out;
 }
 
+YAML::Emitter &operator<<(YAML::Emitter &out,
+                          const MeshRendererComponent &mesh_renderer) {
+    const Mesh *mesh = mesh_renderer.mesh.get();
+    const MeshPrimitive primitive =
+        mesh ? mesh->get_primitive() : MeshPrimitive::kCustom;
+
+    out << YAML::Key << "MeshRenderer" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Primitive" << YAML::Value
+        << (primitive == MeshPrimitive::kCube ? "Cube" : "Custom");
+    out << YAML::Key << "PrimitiveSize" << YAML::Value
+        << (mesh ? mesh->get_primitive_size() : 0.f);
+    out << YAML::Key << "Color" << YAML::Value << mesh_renderer.color;
+    out << YAML::EndMap;
+
+    return out;
+}
+
 YAML::Emitter &operator<<(YAML::Emitter &out, Entity entity) {
     out << YAML::BeginMap;
     out << YAML::Key << "Entity" << YAML::Value
@@ -138,6 +155,10 @@ YAML::Emitter &operator<<(YAML::Emitter &out, Entity entity) {
 
     if (auto sprite = entity.try_get_component<SpriteRendererComponent>()) {
         out << *sprite;
+    }
+    if (auto mesh_renderer =
+            entity.try_get_component<MeshRendererComponent>()) {
+        out << *mesh_renderer;
     }
     if (auto camera = entity.try_get_component<CameraComponent>()) {
         out << *camera;
@@ -245,6 +266,25 @@ void read_sprite(const YAML::Node &node, SpriteRendererComponent &sprite) {
     sprite.color = read_vec4(node["Color"], sprite.color);
 }
 
+void read_mesh_renderer(const YAML::Node &node,
+                        MeshRendererComponent &mesh_renderer) {
+    if (!node) {
+        return;
+    }
+    mesh_renderer.color = read_vec4(node["Color"], mesh_renderer.color);
+
+    // Only primitives are stored; a mesh built from raw vertex data has nothing
+    // to reload.
+    const std::string primitive =
+        read_scalar(node["Primitive"], std::string{"Custom"});
+    const float size = read_scalar(node["PrimitiveSize"], 1.f);
+    if (primitive == "Cube") {
+        mesh_renderer.mesh = Mesh::create_cube(size > 0.f ? size : 1.f);
+    } else {
+        mesh_renderer.mesh.reset();
+    }
+}
+
 void read_script(const YAML::Node &node, NativeScriptComponent &script) {
     if (!node) {
         return;
@@ -341,6 +381,14 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
                         ? entity.get_component<CameraComponent>()
                         : entity.add_component<CameraComponent>();
                 read_camera(node["Camera"], camera);
+            }
+
+            if (node["MeshRenderer"]) {
+                MeshRendererComponent &mesh_renderer =
+                    entity.has_component<MeshRendererComponent>()
+                        ? entity.get_component<MeshRendererComponent>()
+                        : entity.add_component<MeshRendererComponent>();
+                read_mesh_renderer(node["MeshRenderer"], mesh_renderer);
             }
 
             if (node["NativeScript"]) {

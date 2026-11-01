@@ -88,7 +88,10 @@ Ref<Mesh> Mesh::create_cube(float size) {
             {base + 0, base + 1, base + 2, base + 2, base + 3, base + 0});
     }
 
-    return create(vertices, indices);
+    Ref<Mesh> mesh = create(vertices, indices);
+    mesh->primitive_ = MeshPrimitive::kCube;
+    mesh->primitive_size_ = size;
+    return mesh;
 }
 
 } // namespace ivx
