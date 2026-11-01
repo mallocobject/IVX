@@ -190,12 +190,12 @@ void EditLayer::on_event(Event &event) {
                 const auto fbo_y = static_cast<uint32_t>(viewport_size_.y -
                                                          viewport_mouse_pos_.y);
 
-                if (uint32_t uid = frame_buffer_->read_pixel(1, fbo_x, fbo_y)) {
-                    Entity entity{static_cast<entt::entity>(uid - 1),
-                                  scene_.get()};
+                // 0 is the background. The id is the entity's uid, not its
+                // handle: after a scene load the two differ, so it has to go
+                // through the uid lookup.
+                const uint32_t uid = frame_buffer_->read_pixel(1, fbo_x, fbo_y);
+                if (Entity entity = scene_->find_by_uid(uid); entity) {
                     editor_context_.select(entity);
-
-                    IVX_CORE_DEBUG("picked uid {} at {},{}", uid, fbo_x, fbo_y);
                 } else {
                     editor_context_.clear_selection();
                 }

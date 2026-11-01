@@ -24,7 +24,7 @@ Entities:
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     Relationship:
-      Parent: 0
+      Parent: 1
     SpriteRenderer:
       Size: [400, 400]
       TilingFactor: 1
@@ -37,7 +37,7 @@ Entities:
       Rotation: [0, 3.1415927, 0]
       Scale: [1, 1, 1]
     Relationship:
-      Parent: 0
+      Parent: 1
     SpriteRenderer:
       Size: [400, 400]
       TilingFactor: 1
@@ -50,7 +50,7 @@ Entities:
       Rotation: [0, -1.5707964, 0]
       Scale: [1, 1, 1]
     Relationship:
-      Parent: 0
+      Parent: 1
     SpriteRenderer:
       Size: [400, 400]
       TilingFactor: 1
@@ -63,7 +63,7 @@ Entities:
       Rotation: [0, 1.5707964, 0]
       Scale: [1, 1, 1]
     Relationship:
-      Parent: 0
+      Parent: 1
     SpriteRenderer:
       Size: [400, 400]
       TilingFactor: 1
@@ -76,7 +76,7 @@ Entities:
       Rotation: [-1.5707964, 0, 0]
       Scale: [1, 1, 1]
     Relationship:
-      Parent: 0
+      Parent: 1
     SpriteRenderer:
       Size: [400, 400]
       TilingFactor: 1
@@ -89,7 +89,7 @@ Entities:
       Rotation: [1.5707964, 0, 0]
       Scale: [1, 1, 1]
     Relationship:
-      Parent: 0
+      Parent: 1
     SpriteRenderer:
       Size: [400, 400]
       TilingFactor: 1

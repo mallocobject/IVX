@@ -127,9 +127,10 @@ YAML::Emitter &operator<<(YAML::Emitter &out, Entity entity) {
 
     if (const auto &parent =
             entity.get_component<RelationshipComponent>().parent;
-        parent != entt::null) {
-        // out << entity.get_component<IdComponent>().uid;
-        out << static_cast<uint64_t>(parent); // HACK
+        parent != entt::null && entity.scene()) {
+        // The parent's uid, not its entt handle: the reader keys entities by
+        // uid.
+        out << Entity{parent, entity.scene()}.get_component<IdComponent>().uid;
     } else {
         out << YAML::Null; // root
     }
@@ -291,6 +292,7 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
 
     std::unordered_map<std::uint32_t, Entity> by_id;
     std::uint32_t next_id = 0;
+    std::uint32_t max_uid = 0;
     std::size_t textured_sprites = 0;
 
     // Pass 1: entities and their components. Parent links are resolved
@@ -303,6 +305,7 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
         const std::uint32_t uid =
             read_scalar<std::uint32_t>(node["Entity"], next_id);
         ++next_id;
+        max_uid = std::max(max_uid, uid);
 
         const std::string tag =
             read_scalar<std::string>(node["Tag"], std::string{"Entity"});
@@ -385,6 +388,8 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
         scene->set_parent(child->second, parent->second);
     }
 
+    // New entities must not reuse a uid that came from the file.
+    scene->reserve_uid(max_uid);
     scene->update_world_transforms();
 
     IVX_INFO("Scene loaded: {} ({} entities)", filepath.string(), by_id.size());

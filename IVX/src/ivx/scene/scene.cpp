@@ -61,9 +61,26 @@ Entity Scene::create_entity(const std::string &name) {
     entity.add_component<TransformComponent>();
     entity.add_component<RelationshipComponent>();
     entity.add_component<TagComponent>(name);
-    entity.add_component<IdComponent>(static_cast<uint32_t>(entity.handle()) +
-                                      1); // HACK
+    entity.add_component<IdComponent>(next_uid_++);
     return entity;
+}
+
+Entity Scene::find_by_uid(uint32_t uid) const {
+    if (uid == 0) {
+        return {};
+    }
+    for (auto [handle, id] : registry_.view<const IdComponent>().each()) {
+        if (id.uid == uid) {
+            return Entity{handle, const_cast<Scene *>(this)};
+        }
+    }
+    return {};
+}
+
+void Scene::reserve_uid(uint32_t uid) {
+    if (uid >= next_uid_) {
+        next_uid_ = uid + 1;
+    }
 }
 
 Entity Scene::create_child(Entity parent, const std::string &name) {
@@ -334,7 +351,6 @@ void Scene::render() {
         }
     }
     Renderer2D::end_batch();
-
     Renderer3D::begin_batch();
     for (auto [handle, id, transform, mesh_renderer] :
          registry_

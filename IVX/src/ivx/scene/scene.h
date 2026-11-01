@@ -31,6 +31,16 @@ class Scene : public RefCounted {
     // Entity. Names are not unique; identity is the handle.
     Entity find_by_name(std::string_view name);
 
+    // Entities are looked up by their IdComponent::uid, which is a stable id
+    // that survives save/load and is what the id buffer of the viewport stores.
+    // The handle is only valid for the current session, so uid must never be
+    // decoded back into a handle.
+    Entity find_by_uid(uint32_t uid) const;
+
+    // Keeps generated uids above `uid`; used after loading a scene so new
+    // entities cannot collide with the ones that came from the file.
+    void reserve_uid(uint32_t uid);
+
     void set_parent(Entity child, Entity parent);
     std::vector<Entity> get_root_entities();
     std::vector<Entity> get_children(Entity entity);
@@ -43,6 +53,7 @@ class Scene : public RefCounted {
     // Draws into whatever pass is currently open: the pass owns the target, the
     // clear values, the camera block and the pipeline state.
     void render();
+    void render_sprites();
 
     void update_world_transforms();
 
@@ -79,6 +90,8 @@ class Scene : public RefCounted {
 
     std::string name_{"Untitled"};
     glm::uvec2 viewport_size_{0u, 0u};
+    // 0 is reserved for "no entity" in the id buffer, so uids start at 1.
+    uint32_t next_uid_{1};
     entt::registry registry_;
 };
 } // namespace ivx
