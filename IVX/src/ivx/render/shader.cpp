@@ -11,9 +11,9 @@ Ref<Shader> Shader::create(const std::string &vs_src,
                            const std::string &label) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
-    case kOpenGL:
+    case IVX_OpenGL:
         return make_ref<OpenGLShader>(vs_src, fs_src, label);
-    case kNone:
+    case IVX_None:
     default: {
         IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;
@@ -24,9 +24,9 @@ Ref<Shader> Shader::create(const std::filesystem::path &filepath,
                            const std::string &label) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
-    case kOpenGL:
+    case IVX_OpenGL:
         return make_ref<OpenGLShader>(filepath, label);
-    case kNone:
+    case IVX_None:
     default: {
         IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;

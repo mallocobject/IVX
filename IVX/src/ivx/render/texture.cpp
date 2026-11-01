@@ -9,9 +9,9 @@ namespace ivx {
 Ref<Texture2D> Texture2D::create(uint32_t width, uint32_t height) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
-    case kOpenGL:
+    case IVX_OpenGL:
         return make_ref<OpenGLTexture2D>(width, height);
-    case kNone:
+    case IVX_None:
     default: {
         IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;
@@ -22,9 +22,9 @@ Ref<Texture2D> Texture2D::create(uint32_t width, uint32_t height) {
 Ref<Texture2D> Texture2D::create(const std::filesystem::path &filepath) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
-    case kOpenGL:
+    case IVX_OpenGL:
         return make_ref<OpenGLTexture2D>(filepath);
-    case kNone:
+    case IVX_None:
     default: {
         IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;

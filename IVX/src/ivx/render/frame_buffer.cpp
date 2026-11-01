@@ -8,9 +8,9 @@ namespace ivx {
 Ref<FrameBuffer> FrameBuffer::create(const FrameBufferSpecification &spec) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
-    case kOpenGL:
+    case IVX_OpenGL:
         return make_ref<OpenGLFrameBuffer>(spec);
-    case kNone:
+    case IVX_None:
     default: {
         IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;

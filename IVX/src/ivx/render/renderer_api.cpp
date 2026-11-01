@@ -6,14 +6,14 @@
 #include "ivx/render/renderer_api.h"
 
 namespace ivx {
-RendererAPI::API RendererAPI::api_ = RendererAPI::API::kOpenGL;
+RendererAPI::API RendererAPI::api_ = RendererAPI::API::IVX_OpenGL;
 
 Ref<RendererAPI> RendererAPI::create() {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
-    case kOpenGL:
+    case IVX_OpenGL:
         return make_ref<OpenGLRendererAPI>();
-    case kNone:
+    case IVX_None:
     default: {
         IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;

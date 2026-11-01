@@ -11,11 +11,21 @@ namespace ivx {
 class RendererAPI : public RefCounted {
   public:
     enum class API : uint8_t {
-        kNone = 0,
-        kOpenGL,
-        kDirectX,
-        kVulkan,
-        kMetal,
+        IVX_None = 0,
+        IVX_OpenGL,
+        IVX_DirectX,
+        IVX_Vulkan,
+        IVX_Metal,
+    };
+
+    enum class Cmp : uint8_t {
+        IVX_NEVER = 0,
+        IVX_EQUAL,
+        IVX_LEQUAL,
+        IVX_GREATER,
+        IVX_NOTQUAL,
+        IVX_GEQUAL,
+        IVX_ALWAYS,
     };
 
     virtual void init() = 0;

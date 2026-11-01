@@ -92,10 +92,10 @@ void ImGuiLayer::on_event(Event &event) {
     if (event_blocked_) {
         ImGuiIO &io = ImGui::GetIO();
         event.handled |=
-            event.is_in_category(EventCategory::kEventCategoryMouse) &
+            event.is_in_category(EventCategory::IVX_EventCategoryMouse) &
             io.WantCaptureMouse;
         event.handled |=
-            event.is_in_category(EventCategory::kEventCategoryKeyboard) &
+            event.is_in_category(EventCategory::IVX_EventCategoryKeyboard) &
             io.WantCaptureKeyboard;
         // IVX_CORE_VERBOSE("{}, {}", io.WantCaptureMouse,
         // io.WantCaptureKeyboard);

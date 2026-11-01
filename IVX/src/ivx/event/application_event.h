@@ -21,8 +21,8 @@ class WindowResizeEvent : public Event {
         return std::format("WindowResizeEvent: {}, {}", width_, height_);
     }
 
-    EVENT_CLASS_TYPE(kWindowResize)
-    EVENT_CLASS_CATEGORY(kEventCategoryApplication)
+    EVENT_CLASS_TYPE(IVX_WindowResize)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryApplication)
   private:
     uint32_t width_;
     uint32_t height_;
@@ -32,16 +32,16 @@ class WindowCloseEvent : public Event {
   public:
     WindowCloseEvent() = default;
 
-    EVENT_CLASS_TYPE(kWindowClose)
-    EVENT_CLASS_CATEGORY(kEventCategoryApplication)
+    EVENT_CLASS_TYPE(IVX_WindowClose)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryApplication)
 };
 
 class AppTickEvent : public Event {
   public:
     AppTickEvent() = default;
 
-    EVENT_CLASS_TYPE(kAppTick)
-    EVENT_CLASS_CATEGORY(kEventCategoryApplication)
+    EVENT_CLASS_TYPE(IVX_AppTick)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryApplication)
 };
 
 // Emitted when the OS window gains or loses focus (SDL_EVENT_WINDOW_FOCUS_*).
@@ -58,8 +58,8 @@ class WindowFocusEvent : public Event {
         return std::format("WindowFocusEvent: focused={}", focused_);
     }
 
-    EVENT_CLASS_TYPE(kWindowFocus)
-    EVENT_CLASS_CATEGORY(kEventCategoryApplication)
+    EVENT_CLASS_TYPE(IVX_WindowFocus)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryApplication)
   private:
     bool focused_;
 };
@@ -68,15 +68,15 @@ class AppUpdateEvent : public Event {
   public:
     AppUpdateEvent() = default;
 
-    EVENT_CLASS_TYPE(kAppUpdate)
-    EVENT_CLASS_CATEGORY(kEventCategoryApplication)
+    EVENT_CLASS_TYPE(IVX_AppUpdate)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryApplication)
 };
 
 class AppRenderEvent : public Event {
   public:
     AppRenderEvent() = default;
 
-    EVENT_CLASS_TYPE(kAppRender)
-    EVENT_CLASS_CATEGORY(kEventCategoryApplication)
+    EVENT_CLASS_TYPE(IVX_AppRender)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryApplication)
 };
 } // namespace ivx

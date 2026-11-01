@@ -8,9 +8,9 @@ namespace ivx {
 Ref<VertexArray> VertexArray::create() {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
-    case kOpenGL:
+    case IVX_OpenGL:
         return make_ref<OpenGLVertexArray>();
-    case kNone:
+    case IVX_None:
     default: {
         IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;

@@ -21,8 +21,8 @@ class MouseMovedEvent : public Event {
         return std::format("MouseMovedEvent: {}, {}", mouse_x_, mouse_y_);
     }
 
-    EVENT_CLASS_TYPE(kMouseMoved)
-    EVENT_CLASS_CATEGORY(kEventCategoryMouse | kEventCategoryInput)
+    EVENT_CLASS_TYPE(IVX_MouseMoved)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryMouse | IVX_EventCategoryInput)
 
   private:
     float mouse_x_;
@@ -46,8 +46,8 @@ class MouseScrolledEvent : public Event {
         return std::format("MouseScrolledEvent: {}, {}", x_offset_, y_offset_);
     }
 
-    EVENT_CLASS_TYPE(kMouseScrolled)
-    EVENT_CLASS_CATEGORY(kEventCategoryMouse | kEventCategoryInput)
+    EVENT_CLASS_TYPE(IVX_MouseScrolled)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryMouse | IVX_EventCategoryInput)
   private:
     float x_offset_;
     float y_offset_;
@@ -59,8 +59,8 @@ class MouseButtonEvent : public Event {
         return button_;
     }
 
-    EVENT_CLASS_CATEGORY(kEventCategoryMouse | kEventCategoryInput |
-                         kEventCategoryMouseButton)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryMouse | IVX_EventCategoryInput |
+                         IVX_EventCategoryMouseButton)
   protected:
     MouseButtonEvent(MouseCode button) : button_(button) {
     }
@@ -77,7 +77,7 @@ class MouseButtonPressedEvent : public MouseButtonEvent {
         return std::format("MouseButtonPressedEvent: {}", button_);
     }
 
-    EVENT_CLASS_TYPE(kMouseButtonPressed)
+    EVENT_CLASS_TYPE(IVX_MouseButtonPressed)
 };
 
 class MouseButtonReleasedEvent : public MouseButtonEvent {
@@ -89,6 +89,6 @@ class MouseButtonReleasedEvent : public MouseButtonEvent {
         return std::format("MouseButtonReleasedEvent: {}", button_);
     }
 
-    EVENT_CLASS_TYPE(kMouseButtonReleased)
+    EVENT_CLASS_TYPE(IVX_MouseButtonReleased)
 };
 } // namespace ivx

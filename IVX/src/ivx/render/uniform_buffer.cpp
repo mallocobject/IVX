@@ -9,9 +9,9 @@ namespace ivx {
 Ref<UniformBuffer> UniformBuffer::create(uint32_t size, uint32_t binding) {
     using enum RendererAPI::API;
     switch (RendererAPI::get_api()) {
-    case kOpenGL:
+    case IVX_OpenGL:
         return make_ref<OpenGLUniformBuffer>(size, binding);
-    case kNone:
+    case IVX_None:
     default: {
         IVX_CORE_ASSERT(false, "Unknown backend!");
         return nullptr;

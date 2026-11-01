@@ -38,31 +38,31 @@ using first_arg_t =
 } // namespace
 
 enum class EventType : uint8_t {
-    kNone = 0,
-    kWindowClose,
-    kWindowResize,
-    kWindowFocus,
-    kWindowLostFocus,
-    kWindowMoved,
-    kAppTick,
-    kAppUpdate,
-    kAppRender,
-    kKeyPressed,
-    kKeyReleased,
-    kKeyTyped,
-    kMouseButtonPressed,
-    kMouseButtonReleased,
-    kMouseMoved,
-    kMouseScrolled
+    IVX_None = 0,
+    IVX_WindowClose,
+    IVX_WindowResize,
+    IVX_WindowFocus,
+    IVX_WindowLostFocus,
+    IVX_WindowMoved,
+    IVX_AppTick,
+    IVX_AppUpdate,
+    IVX_AppRender,
+    IVX_KeyPressed,
+    IVX_KeyReleased,
+    IVX_KeyTyped,
+    IVX_MouseButtonPressed,
+    IVX_MouseButtonReleased,
+    IVX_MouseMoved,
+    IVX_MouseScrolled
 };
 
 enum class EventCategory : uint8_t {
-    kNone = 0,
-    kEventCategoryApplication = BIT(0),
-    kEventCategoryInput = BIT(1),
-    kEventCategoryKeyboard = BIT(2),
-    kEventCategoryMouse = BIT(3),
-    kEventCategoryMouseButton = BIT(4)
+    IVX_None = 0,
+    IVX_EventCategoryApplication = BIT(0),
+    IVX_EventCategoryInput = BIT(1),
+    IVX_EventCategoryKeyboard = BIT(2),
+    IVX_EventCategoryMouse = BIT(3),
+    IVX_EventCategoryMouseButton = BIT(4)
 };
 
 constexpr EventCategory operator&(EventCategory a, EventCategory b) {

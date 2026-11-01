@@ -10,7 +10,7 @@ class KeyEvent : public Event {
     inline KeyCode get_key_code() const {
         return key_code_;
     }
-    EVENT_CLASS_CATEGORY(kEventCategoryKeyboard | kEventCategoryInput)
+    EVENT_CLASS_CATEGORY(IVX_EventCategoryKeyboard | IVX_EventCategoryInput)
   protected:
     KeyEvent(KeyCode keycode) : key_code_(keycode) {
     }
@@ -33,7 +33,7 @@ class KeyPressedEvent : public KeyEvent {
             "KeyPressedEvent: {} {}", key_code_, is_repeat_ ? "(repeat)" : "");
     }
 
-    EVENT_CLASS_TYPE(kKeyPressed)
+    EVENT_CLASS_TYPE(IVX_KeyPressed)
   private:
     bool is_repeat_{false};
 };
@@ -47,7 +47,7 @@ class KeyReleasedEvent : public KeyEvent {
         return std::format("KeyReleasedEvent: {}", key_code_);
     }
 
-    EVENT_CLASS_TYPE(kKeyReleased)
+    EVENT_CLASS_TYPE(IVX_KeyReleased)
 };
 
 class KeyTypedEvent : public KeyEvent {
@@ -59,6 +59,6 @@ class KeyTypedEvent : public KeyEvent {
         return std::format("KeyTypedEvent: {}", key_code_);
     }
 
-    EVENT_CLASS_TYPE(kKeyTyped)
+    EVENT_CLASS_TYPE(IVX_KeyTyped)
 };
 } // namespace ivx
