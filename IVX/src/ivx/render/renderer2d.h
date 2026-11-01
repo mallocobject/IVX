@@ -13,10 +13,9 @@ class Renderer2D {
   public:
     static void init();
     static void shutdown();
-    // Starts / ends one 2D batch. The render pass (target, clear, pipeline
-    // state) is already open when this is called - RenderPass owns that, this
-    // only owns the batching.
-    static void begin_batch(const Camera &camera);
+    // Starts / ends one 2D batch. The pass (target, camera, state) is already
+    // open: this only owns the batching.
+    static void begin_batch();
     static void end_batch();
     static void flush();
 
@@ -36,78 +35,6 @@ class Renderer2D {
                           float tiling_factor = 1.f,
                           const glm::vec4 &tint_color = glm::vec4{1.f},
                           const uint32_t uid = 0);
-
-    static void draw_quad(const glm::vec2 &position,
-                          const glm::vec2 &size,
-                          const glm::vec4 &color,
-                          const uint32_t uid = 0);
-    static void draw_quad(const glm::vec3 &position,
-                          const glm::vec2 &size,
-                          const glm::vec4 &color,
-                          const uint32_t uid = 0);
-    static void draw_quad(const glm::vec2 &position,
-                          const glm::vec2 &size,
-                          const Ref<Texture2D> &texture,
-                          float tiling_factor = 1.f,
-                          const glm::vec4 &tint_color = glm::vec4{1.f},
-                          const uint32_t uid = 0);
-    static void draw_quad(const glm::vec3 &position,
-                          const glm::vec2 &size,
-                          const Ref<Texture2D> &texture,
-                          float tiling_factor = 1.f,
-                          const glm::vec4 &tint_color = glm::vec4{1.f},
-                          const uint32_t uid = 0);
-    static void draw_quad(const glm::vec2 &position,
-                          const glm::vec2 &size,
-                          const Ref<SubTexture2D> &sub_texture,
-                          float tiling_factor = 1.f,
-                          const glm::vec4 &tint_color = glm::vec4{1.f},
-                          const uint32_t uid = 0);
-    static void draw_quad(const glm::vec3 &position,
-                          const glm::vec2 &size,
-                          const Ref<SubTexture2D> &sub_texture,
-                          float tiling_factor = 1.f,
-                          const glm::vec4 &tint_color = glm::vec4{1.f},
-                          const uint32_t uid = 0);
-
-    static void draw_rotated_quad(const glm::vec2 &position,
-                                  const glm::vec2 &size,
-                                  float rotation,
-                                  const glm::vec4 &color,
-                                  const uint32_t uid = 0);
-    static void draw_rotated_quad(const glm::vec3 &position,
-                                  const glm::vec2 &size,
-                                  float rotation,
-                                  const glm::vec4 &color,
-                                  const uint32_t uid = 0);
-    static void draw_rotated_quad(const glm::vec2 &position,
-                                  const glm::vec2 &size,
-                                  float rotation,
-                                  const Ref<Texture2D> &texture,
-                                  float tiling_factor = 1.f,
-                                  const glm::vec4 &tint_color = glm::vec4{1.f},
-                                  const uint32_t uid = 0);
-    static void draw_rotated_quad(const glm::vec3 &position,
-                                  const glm::vec2 &size,
-                                  float rotation,
-                                  const Ref<Texture2D> &texture,
-                                  float tiling_factor = 1.f,
-                                  const glm::vec4 &tint_color = glm::vec4{1.f},
-                                  const uint32_t uid = 0);
-    static void draw_rotated_quad(const glm::vec2 &position,
-                                  const glm::vec2 &size,
-                                  float rotation,
-                                  const Ref<SubTexture2D> &sub_texture,
-                                  float tiling_factor = 1.f,
-                                  const glm::vec4 &tint_color = glm::vec4{1.f},
-                                  const uint32_t uid = 0);
-    static void draw_rotated_quad(const glm::vec3 &position,
-                                  const glm::vec2 &size,
-                                  float rotation,
-                                  const Ref<SubTexture2D> &sub_texture,
-                                  float tiling_factor = 1.f,
-                                  const glm::vec4 &tint_color = glm::vec4{1.f},
-                                  const uint32_t uid = 0);
 
     // Stats
     struct Statistics {

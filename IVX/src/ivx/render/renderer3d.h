@@ -14,10 +14,9 @@ class Renderer3D {
     static void init();
     static void shutdown();
 
-    // Submission scope of the current pass. Named like Renderer2D::begin_batch
-    // so both renderers read the same way; 3D submits immediately today, so no
-    // batch is accumulated.
-    static void begin_batch(const Camera &camera);
+    // Submission scope of the current pass; 3D submits immediately, so nothing
+    // is accumulated.
+    static void begin_batch();
     static void end_batch();
 
     // Per object submit: binds the shader, uploads the per object uniforms and

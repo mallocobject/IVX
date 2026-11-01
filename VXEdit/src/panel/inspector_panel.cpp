@@ -48,7 +48,7 @@ void InspectorPanel::draw_entity_header(Entity entity) {
 
     // The one and only name editor: TagComponent has no section of its own.
     const auto &uid = entity.get_component<IdComponent>();
-    ImGui::TextDisabled("Entity %llu", uid.uid);
+    ImGui::TextDisabled("Entity %u", uid.uid);
 
     ImGui::SetNextItemWidth(-FLT_MIN);
     // Live editing (no EnterReturnsTrue): the hierarchy renames as you type.

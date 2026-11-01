@@ -300,14 +300,14 @@ void Scene::update_world_recursive(Entity entity,
     }
 }
 
-void Scene::render(const Camera &camera) {
+void Scene::render() {
     // Without this the sprites are drawn with whatever
     // TransformComponent::world held last (identity on the first frame): every
     // quad collapses onto the origin and the viewport shows a single flat card
     // instead of the scene.
     update_world_transforms();
 
-    Renderer2D::begin_batch(camera);
+    Renderer2D::begin_batch();
     for (auto [handle, id, transform, sprite] :
          registry_
              .view<IdComponent, TransformComponent, SpriteRendererComponent>()
@@ -335,7 +335,7 @@ void Scene::render(const Camera &camera) {
     }
     Renderer2D::end_batch();
 
-    Renderer3D::begin_batch(camera);
+    Renderer3D::begin_batch();
     for (auto [handle, id, transform, mesh_renderer] :
          registry_
              .view<IdComponent, TransformComponent, MeshRendererComponent>()

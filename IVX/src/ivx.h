@@ -20,6 +20,7 @@
 
 #include "ivx/render/buffer.h"
 #include "ivx/render/camera.h"
+#include "ivx/render/camera_uniforms.h"
 #include "ivx/render/frame_buffer.h"
 #include "ivx/render/mesh.h"
 #include "ivx/render/render_command.h"
@@ -30,6 +31,7 @@
 #include "ivx/render/shader.h"
 #include "ivx/render/sub_texture2d.h"
 #include "ivx/render/texture.h"
+#include "ivx/render/uniform_buffer.h"
 #include "ivx/render/vertex_array.h"
 
 #include "ivx/scene/components.h"

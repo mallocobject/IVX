@@ -202,7 +202,7 @@ int OpenGLShader::location(const std::string &name) {
 
     auto loc = glGetUniformLocation(program_, name.c_str());
     if (loc == -1) {
-        IVX_CORE_WARN("Uniform '{}' not found in shader '{}'", name, label_);
+        IVX_CORE_ERROR("Uniform '{}' not found in shader '{}'", name, label_);
     }
 
     uniform_mp_[name] = loc;

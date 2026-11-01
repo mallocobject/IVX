@@ -8,8 +8,8 @@ namespace ivx {
 namespace {
 struct Renderer3DData {
     Ref<Shader> default_shader;
-    glm::mat4 view_projection{1.f};
     glm::vec3 light_direction{-0.4f, -1.f, -0.6f};
+    float light_ambient{0.35f};
     Renderer3D::Statistics stats;
 };
 
@@ -28,13 +28,11 @@ void Renderer3D::shutdown() {
     data.default_shader.reset();
 }
 
-void Renderer3D::begin_batch(const Camera &camera) {
+void Renderer3D::begin_batch() {
     IVX_PROFILE_FUNCTION();
 
-    data.view_projection = camera.get_proj_matrix() * camera.get_view_matrix();
-    data.default_shader->set("u_VP", data.view_projection);
-    data.default_shader->set("u_LightDirection", data.light_direction);
-    data.default_shader->set("u_Uid", 0u);
+    data.default_shader->set("u_Light.direction", data.light_direction);
+    data.default_shader->set("u_Light.ambient", data.light_ambient);
     reset_stats();
 }
 
@@ -54,14 +52,11 @@ void Renderer3D::submit(const Ref<Mesh> &mesh,
     }
 
     shader->bind();
-    shader->set("u_VP", data.view_projection);
-    shader->set("u_Model", transform);
-    // Inverse transpose: right for non uniform scale, unlike the model matrix
-    // itself.
-    shader->set("u_NormalMatrix",
+    shader->set("u_Object.model", transform);
+    shader->set("u_Object.normal_matrix",
                 glm::transpose(glm::inverse(glm::mat3{transform})));
-    shader->set("u_Color", tint);
-    shader->set("u_Uid", uid);
+    shader->set("u_Object.color", tint);
+    shader->set("u_Object.uid", uid);
 
     mesh->get_vertex_array()->bind();
     RenderCommand::draw(mesh->get_vertex_array(), mesh->get_index_count());

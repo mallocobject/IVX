@@ -16,6 +16,12 @@ void RenderPass::begin() {
         spec_.target->bind();
     }
 
+    // Re-claims the binding point: another pass may have taken it since the
+    // last frame.
+    if (spec_.camera) {
+        camera_uniforms_.update(*spec_.camera);
+    }
+
     // Snapshot before touching anything: end() has to put back what the
     // *previous* pass left, not a hardcoded default.
     saved_state_ = RenderCommand::state();

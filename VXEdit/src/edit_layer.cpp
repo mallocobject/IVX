@@ -71,6 +71,9 @@ void EditLayer::on_attach() {
     // (picking ids, outline) possible without repeating the state bookkeeping.
     RenderPassSpecification pass_spec;
     pass_spec.target = frame_buffer_;
+    // The pass owns its camera block, so a second pass with another camera can
+    // follow.
+    pass_spec.camera = &editor_camera_;
     pass_spec.clear_color = glm::vec4{0.1f, 0.1f, 0.1f, 1.f};
     // Culling was on globally before passes existed, and the 2D demo cube
     // depends on it: without it the back faces would render too.
@@ -131,7 +134,7 @@ void EditLayer::on_update(float dt) {
 
     if (scene_) {
         IVX_PROFILE_SCOPE("Renderer draw");
-        scene_->render(editor_camera_);
+        scene_->render();
     }
 
     render_pass_->end();

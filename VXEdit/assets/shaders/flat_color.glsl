@@ -1,25 +1,39 @@
 #type vertex
-#version 330 core
+#version 450 core
+
+struct Camera {
+    mat4 view;
+    mat4 projection;
+    mat4 view_projection;
+    vec4 position; // xyz
+};
+
+layout(std140, binding = 0) uniform CameraBlock {
+    Camera camera;
+};
 
 layout(location = 0) in vec3 a_Position;
 
-uniform vec4 u_Color;
-uniform mat4 u_VP;
+struct Object {
+    vec4 color;
+};
 
-out vec4 o_Color;
+uniform Object u_Object;
+
+layout(location = 0) out vec4 v_Color;
 
 void main() {
-    o_Color = u_Color;
-    gl_Position = u_VP * vec4(a_Position, 1.0);
+    v_Color = u_Object.color;
+    gl_Position = camera.view_projection * vec4(a_Position, 1.0);
 }
 
 #type fragment
-#version 330 core
+#version 450 core
 
 layout(location = 0) out vec4 color;
 
-in vec4 o_Color;
+layout(location = 0) in vec4 v_Color;
 
 void main() {
-    color = o_Color;
+    color = v_Color;
 }
