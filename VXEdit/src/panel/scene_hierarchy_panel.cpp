@@ -11,6 +11,9 @@ namespace ivx {
 namespace {
 constexpr const char *kDragPayload = "IVX_SCENE_ENTITY";
 
+// Edge length of the default cube, in world units.
+constexpr float k_default_mesh_size = 200.f;
+
 ImGuiTreeNodeFlags base_flags() {
     return ImGuiTreeNodeFlags_OpenOnArrow |
            ImGuiTreeNodeFlags_OpenOnDoubleClick |
@@ -111,29 +114,34 @@ void SceneHierarchyPanel::draw_toolbar() {
                           scene.registry().view<TagComponent>().size());
     }
 }
+void SceneHierarchyPanel::set_default_entity(Entity &entity, bool is_child) {
+    auto &tf = entity.get_component<TransformComponent>();
 
-Entity SceneHierarchyPanel::create_default_entity(Scene &scene) {
-    // Naming follows the usual "Entity" / "Entity (1)" / "Entity (2)" scheme,
-    // so a new object never shows up as a duplicate of an existing one. Names
-    // are not unique in the scene, so this asks for a free one explicitly.
-    std::string name = "Entity";
-    for (int suffix = 1; scene.find_by_name(name); ++suffix) {
-        name = std::format("Entity ({})", suffix);
+    auto &mesh_renderer = entity.add_component<MeshRendererComponent>();
+    mesh_renderer.mesh = Mesh::create_cube(k_default_mesh_size);
+    mesh_renderer.material.albedo = glm::vec4{0.92f, 0.55f, 0.32f, 1.f};
+
+    if (!is_child) {
+        tf.translation = glm::vec3{0.f};
+        tf.scale = glm::vec3{1.f};
+        return;
     }
 
+    // A child at the parent's origin with the same size is completely inside
+    // it. Shrink it and sit it on top of the parent instead.
+    const float half_extent = k_default_mesh_size * 0.5f;
+    tf.scale = glm::vec3{0.25f};
+    tf.translation = glm::vec3{0.f, half_extent + half_extent * 0.25f, 0.f};
+}
+
+Entity SceneHierarchyPanel::create_default_entity(Scene &scene) {
     // Transform: Scene::create_entity() already gives the identity transform
     // every engine spawns with (position 0, rotation 0, scale 1). Only the
     // visual default is ours to choose.
-    Entity entity = scene.create_entity(name);
+    Entity entity = scene.create_entity("Entity");
 
-    // Unity's default sprite tint is pure white and its default quad is a
-    // textureless square, so a flat white quad is the closest equivalent with
-    // no asset pipeline yet. Size comes from the camera (see
-    // default_sprite_size) so it reads on screen.
-    auto &sprite = entity.add_component<SpriteRendererComponent>();
-    const float size = default_sprite_size(scene);
-    sprite.size = glm::vec2{size, size};
-    sprite.color = glm::vec4{1.f, 1.f, 1.f, 1.f};
+    set_default_entity(entity);
+
     return entity;
 }
 
@@ -208,12 +216,16 @@ void SceneHierarchyPanel::draw_node_context_menu(Entity entity) {
     context_.selected = entity.handle();
 
     if (ImGui::MenuItem("Create Child")) {
-        set_selected(scene.create_child(entity, "Entity"));
+        auto child_entity = scene.create_child(entity, "Entity");
+        set_default_entity(child_entity, true);
+        set_selected(child_entity);
     }
     if (ImGui::MenuItem("Add Sibling")) {
         Entity parent = entity.parent();
-        set_selected(parent ? scene.create_child(parent, "Entity")
-                            : scene.create_entity("Entity"));
+        auto sibling_entity = parent ? scene.create_child(parent, "Entity")
+                                     : scene.create_entity("Entity");
+        set_default_entity(sibling_entity, sibling_entity.has_parent());
+        set_selected(sibling_entity);
     }
     if (ImGui::MenuItem("Unparent", nullptr, false, entity.has_parent())) {
         scene.set_parent(entity, {});

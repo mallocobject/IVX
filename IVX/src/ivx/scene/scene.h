@@ -27,10 +27,6 @@ class Scene : public RefCounted {
 
     bool rename_entity(Entity entity, std::string_view name);
 
-    // First entity whose TagComponent::value equals `name`, or an invalid
-    // Entity. Names are not unique; identity is the handle.
-    Entity find_by_name(std::string_view name);
-
     // Entities are looked up by their IdComponent::uid, which is a stable id
     // that survives save/load and is what the id buffer of the viewport stores.
     // The handle is only valid for the current session, so uid must never be

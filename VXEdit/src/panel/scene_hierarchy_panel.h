@@ -22,8 +22,8 @@ class SceneHierarchyPanel : public Panel {
 
   private:
     void draw_toolbar();
-    // Creates an entity with the defaults a new object gets in Unity/Unreal:
-    // identity transform at the origin, plus a visible placeholder sprite.
+
+    void set_default_entity(Entity &entity, bool is_child = false);
     Entity create_default_entity(Scene &scene);
     void draw_entity_node(Entity entity);
     void draw_node_context_menu(Entity entity);

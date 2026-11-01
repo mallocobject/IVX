@@ -10,6 +10,7 @@
 #include "ivx/render/sub_texture2d.h"
 #include "ivx/render/texture.h"
 #include "ivx/scene/scene_camera.h"
+#include "ivx/utils/math.h"
 #include <entt.hpp>
 #include <glm/ext.hpp>
 #include <glm/glm.hpp>
@@ -20,35 +21,6 @@
 namespace ivx {
 
 using namespace entt::literals;
-
-namespace detail {
-inline glm::mat4 build_rotation(const glm::vec3 &rotation) {
-    float yaw = rotation.y;
-    float pitch = rotation.x;
-    float roll = rotation.z;
-
-    const float cy = std::cos(yaw), sy = std::sin(yaw);
-    const float cp = std::cos(pitch), sp = std::sin(pitch);
-    const float cr = std::cos(roll), sr = std::sin(roll);
-
-    glm::mat4 R(1.0f);
-
-    // GLM col-main: R[col][row]
-    R[0][0] = cy * cr + sy * sp * sr;
-    R[0][1] = cp * sr;
-    R[0][2] = -sy * cr + cy * sp * sr;
-
-    R[1][0] = -cy * sr + sy * sp * cr;
-    R[1][1] = cp * cr;
-    R[1][2] = sy * sr + cy * sp * cr;
-
-    R[2][0] = sy * cp;
-    R[2][1] = -sp;
-    R[2][2] = cy * cp;
-
-    return R;
-}
-} // namespace detail
 
 struct TagComponent {
     // Display name only. Identity is the entity handle itself: entt::entity is
@@ -80,7 +52,7 @@ struct TransformComponent {
     // Local matrix (T * R * S) built from the fields above.
     glm::mat4 load_matrix() const {
         return glm::translate(glm::mat4{1.f}, translation) *
-               detail::build_rotation(rotation) *
+               rotation_matrix_from_euler(rotation) *
                glm::scale(glm::mat4{1.f}, scale);
     }
 };
@@ -116,6 +88,7 @@ struct CameraComponent {
 struct MeshRendererComponent {
     Ref<Mesh> mesh;
     Material material;
+    bool visible{true};
 };
 
 struct NativeScriptComponent;

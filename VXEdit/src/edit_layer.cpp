@@ -273,10 +273,10 @@ void EditLayer::create_scene() {
         Entity mesh_cube = scene_->create_entity("3D Cube");
         auto &tf = mesh_cube.get_component<TransformComponent>();
         tf.translation = glm::vec3{0.f};
-        tf.scale = glm::vec3{200.f};
+        tf.scale = glm::vec3{1.f};
 
         auto &mesh_renderer = mesh_cube.add_component<MeshRendererComponent>();
-        mesh_renderer.mesh = Mesh::create_cube();
+        mesh_renderer.mesh = Mesh::create_cube(200.f);
         mesh_renderer.material.albedo = glm::vec4{0.92f, 0.55f, 0.32f, 1.f};
     }
 
@@ -644,7 +644,7 @@ void EditLayer::apply_gizmo_matrix(Entity entity,
     const glm::quat increment = glm::normalize(glm::quat_cast(
         glm::transpose(parent_rotation) * delta_world * parent_rotation));
     const glm::quat current = glm::normalize(glm::quat_cast(
-        rotation_of(detail::build_rotation(transform.rotation))));
+        rotation_of(rotation_matrix_from_euler(transform.rotation))));
     const glm::quat updated = glm::normalize(increment * current);
     const glm::vec3 rotation =
         euler_from_rotation_matrix(glm::mat3_cast(updated));

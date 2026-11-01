@@ -122,15 +122,6 @@ void Scene::destroy_entity(Entity entity) {
     registry_.destroy(entity.handle());
 }
 
-Entity Scene::find_by_name(std::string_view name) {
-    for (auto [handle, tag] : registry_.view<TagComponent>().each()) {
-        if (tag.value == name) {
-            return Entity{handle, this};
-        }
-    }
-    return {};
-}
-
 bool Scene::rename_entity(Entity entity, std::string_view name) {
     auto &tag = entity.get_component<TagComponent>();
     if (name.empty()) {
@@ -329,7 +320,7 @@ void Scene::render() {
          registry_
              .view<IdComponent, TransformComponent, MeshRendererComponent>()
              .each()) {
-        if (mesh_renderer.mesh) {
+        if (mesh_renderer.mesh && mesh_renderer.visible) {
             Renderer3D::submit(mesh_renderer.mesh,
                                mesh_renderer.material,
                                transform.world,

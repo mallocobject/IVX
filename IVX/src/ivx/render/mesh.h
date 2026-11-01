@@ -41,7 +41,7 @@ class Mesh : public RefCounted {
                             const std::vector<uint32_t> &indices);
     // Unit cube centred on the origin. 24 vertices so every face has its own
     // normal.
-    static Ref<Mesh> create_cube(float size = 1.f);
+    static Ref<Mesh> create_cube(float size);
 
     const Ref<VertexArray> &get_vertex_array() const {
         return vertex_array_;
