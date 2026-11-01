@@ -116,11 +116,11 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
                           const MeshRendererComponent &mesh_renderer) {
     const Mesh *mesh = mesh_renderer.mesh.get();
     const MeshPrimitive primitive =
-        mesh ? mesh->get_primitive() : MeshPrimitive::kCustom;
+        mesh ? mesh->get_primitive() : MeshPrimitive::IVX_Custom;
 
     out << YAML::Key << "MeshRenderer" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Primitive" << YAML::Value
-        << (primitive == MeshPrimitive::kCube ? "Cube" : "Custom");
+        << (primitive == MeshPrimitive::IVX_Cube ? "Cube" : "Custom");
     out << YAML::Key << "PrimitiveSize" << YAML::Value
         << (mesh ? mesh->get_primitive_size() : 0.f);
     out << YAML::Key << "Albedo" << YAML::Value

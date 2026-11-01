@@ -89,7 +89,7 @@ Ref<Mesh> Mesh::create_cube(float size) {
     }
 
     Ref<Mesh> mesh = create(vertices, indices);
-    mesh->primitive_ = MeshPrimitive::kCube;
+    mesh->primitive_ = MeshPrimitive::IVX_Cube;
     mesh->primitive_size_ = size;
     return mesh;
 }

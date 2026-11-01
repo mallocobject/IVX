@@ -269,8 +269,9 @@ void draw_mesh_renderer(Entity /*entity*/,
                         EditorContext & /*context*/) {
     const Mesh *mesh = mesh_renderer.mesh.get();
     if (mesh != nullptr) {
-        const char *primitive =
-            mesh->get_primitive() == MeshPrimitive::kCube ? "Cube" : "Custom";
+        const char *primitive = mesh->get_primitive() == MeshPrimitive::IVX_Cube
+                                    ? "Cube"
+                                    : "Custom";
         ImGui::Text(
             "Mesh: %s, %u triangles", primitive, mesh->get_index_count() / 3);
     } else {

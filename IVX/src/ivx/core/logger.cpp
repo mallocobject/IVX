@@ -10,7 +10,7 @@ namespace {
 struct Settings {
     std::string dir; // empty -> console only
     std::string prefix = "ivx";
-    LogFileFormat format = LogFileFormat::kCompressed;
+    LogFileFormat format = LogFileFormat::IVX_Compressed;
     std::size_t max_file_size = 100ull * 1024 * 1024;
     int expire_days = 7;
     LogLevel threshold = LogLevel::VERBOSE;
@@ -47,8 +47,8 @@ std::string build_config(const char *file_suffix) {
 
     if (!g_settings.dir.empty()) {
         cfg += "appenders_config.file.type=";
-        cfg += g_settings.format == LogFileFormat::kText ? "text_file"
-                                                         : "compressed_file";
+        cfg += g_settings.format == LogFileFormat::IVX_Text ? "text_file"
+                                                            : "compressed_file";
         cfg += "\n";
         cfg += "appenders_config.file.levels=" + levels + "\n";
         cfg += "appenders_config.file.file_name=" + g_settings.dir + "/" +

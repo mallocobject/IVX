@@ -14,8 +14,8 @@ enum class LogLevel : std::uint8_t { VERBOSE, DEBUG, INFO, WARN, ERROR, FATAL };
 
 // Serialisation of the file appender.
 enum class LogFileFormat : std::uint8_t {
-    kCompressed, // ".logcompr": written continuously, needs BqLog_LogDecoder
-    kText,       // ".log": plain utf-8, but bqlog only flushes it on clean exit
+    IVX_Compressed, // ".logcompr": written continuously, needs BqLog_LogDecoder
+    IVX_Text, // ".log": plain utf-8, but bqlog only flushes it on clean exit
 };
 
 // Turns file output on. Never calling it (or passing an empty dir) keeps the
@@ -23,7 +23,7 @@ enum class LogFileFormat : std::uint8_t {
 // "<dir>/<prefix>_*.logcompr" (IVX) and "<dir>/<prefix>_app_*.logcompr" (APP).
 void set_log_path(std::string dir,
                   std::string prefix = "ivx",
-                  LogFileFormat format = LogFileFormat::kCompressed,
+                  LogFileFormat format = LogFileFormat::IVX_Compressed,
                   std::size_t max_file_size = 100ull * 1024 * 1024,
                   int expire_days = 7);
 

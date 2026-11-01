@@ -13,8 +13,8 @@ namespace ivx {
 // only procedurally generated primitives survive a save/load round trip for
 // now.
 enum class MeshPrimitive : uint8_t {
-    kCustom = 0,
-    kCube,
+    IVX_Custom = 0,
+    IVX_Cube,
 };
 
 struct Vertex3D {
@@ -67,7 +67,7 @@ class Mesh : public RefCounted {
     Ref<VertexArray> vertex_array_;
     Bounds bounds_;
     uint32_t index_count_{0};
-    MeshPrimitive primitive_{MeshPrimitive::kCustom};
+    MeshPrimitive primitive_{MeshPrimitive::IVX_Custom};
     float primitive_size_{0.f};
 };
 
