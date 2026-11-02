@@ -11,7 +11,8 @@ ToneMappingPass::ToneMappingPass(uint32_t width, uint32_t height) {
     spec.num_samples = 1;
     // Plain RGBA8 on purpose: the shader already encodes sRGB, so an
     // SRGB8_ALPHA8 attachment would encode a second time.
-    spec.attachments = {{FrameBufferTextureFormat::RGBA8}};
+    // No depth attachment: a full screen triangle does not need one.
+    spec.color_formats = {FrameBufferColorFormat::RGBA8};
     output_ = FrameBuffer::create(spec);
 
     RenderPassSpecification pass;

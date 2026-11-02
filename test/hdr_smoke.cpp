@@ -85,15 +85,16 @@ int main() {
                             sizeof(rgba),
                             rgba);
                         for (int c = 0; c < 3; ++c) {
-                            const float want = expected(curve, hdr[c], exposure);
+                            const float want =
+                                expected(curve, hdr[c], exposure);
                             if (std::abs(rgba[c] / 255.f - want) >=
                                 2.f / 255.f) {
-                                std::cerr
-                                    << "MISMATCH curve="
-                                    << static_cast<int>(curve)
-                                    << " exposure=" << exposure
-                                    << " channel=" << c << " want=" << want
-                                    << " got=" << rgba[c] / 255.f << '\n';
+                                std::cerr << "MISMATCH curve="
+                                          << static_cast<int>(curve)
+                                          << " exposure=" << exposure
+                                          << " channel=" << c
+                                          << " want=" << want
+                                          << " got=" << rgba[c] / 255.f << '\n';
                             }
                             require(std::abs(rgba[c] / 255.f - want) <
                                         2.f / 255.f,

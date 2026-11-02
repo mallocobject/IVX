@@ -308,7 +308,7 @@ void Scene::update_world_recursive(Entity entity,
     }
 }
 
-void Scene::render() {
+void Scene::render(RenderMode mode) {
     // Without this the sprites are drawn with whatever
     // TransformComponent::world held last (identity on the first frame): every
     // quad collapses onto the origin and the viewport shows a single flat card
@@ -320,7 +320,13 @@ void Scene::render() {
          registry_
              .view<IdComponent, TransformComponent, MeshRendererComponent>()
              .each()) {
-        if (mesh_renderer.mesh && mesh_renderer.visible) {
+        if (!mesh_renderer.mesh || !mesh_renderer.visible) {
+            continue;
+        }
+
+        if (mode == RenderMode::IVX_DepthOnly) {
+            Renderer3D::submit_depth(mesh_renderer.mesh, transform.world);
+        } else {
             Renderer3D::submit(mesh_renderer.mesh,
                                mesh_renderer.material,
                                transform.world,

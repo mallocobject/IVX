@@ -27,6 +27,10 @@ class Renderer3D {
                        const glm::mat4 &transform,
                        uint32_t uid = 0);
 
+    // Depth-only submission for a shadow pass: the built in depth shader, no
+    // material, no textures, and the same statistics as a normal draw.
+    static void submit_depth(const Ref<Mesh> &mesh, const glm::mat4 &transform);
+
     struct Statistics {
         uint32_t draw_calls{0};
         uint32_t triangles{0};

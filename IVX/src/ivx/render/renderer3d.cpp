@@ -8,6 +8,8 @@ namespace ivx {
 namespace {
 struct Renderer3DData {
     Ref<Shader> default_shader;
+    // Writes depth only; used by the shadow pass.
+    Ref<Shader> depth_shader;
     // Stands in for a missing albedo map.
     Ref<Texture2D> white_texture;
     Renderer3D::Statistics stats;
@@ -20,6 +22,7 @@ void Renderer3D::init() {
     IVX_PROFILE_FUNCTION();
 
     data.default_shader = Shader::create(SHADERS "mesh.glsl");
+    data.depth_shader = Shader::create(SHADERS "shadow.glsl");
 
     data.white_texture = Texture2D::create(1, 1);
     const uint32_t white = 0xffffffffu;
@@ -82,4 +85,21 @@ const Renderer3D::Statistics &Renderer3D::get_stats() {
     return data.stats;
 }
 
+void Renderer3D::submit_depth(const Ref<Mesh> &mesh,
+                              const glm::mat4 &transform) {
+    IVX_PROFILE_FUNCTION();
+
+    if (!mesh) {
+        return;
+    }
+
+    data.depth_shader->bind();
+    data.depth_shader->set("u_Model", transform);
+
+    mesh->get_vertex_array()->bind();
+    RenderCommand::draw(mesh->get_vertex_array(), mesh->get_index_count());
+
+    data.stats.draw_calls++;
+    data.stats.triangles += mesh->get_index_count() / 3;
+}
 } // namespace ivx

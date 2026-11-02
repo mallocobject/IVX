@@ -8,17 +8,24 @@
 namespace ivx {
 
 // What one colour attachment holds.
-enum class FrameBufferTextureFormat : std::uint8_t {
-    None,
-    RGBA8,       // ordinary colour
+enum class FrameBufferColorFormat : std::uint8_t {
+    RGBA8,
     RGBA16F,     // linear HDR scene colour
     RED_INTEGER, // entity ids: R32UI, so no blending and no filtering
 };
 
-struct FrameBufferAttachmentSpec {
-    FrameBufferTextureFormat format{FrameBufferTextureFormat::RGBA8};
+// What the single depth attachment holds. None means there is none, which is
+// the normal case for a full screen effect.
+enum class FrameBufferDepthFormat : std::uint8_t {
+    None,
+    Depth24Stencil8, // renderbuffer, not sampleable: the viewport and overlays
+    Depth32F,        // texture, sampleable: shadow maps (1 near, 0 far)
 };
 
+// A framebuffer is described completely here: the colour attachments in draw
+// order, plus at most one depth attachment. Depth is a separate field because
+// GL treats it separately - it is never blended, it has its own attachment
+// point, and it cannot be filtered like colour.
 struct FrameBufferSpecification {
     uint32_t width{0};
     uint32_t height{0};
@@ -27,9 +34,9 @@ struct FrameBufferSpecification {
     // that cannot allocate the requested count falls back to the highest one it
     // supports (see the backend).
     uint32_t num_samples{4};
-    bool swap_chain_target{false};
 
-    std::vector<FrameBufferAttachmentSpec> attachments;
+    std::vector<FrameBufferColorFormat> color_formats;
+    FrameBufferDepthFormat depth_format{FrameBufferDepthFormat::None};
 };
 
 class FrameBuffer : public RefCounted {
@@ -40,6 +47,10 @@ class FrameBuffer : public RefCounted {
     // Sample the resolved attachment after the scene pass has ended.
     virtual void bind_color_attachment(uint32_t slot,
                                        uint32_t index = 0) const = 0;
+
+    // 0 when there is no depth attachment, or when it is a renderbuffer.
+    virtual uint32_t get_depth_attachment() const = 0;
+    virtual void bind_depth_attachment(uint32_t slot) const = 0;
 
     // Reads one pixel of an integer attachment (an entity id, normally). The
     // origin is bottom-left, like OpenGL's

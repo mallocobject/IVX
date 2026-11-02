@@ -60,8 +60,11 @@ void EditLayer::on_attach() {
     spec.width = WIDTH;
     spec.height = HEIGHT;
     spec.num_samples = 4;
-    spec.attachments = {{FrameBufferTextureFormat::RGBA16F},
-                        {FrameBufferTextureFormat::RED_INTEGER}};
+    spec.color_formats = {FrameBufferColorFormat::RGBA16F,
+                          FrameBufferColorFormat::RED_INTEGER};
+    // Depth is a separate field on purpose: it is never blended and has its own
+    // attachment point. A renderbuffer is enough here, nothing samples it.
+    spec.depth_format = FrameBufferDepthFormat::Depth24Stencil8;
 
     frame_buffer_ = FrameBuffer::create(spec);
     tone_mapping_pass_ = make_ref<ToneMappingPass>(WIDTH, HEIGHT);
@@ -293,7 +296,7 @@ void EditLayer::create_scene() {
     {
         Entity mesh_cube = scene_->create_entity("3D Cube");
         auto &tf = mesh_cube.get_component<TransformComponent>();
-        tf.translation = glm::vec3{0.f, 1.f, 0.f};
+        tf.translation = glm::vec3{0.f, 0.f, 0.f};
         tf.scale = glm::vec3{1.f};
 
         auto &mesh_renderer = mesh_cube.add_component<MeshRendererComponent>();

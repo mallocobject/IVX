@@ -15,8 +15,11 @@ class OpenGLFrameBuffer : public FrameBuffer {
     // buffers cannot be sampled directly, so unbind() blits them into
     // single-sampled textures that ImGui and the shaders can read.
     virtual uint32_t get_color_attachment(uint32_t index = 0) const override;
-    void bind_color_attachment(uint32_t slot,
-                               uint32_t index = 0) const override;
+    virtual void bind_color_attachment(uint32_t slot,
+                                       uint32_t index = 0) const override;
+
+    virtual uint32_t get_depth_attachment() const override;
+    virtual void bind_depth_attachment(uint32_t slot) const override;
 
     // Reads the last resolved frame (see unbind()). Coordinates start
     // bottom-left.
@@ -39,32 +42,42 @@ class OpenGLFrameBuffer : public FrameBuffer {
     virtual void resize(uint32_t width, uint32_t height) override;
 
   private:
+    // One colour attachment: the sampleable texture (also the resolve target)
+    // and, with multisampling on, the renderbuffer that is actually drawn into.
+    struct ColorAttachment {
+        FrameBufferColorFormat format{FrameBufferColorFormat::RGBA8};
+        uint32_t texture{0};
+        uint32_t renderbuffer{0};
+    };
+
+    // Either a sampleable texture or a renderbuffer, never both.
+    struct DepthAttachment {
+        FrameBufferDepthFormat format{FrameBufferDepthFormat::None};
+        uint32_t texture{0};
+        uint32_t renderbuffer{0};
+    };
+
     void invalidate();
     // Releases the GL objects only; invalidate() then builds a fresh set. Kept
     // separate from the destructor so resizing does not have to duplicate the
     // deletion list.
     void destroy();
 
-    // Multisampled targets only: the FBO that is drawn into, the single-sampled
-    // textures that unbind() resolves to, and the multisampled colour
-    // renderbuffers.
+    // The single sampled storage: the textures a shader samples (and the
+    // resolve targets of a multisampled framebuffer).
+    void create_color_targets();
+    // `samples` is 1 for the single sampled case and > 1 for the draw target.
+    void create_depth_target(int samples);
+
     void invalidate_multisampled();
     void resolve() const;
 
     uint32_t fbo_{0};
-    // One texture per entry in spec_.attachments; index i is
-    // GL_COLOR_ATTACHMENT<i>. Holds the single-sampled textures in both modes:
-    // without multisampling they are attached to fbo_ directly, with it they
-    // live on resolve_fbo_.
-    std::vector<uint32_t> color_attachments_;
-    std::vector<FrameBufferTextureFormat> color_formats_;
+    std::vector<ColorAttachment> color_attachments_;
+    DepthAttachment depth_;
 
-    uint32_t depth_buffer_{0};
-
-    // Multisampled mode: color attachments as renderbuffers and the FBO they
-    // resolve into.
+    // Multisampled mode only: the FBO the single-sampled textures resolve into.
     uint32_t resolve_fbo_{0};
-    std::vector<uint32_t> multisampled_attachments_;
 
     FrameBufferSpecification spec_;
 

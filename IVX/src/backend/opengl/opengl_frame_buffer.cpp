@@ -9,22 +9,53 @@
 
 namespace ivx {
 namespace {
-// Internal texture format for a colour attachment. The integer one has to stay
-// integer: blending and filtering are meaningless for ids, and GL would
-// silently produce garbage.
-GLenum internal_format_of(FrameBufferTextureFormat format) {
+// Everything that differs between colour formats lives here, so the attachment
+// code never switches on a format again: adding a format is one row.
+struct GlColorFormat {
+    GLenum internal_format;
+    bool integer; // no filtering, and the clear has to use the uiv entry point
+};
+
+GlColorFormat color_format_of(FrameBufferColorFormat format) {
+    using enum FrameBufferColorFormat;
     switch (format) {
-    case FrameBufferTextureFormat::RGBA16F:
-        return GL_RGBA16F;
-    case FrameBufferTextureFormat::RED_INTEGER:
-        return GL_R32UI;
-    case FrameBufferTextureFormat::None:
-        // A "None" entry is treated as ordinary colour rather than failing the
-        // whole framebuffer: it is what a default-constructed spec asks for.
-    case FrameBufferTextureFormat::RGBA8:
+    case RGBA16F:
+        return {GL_RGBA16F, false};
+    case RED_INTEGER:
+        return {GL_R32UI, true};
+    case RGBA8:
     default:
-        return GL_RGBA8;
+        return {GL_RGBA8, false};
     }
+}
+
+uint32_t create_color_texture(FrameBufferColorFormat format,
+                              uint32_t width,
+                              uint32_t height) {
+    const GlColorFormat info = color_format_of(format);
+
+    uint32_t texture = 0;
+    glCreateTextures(GL_TEXTURE_2D, 1, &texture);
+    glTextureStorage2D(texture, 1, info.internal_format, width, height);
+    // Integer targets must not be filtered, or read_pixel() gets interpolated
+    // ids.
+    const GLint filter = info.integer ? GL_NEAREST : GL_LINEAR;
+    glTextureParameteri(texture, GL_TEXTURE_MIN_FILTER, filter);
+    glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, filter);
+    return texture;
+}
+
+// An empty list has to be spelled out, or the missing attachment 0 leaves the
+// framebuffer incomplete.
+void set_draw_buffers(uint32_t fbo, const std::vector<GLenum> &draw_buffers) {
+    if (draw_buffers.empty()) {
+        glNamedFramebufferDrawBuffers(fbo, 0, nullptr);
+        glNamedFramebufferReadBuffer(fbo, GL_NONE);
+        return;
+    }
+
+    glNamedFramebufferDrawBuffers(
+        fbo, static_cast<GLsizei>(draw_buffers.size()), draw_buffers.data());
 }
 } // namespace
 
@@ -40,123 +71,136 @@ OpenGLFrameBuffer::~OpenGLFrameBuffer() {
 void OpenGLFrameBuffer::invalidate() {
     destroy();
 
-    const auto attachment_count =
-        static_cast<std::size_t>(spec_.attachments.size());
-    color_formats_.resize(attachment_count);
+    const auto attachment_count = spec_.color_formats.size();
+    color_attachments_.resize(attachment_count);
     for (std::size_t i = 0; i < attachment_count; ++i) {
-        color_formats_[i] = spec_.attachments[i].format;
+        color_attachments_[i].format = spec_.color_formats[i];
     }
-
-    color_attachments_.assign(attachment_count, 0);
-    glCreateTextures(GL_TEXTURE_2D,
-                     static_cast<GLsizei>(attachment_count),
-                     color_attachments_.data());
-
-    for (std::size_t i = 0; i < attachment_count; ++i) {
-        const bool integer =
-            color_formats_[i] == FrameBufferTextureFormat::RED_INTEGER;
-        glTextureStorage2D(color_attachments_[i],
-                           1,
-                           internal_format_of(color_formats_[i]),
-                           spec_.width,
-                           spec_.height);
-        // Integer targets must not be filtered, or read_pixel() gets
-        // interpolated ids.
-        const GLint filter = integer ? GL_NEAREST : GL_LINEAR;
-        glTextureParameteri(
-            color_attachments_[i], GL_TEXTURE_MIN_FILTER, filter);
-        glTextureParameteri(
-            color_attachments_[i], GL_TEXTURE_MAG_FILTER, filter);
-    }
+    depth_.format = spec_.depth_format;
 
     if (spec_.num_samples > 1) {
         invalidate_multisampled();
         return;
     }
 
-    glCreateFramebuffers(1, &fbo_);
+    create_color_targets();
 
-    std::vector<GLenum> draw_buffers(attachment_count, GL_NONE);
+    glCreateFramebuffers(1, &fbo_);
+    std::vector<GLenum> draw_buffers;
+    draw_buffers.reserve(attachment_count);
     for (std::size_t i = 0; i < attachment_count; ++i) {
-        glNamedFramebufferTexture(fbo_,
-                                  GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i),
-                                  color_attachments_[i],
-                                  0);
-        draw_buffers[i] = GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i);
+        const GLenum point = GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i);
+        glNamedFramebufferTexture(
+            fbo_, point, color_attachments_[i].texture, 0);
+        draw_buffers.push_back(point);
+    }
+    set_draw_buffers(fbo_, draw_buffers);
+
+    create_depth_target(1);
+}
+
+void OpenGLFrameBuffer::create_color_targets() {
+    for (ColorAttachment &attachment : color_attachments_) {
+        attachment.texture =
+            create_color_texture(attachment.format, spec_.width, spec_.height);
+    }
+}
+
+void OpenGLFrameBuffer::create_depth_target(int samples) {
+    if (depth_.format == FrameBufferDepthFormat::None) {
+        return;
     }
 
-    // Without this every attachment past the first is silently never written:
-    // GL only enables COLOR_ATTACHMENT0 on a freshly created framebuffer.
-    glNamedFramebufferDrawBuffers(
-        fbo_, static_cast<GLsizei>(attachment_count), draw_buffers.data());
+    if (depth_.format == FrameBufferDepthFormat::Depth32F) {
+        IVX_CORE_ASSERT(samples == 1,
+                        "A sampleable depth attachment cannot be multisampled");
 
-    glCreateRenderbuffers(1, &depth_buffer_);
-    glNamedRenderbufferStorage(
-        depth_buffer_, GL_DEPTH24_STENCIL8, spec_.width, spec_.height);
-    glNamedFramebufferRenderbuffer(
-        fbo_, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depth_buffer_);
+        glCreateTextures(GL_TEXTURE_2D, 1, &depth_.texture);
+        glTextureStorage2D(depth_.texture,
+                           1,
+                           GL_DEPTH_COMPONENT32F,
+                           spec_.width,
+                           spec_.height);
+        // A shadow map is compared with manual taps, never filtered by the
+        // sampler.
+        glTextureParameteri(depth_.texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTextureParameteri(depth_.texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTextureParameteri(
+            depth_.texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTextureParameteri(
+            depth_.texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        // Reverse-Z: 1 is the near plane, so samples outside the map read as
+        // "nothing in front of me" and the fragments there stay lit.
+        const GLfloat border[4]{1.f, 1.f, 1.f, 1.f};
+        glTextureParameterfv(depth_.texture, GL_TEXTURE_BORDER_COLOR, border);
 
-    IVX_CORE_ASSERT(glCheckNamedFramebufferStatus(fbo_, GL_FRAMEBUFFER) ==
-                        GL_FRAMEBUFFER_COMPLETE,
-                    "Framebuffer is incomplete!");
+        glNamedFramebufferTexture(fbo_, GL_DEPTH_ATTACHMENT, depth_.texture, 0);
+        return;
+    }
+
+    // Depth24Stencil8: private to the framebuffer, never sampled.
+    glCreateRenderbuffers(1, &depth_.renderbuffer);
+    if (samples > 1) {
+        glNamedRenderbufferStorageMultisample(depth_.renderbuffer,
+                                              static_cast<GLsizei>(samples),
+                                              GL_DEPTH24_STENCIL8,
+                                              spec_.width,
+                                              spec_.height);
+    } else {
+        glNamedRenderbufferStorage(depth_.renderbuffer,
+                                   GL_DEPTH24_STENCIL8,
+                                   spec_.width,
+                                   spec_.height);
+    }
+    glNamedFramebufferRenderbuffer(fbo_,
+                                   GL_DEPTH_STENCIL_ATTACHMENT,
+                                   GL_RENDERBUFFER,
+                                   depth_.renderbuffer);
 }
 
 void OpenGLFrameBuffer::invalidate_multisampled() {
-    const auto attachment_count =
-        static_cast<std::size_t>(spec_.attachments.size());
+    const auto attachment_count = color_attachments_.size();
     const GLsizei samples = static_cast<GLsizei>(spec_.num_samples);
 
+    // The single-sampled copies every reader goes through; they are never drawn
+    // into, only blitted to.
+    create_color_targets();
+
     // The draw target: multisampled colour renderbuffers plus multisampled
-    // depth/stencil. A renderbuffer is enough for the multisampled copies -
-    // they are only ever a source for the resolve blit, never sampled by a
-    // shader.
+    // depth. A renderbuffer is enough for the multisampled copies - they are
+    // only ever a source for the resolve blit, never sampled by a shader.
     glCreateFramebuffers(1, &fbo_);
 
-    multisampled_attachments_.assign(attachment_count, 0);
+    std::vector<GLenum> draw_buffers;
+    draw_buffers.reserve(attachment_count);
     for (std::size_t i = 0; i < attachment_count; ++i) {
-        glCreateRenderbuffers(1, &multisampled_attachments_[i]);
+        ColorAttachment &attachment = color_attachments_[i];
+        glCreateRenderbuffers(1, &attachment.renderbuffer);
         glNamedRenderbufferStorageMultisample(
-            multisampled_attachments_[i],
+            attachment.renderbuffer,
             samples,
-            internal_format_of(color_formats_[i]),
+            color_format_of(attachment.format).internal_format,
             spec_.width,
             spec_.height);
-        glNamedFramebufferRenderbuffer(fbo_,
-                                       GL_COLOR_ATTACHMENT0 +
-                                           static_cast<GLenum>(i),
-                                       GL_RENDERBUFFER,
-                                       multisampled_attachments_[i]);
+
+        const GLenum point = GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i);
+        glNamedFramebufferRenderbuffer(
+            fbo_, point, GL_RENDERBUFFER, attachment.renderbuffer);
+        draw_buffers.push_back(point);
     }
+    set_draw_buffers(fbo_, draw_buffers);
 
-    std::vector<GLenum> draw_buffers(attachment_count, GL_NONE);
-    for (std::size_t i = 0; i < attachment_count; ++i) {
-        draw_buffers[i] = GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i);
-    }
-    glNamedFramebufferDrawBuffers(
-        fbo_, static_cast<GLsizei>(attachment_count), draw_buffers.data());
+    create_depth_target(static_cast<int>(samples));
 
-    glCreateRenderbuffers(1, &depth_buffer_);
-    glNamedRenderbufferStorageMultisample(
-        depth_buffer_, samples, GL_DEPTH24_STENCIL8, spec_.width, spec_.height);
-    glNamedFramebufferRenderbuffer(
-        fbo_, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depth_buffer_);
-
-    IVX_CORE_ASSERT(glCheckNamedFramebufferStatus(fbo_, GL_FRAMEBUFFER) ==
-                        GL_FRAMEBUFFER_COMPLETE,
-                    "Multisampled framebuffer is incomplete!");
-
-    // The resolve target holds the single-sampled textures handed out by
-    // get_color_attachment(); it is never drawn into, only blitted to.
+    // The resolve destination, attached to the single-sampled textures.
     glCreateFramebuffers(1, &resolve_fbo_);
     for (std::size_t i = 0; i < attachment_count; ++i) {
         glNamedFramebufferTexture(resolve_fbo_,
                                   GL_COLOR_ATTACHMENT0 + static_cast<GLenum>(i),
-                                  color_attachments_[i],
+                                  color_attachments_[i].texture,
                                   0);
     }
-    glNamedFramebufferDrawBuffers(resolve_fbo_,
-                                  static_cast<GLsizei>(attachment_count),
-                                  draw_buffers.data());
+    set_draw_buffers(resolve_fbo_, draw_buffers);
 
     IVX_CORE_ASSERT(
         glCheckNamedFramebufferStatus(resolve_fbo_, GL_FRAMEBUFFER) ==
@@ -167,14 +211,16 @@ void OpenGLFrameBuffer::invalidate_multisampled() {
     // so verify what was actually allocated instead of trusting the request: a
     // silent fall back to 1 sample would look like "MSAA does nothing" rather
     // than an error.
-    GLint allocated_samples = 0;
-    glGetNamedRenderbufferParameteriv(
-        depth_buffer_, GL_RENDERBUFFER_SAMPLES, &allocated_samples);
-    IVX_CORE_ASSERT(
-        allocated_samples == samples,
-        "Multisampled framebuffer got {} samples instead of the requested {}",
-        allocated_samples,
-        static_cast<int>(samples));
+    if (depth_.renderbuffer != 0) {
+        GLint allocated_samples = 0;
+        glGetNamedRenderbufferParameteriv(
+            depth_.renderbuffer, GL_RENDERBUFFER_SAMPLES, &allocated_samples);
+        IVX_CORE_ASSERT(allocated_samples == samples,
+                        "Multisampled framebuffer got {} samples instead of "
+                        "the requested {}",
+                        allocated_samples,
+                        static_cast<int>(samples));
+    }
 }
 
 void OpenGLFrameBuffer::resolve() const {
@@ -192,9 +238,8 @@ void OpenGLFrameBuffer::resolve() const {
         // Integer targets need GL_NEAREST (picking one sample); colour formats
         // can average.
         const GLenum filter =
-            color_formats_[i] == FrameBufferTextureFormat::RED_INTEGER
-                ? GL_NEAREST
-                : GL_LINEAR;
+            color_format_of(color_attachments_[i].format).integer ? GL_NEAREST
+                                                                  : GL_LINEAR;
         glBlitNamedFramebuffer(fbo_,
                                resolve_fbo_,
                                0,
@@ -210,7 +255,9 @@ void OpenGLFrameBuffer::resolve() const {
     }
 
     // Leave the multisampled framebuffer ready for the next frame's draws.
-    glNamedFramebufferReadBuffer(fbo_, GL_COLOR_ATTACHMENT0);
+    if (!color_attachments_.empty()) {
+        glNamedFramebufferReadBuffer(fbo_, GL_COLOR_ATTACHMENT0);
+    }
 }
 
 void OpenGLFrameBuffer::destroy() {
@@ -222,34 +269,44 @@ void OpenGLFrameBuffer::destroy() {
         glDeleteFramebuffers(1, &fbo_);
         fbo_ = 0;
     }
-    if (!multisampled_attachments_.empty()) {
-        glDeleteRenderbuffers(
-            static_cast<GLsizei>(multisampled_attachments_.size()),
-            multisampled_attachments_.data());
-        multisampled_attachments_.clear();
+
+    for (ColorAttachment &attachment : color_attachments_) {
+        if (attachment.texture != 0) {
+            glDeleteTextures(1, &attachment.texture);
+        }
+        if (attachment.renderbuffer != 0) {
+            glDeleteRenderbuffers(1, &attachment.renderbuffer);
+        }
     }
-    if (!color_attachments_.empty()) {
-        glDeleteTextures(static_cast<GLsizei>(color_attachments_.size()),
-                         color_attachments_.data());
-        color_attachments_.clear();
+    color_attachments_.clear();
+
+    if (depth_.texture != 0) {
+        glDeleteTextures(1, &depth_.texture);
     }
-    color_formats_.clear();
-    if (depth_buffer_ != 0) {
-        glDeleteRenderbuffers(1, &depth_buffer_);
-        depth_buffer_ = 0;
+    if (depth_.renderbuffer != 0) {
+        glDeleteRenderbuffers(1, &depth_.renderbuffer);
     }
+    depth_ = DepthAttachment{};
 }
 
 uint32_t OpenGLFrameBuffer::get_color_attachment(uint32_t index) const {
     if (index >= color_attachments_.size()) {
         return 0;
     }
-    return color_attachments_[index];
+    return color_attachments_[index].texture;
 }
 
 void OpenGLFrameBuffer::bind_color_attachment(uint32_t slot,
                                               uint32_t index) const {
     glBindTextureUnit(slot, get_color_attachment(index));
+}
+
+uint32_t OpenGLFrameBuffer::get_depth_attachment() const {
+    return depth_.texture;
+}
+
+void OpenGLFrameBuffer::bind_depth_attachment(uint32_t slot) const {
+    glBindTextureUnit(slot, depth_.texture);
 }
 
 uint32_t
@@ -259,12 +316,13 @@ OpenGLFrameBuffer::read_pixel(uint32_t index, uint32_t x, uint32_t y) const {
         return 0;
     }
 
+    const ColorAttachment &attachment = color_attachments_[index];
     // glGetTextureSubImage reads straight out of the texture: no read
     // framebuffer binding to save and restore, and it cannot disturb the draw
     // state mid-frame.
-    if (color_formats_[index] == FrameBufferTextureFormat::RED_INTEGER) {
+    if (color_format_of(attachment.format).integer) {
         std::uint32_t value = 0;
-        glGetTextureSubImage(color_attachments_[index],
+        glGetTextureSubImage(attachment.texture,
                              0,
                              static_cast<GLint>(x),
                              static_cast<GLint>(y),
@@ -280,7 +338,7 @@ OpenGLFrameBuffer::read_pixel(uint32_t index, uint32_t x, uint32_t y) const {
     }
 
     std::uint8_t rgba[4]{};
-    glGetTextureSubImage(color_attachments_[index],
+    glGetTextureSubImage(attachment.texture,
                          0,
                          static_cast<GLint>(x),
                          static_cast<GLint>(y),
@@ -300,7 +358,7 @@ void OpenGLFrameBuffer::clear(const glm::vec4 &clear_color,
                               bool clear_depth) {
     if (clear_color_attachments) {
         for (std::size_t i = 0; i < color_attachments_.size(); ++i) {
-            if (color_formats_[i] == FrameBufferTextureFormat::RED_INTEGER) {
+            if (color_format_of(color_attachments_[i].format).integer) {
                 const GLuint zero[4]{0u, 0u, 0u, 0u};
                 glClearNamedFramebufferuiv(
                     fbo_, GL_COLOR, static_cast<GLint>(i), zero);
@@ -313,12 +371,20 @@ void OpenGLFrameBuffer::clear(const glm::vec4 &clear_color,
         }
     }
 
-    if (clear_depth) {
-        // Reverse-Z with GL_GREATER: depth 1.0 is the *near* plane and 0.0 the
-        // far one, so the clear value is 0.0 - the same convention
-        // OpenGLRendererAPI::clear() uses. Clearing to 1.0 would put every
-        // fragment "behind" the cleared plane and the whole scene would be
-        // discarded by the depth test.
+    if (!clear_depth) {
+        return;
+    }
+
+    // Reverse-Z with GL_GREATER: depth 1.0 is the *near* plane and 0.0 the far
+    // one, so the clear value is 0.0 - the same convention
+    // OpenGLRendererAPI::clear() uses. Clearing to 1.0 would put every fragment
+    // "behind" the cleared plane and the whole scene would be discarded by the
+    // depth test.
+    if (depth_.texture != 0) {
+        // A pure depth attachment cannot take the combined DEPTH_STENCIL clear.
+        const GLfloat far_depth = 0.f;
+        glClearNamedFramebufferfv(fbo_, GL_DEPTH, 0, &far_depth);
+    } else if (depth_.renderbuffer != 0) {
         glClearNamedFramebufferfi(fbo_, GL_DEPTH_STENCIL, 0, 0.f, 0);
     }
 }
