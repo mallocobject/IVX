@@ -53,6 +53,7 @@ class RenderPass : public RefCounted {
     // Gathered by the scene every frame, so the pass keeps its own copy.
     void set_lights(const LightSet &lights) {
         lights_ = lights;
+        has_lights_ = true;
     }
 
   private:
@@ -61,6 +62,7 @@ class RenderPass : public RefCounted {
     CameraUniforms camera_uniforms_;
     LightSet lights_{};
     LightUniforms light_uniforms_;
+    bool has_lights_{false};
     RenderCommand::State saved_state_{};
     bool begun_{false};
 };

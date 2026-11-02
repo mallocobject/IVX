@@ -39,6 +39,8 @@ void main() {
 #type fragment
 #version 450 core
 
+const int kMaxLights = 8;
+
 layout(location = 0) out vec4 color;
 layout(location = 1) out uint uid;
 
@@ -58,19 +60,37 @@ uniform Object u_Object;
 // Unit 0; a missing map binds a white 1x1 texture, so no branch is needed.
 layout(binding = 0) uniform sampler2D u_AlbedoMap;
 
-struct DirectionalLight {
-    vec3 direction; // direction the light travels in
-    float ambient;
+struct Light {
+    vec4 position_type;   // xyz position, w type (0 directional / 1 point / 2 spot)
+    vec4 direction_range; // xyz direction the light travels in, w range
+    vec4 color_intensity; // rgb color, w intensity
+    vec4 spot_angles;     // x inner cos, y outer cos
 };
 
-uniform DirectionalLight u_Light;
+// std140, 544 bytes. Mirrors GpuLightData in light_uniforms.h.
+layout(std140, binding = 1) uniform LightBlock {
+    vec4 ambient_exposure; // rgb ambient, w exposure
+    ivec4 counts;          // x number of lights
+    Light lights[kMaxLights];
+};
 
 void main() {
     vec3 albedo =
         texture(u_AlbedoMap, v_TexCoord * u_Object.tiling).rgb * u_Object.albedo.rgb;
-    float ndotl = max(dot(normalize(v_Normal), -normalize(u_Light.direction)), 0.0);
-    float ambient = clamp(u_Light.ambient, 0.0, 1.0);
-    vec3 lit = albedo * (ambient + (1.0 - ambient) * ndotl);
+    vec3 n = normalize(v_Normal);
+
+    // Only directional lights so far: the entity light types land with LightComponent.
+    vec3 diffuse = vec3(0.0);
+    for (int i = 0; i < counts.x; ++i) {
+        vec3 to_light = -normalize(lights[i].direction_range.xyz);
+        float ndotl = max(dot(n, to_light), 0.0);
+        diffuse += lights[i].color_intensity.rgb * lights[i].color_intensity.w * ndotl;
+    }
+
+    // Ambient is the floor and the diffuse sum pushes towards full brightness, which keeps the
+    // single light case identical to the old per-shader uniforms.
+    vec3 lit = albedo * mix(ambient_exposure.rgb, vec3(1.0), clamp(diffuse, 0.0, 1.0));
+    lit *= ambient_exposure.w;
 
     // Albedo maps are sampled as sRGB, so lighting is linear; encode back for an RGBA8 target.
     color = vec4(pow(lit, vec3(1.0 / 2.2)), u_Object.albedo.a);

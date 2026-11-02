@@ -10,8 +10,6 @@ struct Renderer3DData {
     Ref<Shader> default_shader;
     // Stands in for a missing albedo map.
     Ref<Texture2D> white_texture;
-    glm::vec3 light_direction{-0.4f, -1.f, -0.6f};
-    float light_ambient{0.35f};
     Renderer3D::Statistics stats;
 };
 
@@ -38,8 +36,6 @@ void Renderer3D::shutdown() {
 void Renderer3D::begin_batch() {
     IVX_PROFILE_FUNCTION();
 
-    data.default_shader->set("u_Light.direction", data.light_direction);
-    data.default_shader->set("u_Light.ambient", data.light_ambient);
     reset_stats();
 }
 

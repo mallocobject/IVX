@@ -365,7 +365,16 @@ LightSet Scene::collect_lights() const {
     LightSet set;
     set.ambient = environment_.ambient;
     set.exposure = environment_.exposure;
-    // Lights are entities from S3 on; nothing to gather yet.
+
+    // Stand in sun until lights are entities; it matches what Renderer3D used
+    // to hardcode.
+    Light &sun = set.lights[0];
+    sun.type = LightType::IVX_Directional;
+    sun.direction = glm::normalize(glm::vec3{-0.4f, -1.f, -0.6f});
+    sun.color = glm::vec3{1.f};
+    sun.intensity = 1.f;
+    set.count = 1;
+
     return set;
 }
 void Scene::on_viewport_resize(uint32_t width, uint32_t height) {

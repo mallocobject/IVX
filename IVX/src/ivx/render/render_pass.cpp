@@ -13,10 +13,10 @@ void RenderPass::begin() {
     begun_ = true;
 
     if (spec_.target) {
-        spec_.target->bind();
+        spec_.target->bind(); // framebuffer
     }
 
-    if (!lights_.lights.empty()) {
+    if (has_lights_) {
         light_uniforms_.update(lights_);
     }
 

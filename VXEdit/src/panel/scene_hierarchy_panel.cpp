@@ -20,29 +20,6 @@ ImGuiTreeNodeFlags base_flags() {
            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
 }
 
-// Size for a freshly created sprite, in world units.
-//
-// Unity spawns its default Square sprite at 1 unit in a 10-unit-tall 2D view,
-// i.e. ~10% of the view height. This scene has no fixed unit scale (the demo
-// camera is 720 units tall), so derive the same *proportion* from the primary
-// camera instead of hardcoding a number that would be invisible or huge
-// elsewhere.
-float default_sprite_size(Scene &scene) {
-    constexpr float kFallback = 100.f;
-    for (auto [handle, camera] :
-         scene.registry().view<CameraComponent>().each()) {
-        if (!camera.primary) {
-            continue;
-        }
-        if (camera.camera.get_projection_type() !=
-            SceneCamera::ProjectionType::Orthographic) {
-            break;
-        }
-        return std::clamp(
-            camera.camera.get_orthographic_size() * 0.1f, 1.f, kFallback);
-    }
-    return kFallback;
-}
 } // namespace
 
 SceneHierarchyPanel::SceneHierarchyPanel(EditorContext &context)
@@ -89,19 +66,12 @@ void SceneHierarchyPanel::on_imgui() {
 void SceneHierarchyPanel::draw_toolbar() {
     Scene &scene = *context_.scene;
 
-    // Spawns a usable entity, not an invisible one: origin + identity transform
-    // like Unity's "Create Empty", plus a white placeholder sprite because this
-    // editor has no gizmo icons to show an entity that renders nothing. Any
-    // component can be removed afterwards.
     if (ImGui::Button("+ Entity")) {
         set_selected(create_default_entity(scene));
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip(
-            "New entity at the origin (position 0, rotation 0, scale 1)\n"
-            "with a %.0fx%.0f white sprite so it is visible in the viewport.",
-            static_cast<double>(default_sprite_size(scene)),
-            static_cast<double>(default_sprite_size(scene)));
+        ImGui::SetTooltip("New entity at the origin with a %.0f unit cube",
+                          static_cast<double>(k_default_mesh_size));
     }
 
     ImGui::SameLine();
