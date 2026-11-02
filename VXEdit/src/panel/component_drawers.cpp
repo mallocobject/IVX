@@ -1,5 +1,7 @@
 #include "component_registry.h"
 
+#include "form_layout.h"
+
 #include "asset/asset_manager.h"
 #include "asset/asset_payload.h"
 
@@ -17,27 +19,6 @@
 
 namespace ivx {
 namespace {
-
-// ---- shared row layout -----------------------------------------------------
-// Unity-style rows: the label sits in a fixed left column and the widget fills
-// the rest of the row. ImGui draws labels on the right of the widget by
-// default, so each row draws its own label; that also lines up every field edge
-// down the panel.
-
-float label_column() {
-    // Wide enough for the longest row label in use, scaled with the UI.
-    return std::ceil(ImGui::CalcTextSize("Fixed Aspect").x) +
-           14.f * ui::scale();
-}
-
-template <typename Draw>
-void label_row(const char *label, Draw &&draw) {
-    ImGui::AlignTextToFramePadding();
-    ImGui::TextUnformatted(label);
-    ImGui::SameLine(label_column());
-    ImGui::SetNextItemWidth(-FLT_MIN);
-    draw();
-}
 
 // ---- transform -------------------------------------------------------------
 // Translation / Rotation / Scale are three rows of axis fields. Every field is
@@ -582,7 +563,7 @@ void register_all_components() {
         "Transform",
         draw_transform,
         {.removable = false, .addable = false, .draw_in_inspector = true});
-    registry.add<SpriteRendererComponent>("Sprite Renderer", draw_sprite);
+    // registry.add<SpriteRendererComponent>("Sprite Renderer", draw_sprite);
     registry.add<MeshRendererComponent>("Mesh Renderer", draw_mesh_renderer);
     // A camera is just a component: it can be added, edited and removed like
     // any other. Scene Hierarchy's "+ Entity" menu is the shortcut for a fresh

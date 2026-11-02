@@ -341,6 +341,7 @@ void EditLayer::setup_panels() {
     inspector_panel_ = panels_.add<InspectorPanel>(editor_context_);
     console_panel_ = panels_.add<ConsolePanel>();
     content_browser_panel_ = panels_.add<ContentBrowserPanel>();
+    environment_panel_ = panels_.add<EnvironmentPanel>(editor_context_);
 }
 
 void EditLayer::draw_menu_bar() {

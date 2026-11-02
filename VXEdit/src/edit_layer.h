@@ -5,6 +5,7 @@
 #include "panel/console_panel.h"
 #include "panel/content_browser_panel.h"
 #include "panel/editor_context.h"
+#include "panel/environment_panel.h"
 #include "panel/inspector_panel.h"
 #include "panel/panel.h"
 #include "panel/scene_hierarchy_panel.h"
@@ -95,6 +96,7 @@ class EditLayer : public Layer {
     Ref<InspectorPanel> inspector_panel_;
     Ref<ConsolePanel> console_panel_;
     Ref<ContentBrowserPanel> content_browser_panel_;
+    Ref<EnvironmentPanel> environment_panel_;
     // The viewport is a LambdaPanel; kept so the input gate can tell whether
     // the viewport tab is the one currently on screen.
     Ref<Panel> viewport_panel_;

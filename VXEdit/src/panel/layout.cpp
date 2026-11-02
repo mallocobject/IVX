@@ -50,6 +50,8 @@ void setup_default_layout(ImGuiID dockspace_id) {
     // The inspector owns the right column on its own: a camera is edited there
     // like any other component, so there is no camera panel to sit next to it.
     ImGui::DockBuilderDockWindow("Inspector", right);
+    // Scene wide settings, one tab away from the entity properties.
+    ImGui::DockBuilderDockWindow("Environment", right);
     // Tabbed with the console: both are bottom strip tools, and a browser on
     // its own row would cost the viewport height. Docked first so it is the
     // active tab; the console is one click away.
