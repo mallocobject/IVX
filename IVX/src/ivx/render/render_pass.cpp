@@ -29,10 +29,15 @@ void RenderPass::begin() {
     // Snapshot before touching anything: end() has to put back what the
     // *previous* pass left, not a hardcoded default.
     saved_state_ = RenderCommand::state();
-    RenderCommand::set_depth_test(spec_.depth_test);
-    RenderCommand::set_depth_write(spec_.depth_write);
-    RenderCommand::set_blend(spec_.blend);
-    RenderCommand::set_cull_faces(spec_.cull_faces);
+
+    RenderCommand::State wanted{};
+    wanted.depth_test = spec_.depth_test;
+    wanted.depth_write = spec_.depth_write;
+    wanted.depth_func = spec_.depth_func;
+    wanted.blend = spec_.blend;
+    wanted.cull = spec_.cull;
+    wanted.stencil = spec_.stencil;
+    RenderCommand::set_state(wanted);
 
     if (spec_.target) {
         // The framebuffer knows how to clear integer and multisampled
@@ -53,10 +58,7 @@ void RenderPass::end() {
     }
     begun_ = false;
 
-    RenderCommand::set_depth_test(saved_state_.depth_test);
-    RenderCommand::set_depth_write(saved_state_.depth_write);
-    RenderCommand::set_blend(saved_state_.blend);
-    RenderCommand::set_cull_faces(saved_state_.cull_faces);
+    RenderCommand::set_state(saved_state_);
 
     if (spec_.target) {
         spec_.target->unbind();

@@ -79,7 +79,7 @@ void EditLayer::on_attach() {
     pass_spec.clear_color = glm::vec4{0.0129f, 0.0129f, 0.0129f, 1.f};
     // Culling was on globally before passes existed, and the 2D demo cube
     // depends on it: without it the back faces would render too.
-    pass_spec.cull_faces = true;
+    pass_spec.cull = RendererAPI::CullMode::IVX_Back;
     render_pass_ = make_ref<RenderPass>(std::move(pass_spec));
 
     // The editor starts without a scene: the user picks File > New or File >

@@ -27,9 +27,13 @@ struct RenderPassSpecification {
 
     bool depth_test{true};
     bool depth_write{true};
-    bool blend{true};
+    // Reverse-Z by default, matching what RenderCommand::init() pushes.
+    RendererAPI::Cmp depth_func{RendererAPI::Cmp::IVX_Greater};
+    BlendState blend{};
     // Off by default: sprite quads are single sided.
-    bool cull_faces{false};
+    RendererAPI::CullMode cull{RendererAPI::CullMode::IVX_None};
+    // Off by default; a pass that wants masking or outlines asks for it here.
+    StencilState stencil{};
 };
 
 class RenderPass : public RefCounted {

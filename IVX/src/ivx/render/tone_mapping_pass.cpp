@@ -18,8 +18,8 @@ ToneMappingPass::ToneMappingPass(uint32_t width, uint32_t height) {
     pass.target = output_;
     pass.depth_test = false;
     pass.depth_write = false;
-    pass.blend = false;
-    pass.cull_faces = false;
+    pass.blend.enabled = false;
+    pass.cull = RendererAPI::CullMode::IVX_None;
     pass.clear_depth = false;
     pass.clear_color_attachments = false;
     pass_ = make_ref<RenderPass>(pass);

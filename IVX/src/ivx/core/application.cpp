@@ -68,12 +68,12 @@ void Application::run() {
         // "clear" - a pass - whether the target is a framebuffer or the screen.
         RenderPassSpecification screen_spec;
         screen_spec.clear_color = glm::vec4{0.1f, 0.1f, 0.1f, 1.f};
-        // The values RendererAPI::init() starts with, so the first pass that
+        // The values RenderCommand::init() pushes, so the first pass that
         // snapshots the state sees the engine defaults.
         screen_spec.depth_test = true;
         screen_spec.depth_write = true;
-        screen_spec.blend = true;
-        screen_spec.cull_faces = true;
+        screen_spec.blend.enabled = true;
+        screen_spec.cull = RendererAPI::CullMode::IVX_Back;
         RenderPass screen_pass{screen_spec};
         screen_pass.begin();
 
