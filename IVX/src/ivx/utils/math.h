@@ -146,4 +146,70 @@ inline glm::vec3 unwrap_euler(const glm::vec3 &angles,
     }
     return result;
 }
+
+// ---- display transfer -------------------------------------------------------
+// Linear radiance to display values. ToneMappingPass mirrors these exact
+// formulas in GLSL, so the editor preview, the smoke test reference and the GPU
+// agree channel by channel.
+
+// Reinhard: x / (1 + x). Cheap and monotonic, but it darkens mid tones and
+// never reaches white.
+inline glm::vec3 tonemap_reinhard(const glm::vec3 &linear) {
+    return linear / (glm::vec3{1.f} + linear);
+}
+
+// Narkowicz's ACES approximation: filmic contrast with rolled off highlights.
+inline glm::vec3 tonemap_aces(const glm::vec3 &linear) {
+    constexpr float a = 2.51f;
+    constexpr float b = 0.03f;
+    constexpr float c = 2.43f;
+    constexpr float d = 0.59f;
+    constexpr float e = 0.14f;
+
+    const glm::vec3 numerator = linear * (a * linear + b);
+    const glm::vec3 denominator = linear * (c * linear + d) + e;
+    return glm::clamp(numerator / denominator, 0.f, 1.f);
+}
+
+// Khronos PBR Neutral: leaves everything below 0.8 untouched and compresses
+// only the top, so albedo colours stay recognisable. Highlights go towards
+// white instead of clipping.
+inline glm::vec3 tonemap_neutral(const glm::vec3 &linear) {
+    constexpr float start_compression = 0.8f - 0.04f;
+    constexpr float desaturation = 0.15f;
+
+    glm::vec3 color = linear;
+    const float darkest = glm::min(color.r, glm::min(color.g, color.b));
+    // Straight section near black, constant offset above it (the official
+    // curve).
+    const float offset =
+        darkest < 0.08f ? darkest - 6.25f * darkest * darkest : 0.04f;
+    color -= glm::vec3{offset};
+
+    const float peak = glm::max(color.r, glm::max(color.g, color.b));
+    if (peak < start_compression) {
+        return glm::max(color, glm::vec3{0.f});
+    }
+
+    const float d = 1.f - start_compression;
+    const float new_peak = 1.f - d * d / (peak + d - start_compression);
+    color *= new_peak / peak;
+
+    const float whitepoint =
+        1.f - 1.f / (desaturation * (peak - new_peak) + 1.f);
+    return glm::max(glm::mix(color, glm::vec3{1.f}, whitepoint),
+                    glm::vec3{0.f});
+}
+
+// Exact linear-to-sRGB transfer (IEC 61966-2-1), per channel.
+inline float encode_srgb(float linear) {
+    return linear <= 0.0031308f
+               ? 12.92f * linear
+               : 1.055f * std::pow(linear, 1.f / 2.4f) - 0.055f;
+}
+
+inline glm::vec3 encode_srgb(const glm::vec3 &linear) {
+    return glm::vec3{
+        encode_srgb(linear.r), encode_srgb(linear.g), encode_srgb(linear.b)};
+}
 } // namespace ivx

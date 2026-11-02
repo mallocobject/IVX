@@ -35,7 +35,9 @@ void ToneMappingPass::resize(uint32_t width, uint32_t height) {
     }
 }
 
-void ToneMappingPass::render(const Ref<FrameBuffer> &source, float exposure) {
+void ToneMappingPass::render(const Ref<FrameBuffer> &source,
+                             float exposure,
+                             ToneMappingCurve curve) {
     IVX_PROFILE_FUNCTION();
 
     // A collapsed viewport leaves the output at zero size; there is nothing to
@@ -48,6 +50,7 @@ void ToneMappingPass::render(const Ref<FrameBuffer> &source, float exposure) {
     pass_->begin();
     shader_->bind();
     shader_->set("u_Exposure", std::max(exposure, 0.f));
+    shader_->set("u_Curve", static_cast<int>(curve));
     source->bind_color_attachment(0);
     triangle_->bind();
     RenderCommand::draw(triangle_);

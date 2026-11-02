@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ivx/render/tone_mapping_curve.h"
 #include <glm/glm.hpp>
 
 namespace ivx {
@@ -9,6 +10,7 @@ namespace ivx {
 struct Environment {
     glm::vec3 ambient{0.15f};
     float exposure{1.f};
+    ToneMappingCurve tonemap{ToneMappingCurve::IVX_Reinhard};
 };
 
 } // namespace ivx

@@ -30,7 +30,15 @@ void EnvironmentPanel::on_imgui() {
     });
     ImGui::Spacing();
     ImGui::SeparatorText("Tone mapping");
-    ImGui::TextDisabled("Reinhard / sRGB output");
+
+    int curve = static_cast<int>(environment.tonemap);
+    label_row("Curve", [&] {
+        if (ImGui::Combo("##tonemap_curve",
+                         &curve,
+                         "Reinhard\0ACES\0Khronos Neutral\0")) {
+            environment.tonemap = static_cast<ToneMappingCurve>(curve);
+        }
+    });
     label_row("Exposure", [&] {
         ImGui::SliderFloat("##exposure", &environment.exposure, 0.1f, 4.f);
     });
@@ -40,7 +48,8 @@ void EnvironmentPanel::on_imgui() {
         environment = Environment{};
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip("Back to the default ambient light and exposure");
+        ImGui::SetTooltip(
+            "Back to the default ambient light, curve and exposure");
     }
 }
 

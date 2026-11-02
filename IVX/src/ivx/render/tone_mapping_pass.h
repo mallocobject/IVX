@@ -2,6 +2,7 @@
 
 #include "ivx/render/render_pass.h"
 #include "ivx/render/shader.h"
+#include "ivx/render/tone_mapping_curve.h"
 #include "ivx/render/vertex_array.h"
 
 namespace ivx {
@@ -18,7 +19,9 @@ class ToneMappingPass : public RefCounted {
   public:
     ToneMappingPass(uint32_t width, uint32_t height);
     void resize(uint32_t width, uint32_t height);
-    void render(const Ref<FrameBuffer> &source, float exposure);
+    void render(const Ref<FrameBuffer> &source,
+                float exposure,
+                ToneMappingCurve curve);
     const Ref<FrameBuffer> &output() const {
         return output_;
     }

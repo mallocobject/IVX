@@ -422,6 +422,10 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
         Environment &target = scene->environment();
         target.ambient = read_vec3(environment["Ambient"], target.ambient);
         target.exposure = read_scalar(environment["Exposure"], target.exposure);
+        if (const YAML::Node curve = environment["ToneMapping"]; curve) {
+            target.tonemap =
+                tone_mapping_curve_from_name(curve.as<std::string>());
+        }
     }
 
     std::unordered_map<std::uint32_t, Entity> by_id;
@@ -584,6 +588,8 @@ void Serializer::serialize(const Ref<Scene> &scene,
     out << YAML::Key << "Ambient" << YAML::Value << world.environment().ambient;
     out << YAML::Key << "Exposure" << YAML::Value
         << world.environment().exposure;
+    out << YAML::Key << "ToneMapping" << YAML::Value
+        << tone_mapping_curve_name(world.environment().tonemap);
     out << YAML::EndMap;
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
     for (Entity entity : order) {

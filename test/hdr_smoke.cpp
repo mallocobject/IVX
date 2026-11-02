@@ -11,11 +11,13 @@ static void require(bool condition, const char *message) {
         throw std::runtime_error(message);
 }
 
-static float encode(float radiance, float exposure) {
-    float x = radiance * exposure;
-    x /= 1.f + x;
-    return x <= 0.0031308f ? 12.92f * x
-                           : 1.055f * std::pow(x, 1.f / 2.4f) - 0.055f;
+// Reference path: the curve from ivx/utils/math.h followed by the sRGB
+// transfer. The shader has to agree channel by channel, which is what the
+// comparisons below enforce.
+static float
+expected(ivx::ToneMappingCurve curve, float radiance, float exposure) {
+    const glm::vec3 linear = glm::vec3{radiance} * exposure;
+    return ivx::encode_srgb(ivx::tonemap(curve, linear)).r;
 }
 
 int main() {
@@ -57,54 +59,72 @@ int main() {
                                      hdr);
                 require(std::abs(hdr[2] - 16.f) < 0.01f,
                         "HDR radiance clipped");
-                for (float exposure : {0.f, 0.5f, 1.f, 4.f}) {
-                    const auto state = ivx::RenderCommand::state();
-                    GLint viewport[4], binding;
-                    glGetIntegerv(GL_VIEWPORT, viewport);
-                    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &binding);
-                    tone.render(source, exposure);
-                    unsigned char rgba[4]{};
-                    glGetTextureSubImage(tone.output()->get_color_attachment(),
-                                         0,
-                                         size - 1,
-                                         size - 1,
-                                         0,
-                                         1,
-                                         1,
-                                         1,
-                                         GL_RGBA,
-                                         GL_UNSIGNED_BYTE,
-                                         sizeof(rgba),
-                                         rgba);
-                    for (int c = 0; c < 3; ++c) {
-                        require(std::abs(rgba[c] / 255.f -
-                                         encode(hdr[c], exposure)) <
-                                    2.f / 255.f,
-                                "Incorrect tone mapping or sRGB encoding");
+
+                for (ivx::ToneMappingCurve curve :
+                     {ivx::ToneMappingCurve::IVX_Reinhard,
+                      ivx::ToneMappingCurve::IVX_ACES,
+                      ivx::ToneMappingCurve::IVX_Neutral}) {
+                    for (float exposure : {0.f, 0.5f, 1.f, 4.f}) {
+                        const auto state = ivx::RenderCommand::state();
+                        GLint viewport[4], binding;
+                        glGetIntegerv(GL_VIEWPORT, viewport);
+                        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &binding);
+                        tone.render(source, exposure, curve);
+                        unsigned char rgba[4]{};
+                        glGetTextureSubImage(
+                            tone.output()->get_color_attachment(),
+                            0,
+                            size - 1,
+                            size - 1,
+                            0,
+                            1,
+                            1,
+                            1,
+                            GL_RGBA,
+                            GL_UNSIGNED_BYTE,
+                            sizeof(rgba),
+                            rgba);
+                        for (int c = 0; c < 3; ++c) {
+                            const float want = expected(curve, hdr[c], exposure);
+                            if (std::abs(rgba[c] / 255.f - want) >=
+                                2.f / 255.f) {
+                                std::cerr
+                                    << "MISMATCH curve="
+                                    << static_cast<int>(curve)
+                                    << " exposure=" << exposure
+                                    << " channel=" << c << " want=" << want
+                                    << " got=" << rgba[c] / 255.f << '\n';
+                            }
+                            require(std::abs(rgba[c] / 255.f - want) <
+                                        2.f / 255.f,
+                                    "Incorrect tone mapping or sRGB encoding");
+                        }
+                        require(rgba[3] == 255, "Alpha changed");
+                        require(source->read_pixel(1, size - 1, size - 1) == 42,
+                                "Picking ID changed");
+                        const auto restored = ivx::RenderCommand::state();
+                        require(state.depth_test == restored.depth_test &&
+                                    state.depth_write == restored.depth_write &&
+                                    state.blend == restored.blend &&
+                                    state.cull_faces == restored.cull_faces,
+                                "Pipeline state not restored");
+                        GLint after[4], after_binding;
+                        glGetIntegerv(GL_VIEWPORT, after);
+                        glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,
+                                      &after_binding);
+                        require(binding == after_binding,
+                                "Framebuffer not restored");
+                        for (int c = 0; c < 4; ++c)
+                            require(viewport[c] == after[c],
+                                    "Viewport not restored");
+                        require(glGetError() == GL_NO_ERROR, "OpenGL error");
                     }
-                    require(rgba[3] == 255, "Alpha changed");
-                    require(source->read_pixel(1, size - 1, size - 1) == 42,
-                            "Picking ID changed");
-                    const auto restored = ivx::RenderCommand::state();
-                    require(state.depth_test == restored.depth_test &&
-                                state.depth_write == restored.depth_write &&
-                                state.blend == restored.blend &&
-                                state.cull_faces == restored.cull_faces,
-                            "Pipeline state not restored");
-                    GLint after[4], after_binding;
-                    glGetIntegerv(GL_VIEWPORT, after);
-                    glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING, &after_binding);
-                    require(binding == after_binding,
-                            "Framebuffer not restored");
-                    for (int c = 0; c < 4; ++c)
-                        require(viewport[c] == after[c],
-                                "Viewport not restored");
-                    require(glGetError() == GL_NO_ERROR, "OpenGL error");
                 }
             }
         }
-        std::cout << "HDR smoke passed: radiance, exposure, sRGB, MSAA, "
-                     "resize, IDs, state\n";
+        std::cout
+            << "HDR smoke passed: radiance, three curves, exposure, sRGB, "
+               "MSAA, resize, IDs, state\n";
         return 0;
     } catch (const std::exception &e) {
         std::cerr << e.what() << '\n';

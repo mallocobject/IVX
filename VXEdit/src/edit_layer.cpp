@@ -154,7 +154,9 @@ void EditLayer::on_update(float dt) {
     // Self-contained pass: it binds its own target and state, which is why it
     // is called with no pass open around it.
     tone_mapping_pass_->render(frame_buffer_,
-                               scene_ ? scene_->environment().exposure : 1.f);
+                               scene_ ? scene_->environment().exposure : 1.f,
+                               scene_ ? scene_->environment().tonemap
+                                      : ToneMappingCurve::IVX_Reinhard);
 }
 
 void EditLayer::on_event(Event &event) {

@@ -33,6 +33,7 @@
 #include "ivx/render/shader.h"
 #include "ivx/render/sub_texture2d.h"
 #include "ivx/render/texture.h"
+#include "ivx/render/tone_mapping_curve.h"
 #include "ivx/render/tone_mapping_pass.h"
 #include "ivx/render/uniform_buffer.h"
 #include "ivx/render/vertex_array.h"
