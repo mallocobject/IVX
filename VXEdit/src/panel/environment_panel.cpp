@@ -28,6 +28,9 @@ void EnvironmentPanel::on_imgui() {
                           glm::value_ptr(environment.ambient),
                           ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
     });
+    ImGui::Spacing();
+    ImGui::SeparatorText("Tone mapping");
+    ImGui::TextDisabled("Reinhard / sRGB output");
     label_row("Exposure", [&] {
         ImGui::SliderFloat("##exposure", &environment.exposure, 0.1f, 4.f);
     });

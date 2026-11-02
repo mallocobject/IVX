@@ -5,16 +5,11 @@ set(CMAKE_C_STANDARD 17)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(test
-    # ref_test.cpp
-    # catch_amalgamated.cpp
-    scoped_timer_test.cpp
-)
+# Needs a real GL context, so it is a program rather than a unit test: it tone maps a known
+# HDR radiance, then checks the encoded pixels, the exposure curve, the picking ID and that the
+# pass restores the pipeline state it found.
+add_executable(hdr_smoke hdr_smoke.cpp)
+target_link_libraries(hdr_smoke PRIVATE IVX)
 
-target_include_directories(test PUBLIC
-    "${CMAKE_CURRENT_SOURCE_DIR}/../IVX/src"
-)
-
-# ref_test.cpp asserts intrusive-implementation behaviour (count layout,
-# non-copyable RefCounted, ref_count()), so this target pins the intrusive mode.
-target_compile_definitions(test PRIVATE IVX_INTRUSIVE_REF)
+# ref_test.cpp, pre_process_test.cpp and scoped_timer_test.cpp predate the current headers
+# (ivx/core/scoped_timer.h no longer exists), so they are kept for reference but not built.

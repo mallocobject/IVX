@@ -75,7 +75,7 @@ struct Light {
 
 // std140, 672 bytes. Mirrors GpuLightData in light_uniforms.h.
 layout(std140, binding = 1) uniform LightBlock {
-    vec4 ambient_exposure; // rgb ambient, w exposure
+    vec4 ambient;          // rgb ambient, w padding (exposure is the tonemap pass)
     ivec4 counts;          // x number of lights
     Light lights[kMaxLights];
 };
@@ -124,11 +124,10 @@ void main() {
     // Ambient is the floor, lights add on top of it scaled by the room the ambient leaves.
     // A single white light gives ambient + (1 - ambient) * N.L, which is the old formula, while
     // coloured lights tint the surface instead of washing it towards white. Sums can exceed 1
-    // until an HDR target and tonemapping exist.
-    vec3 lit = albedo * (ambient_exposure.rgb + (1.0 - ambient_exposure.rgb) * diffuse);
-    lit *= ambient_exposure.w;
-
-    // Albedo maps are sampled as sRGB, so lighting is linear; encode back for an RGBA8 target.
-    color = vec4(pow(lit, vec3(1.0 / 2.2)), u_Object.albedo.a);
+    // in the HDR target and are compressed by the final tone mapping pass.
+    vec3 lit = albedo * (ambient.rgb + (1.0 - ambient.rgb) * diffuse);
+    // Preserve linear HDR radiance. Exposure and display encoding belong to
+    // the final post-process pass, after MSAA resolve.
+    color = vec4(lit, u_Object.albedo.a);
     uid = u_Object.uid;
 }

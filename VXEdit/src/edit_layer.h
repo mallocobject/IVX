@@ -1,5 +1,6 @@
 #pragma once
 #include "editor_camera.h"
+#include "ivx/render/tone_mapping_pass.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
 #include "panel/console_panel.h"
@@ -59,6 +60,7 @@ class EditLayer : public Layer {
     void save_scene(const std::filesystem::path &filepath);
 
     Ref<FrameBuffer> frame_buffer_;
+    Ref<ToneMappingPass> tone_mapping_pass_;
 
     // Shared editor state (scene + selection). Panels reference it, so it must
     // outlive them: declared before panels_ and never re-assigned afterwards.

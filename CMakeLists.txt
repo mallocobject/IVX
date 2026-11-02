@@ -107,6 +107,7 @@ target_link_libraries(ImGuiColorTextEdit PUBLIC imgui)
 
 add_subdirectory(IVX)
 add_subdirectory(VXEdit)
+# add_subdirectory(test)
 # add_subdirectory(Sandbox)
 
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT VXEdit)

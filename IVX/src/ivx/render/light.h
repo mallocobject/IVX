@@ -46,10 +46,11 @@ struct Light {
     float outer_cos{0.f};
 };
 
-// Scene wide ambient/exposure plus every light the scene collected.
+// Scene wide ambient plus every light the scene collected. Exposure is not
+// here: it belongs to the tone mapping pass, which reads Environment::exposure
+// directly.
 struct LightSet {
     glm::vec3 ambient{0.05f};
-    float exposure{1.f};
     std::array<Light, k_max_lights> lights{};
     uint32_t count{0};
 };

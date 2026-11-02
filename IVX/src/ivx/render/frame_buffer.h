@@ -11,7 +11,7 @@ namespace ivx {
 enum class FrameBufferTextureFormat : std::uint8_t {
     None,
     RGBA8,       // ordinary colour
-    RGBA16F,     // HDR colour (nothing uses it yet, kept for post processing)
+    RGBA16F,     // linear HDR scene colour
     RED_INTEGER, // entity ids: R32UI, so no blending and no filtering
 };
 
@@ -37,6 +37,9 @@ class FrameBuffer : public RefCounted {
     virtual ~FrameBuffer() = default;
 
     virtual uint32_t get_color_attachment(uint32_t index = 0) const = 0;
+    // Sample the resolved attachment after the scene pass has ended.
+    virtual void bind_color_attachment(uint32_t slot,
+                                       uint32_t index = 0) const = 0;
 
     // Reads one pixel of an integer attachment (an entity id, normally). The
     // origin is bottom-left, like OpenGL's

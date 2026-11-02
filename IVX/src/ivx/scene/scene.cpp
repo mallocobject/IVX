@@ -364,7 +364,6 @@ void Scene::render_sprites() {
 LightSet Scene::collect_lights() const {
     LightSet set;
     set.ambient = environment_.ambient;
-    set.exposure = environment_.exposure;
 
     for (auto [handle, light, transform] :
          registry_.view<const LightComponent, const TransformComponent>()

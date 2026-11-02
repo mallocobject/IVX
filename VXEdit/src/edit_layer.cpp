@@ -60,21 +60,23 @@ void EditLayer::on_attach() {
     spec.width = WIDTH;
     spec.height = HEIGHT;
     spec.num_samples = 4;
-    spec.attachments = {{FrameBufferTextureFormat::RGBA8},
+    spec.attachments = {{FrameBufferTextureFormat::RGBA16F},
                         {FrameBufferTextureFormat::RED_INTEGER}};
 
     frame_buffer_ = FrameBuffer::create(spec);
+    tone_mapping_pass_ = make_ref<ToneMappingPass>(WIDTH, HEIGHT);
 
-    // One pass per viewport frame: the target, the clear values and the
-    // pipeline state used to be spread over bind()/clear()/unbind() calls in
-    // on_update(). Keeping them in a pass is also what makes a second pass
-    // (picking ids, outline) possible without repeating the state bookkeeping.
+    // Scene pass writes linear HDR colour and picking IDs. ToneMappingPass
+    // resolves display colour into a separate RGBA8 target afterwards.
     RenderPassSpecification pass_spec;
     pass_spec.target = frame_buffer_;
     // The pass owns its camera block, so a second pass with another camera can
     // follow.
     pass_spec.camera = &editor_camera_;
-    pass_spec.clear_color = glm::vec4{0.1f, 0.1f, 0.1f, 1.f};
+    // Linear radiance, not display colour: the tone mapping pass encodes it.
+    // 0.0129 linear is the 0.1 grey the viewport used before HDR, after
+    // Reinhard and sRGB.
+    pass_spec.clear_color = glm::vec4{0.0129f, 0.0129f, 0.0129f, 1.f};
     // Culling was on globally before passes existed, and the 2D demo cube
     // depends on it: without it the back faces would render too.
     pass_spec.cull_faces = true;
@@ -105,18 +107,18 @@ void EditLayer::on_update(float dt) {
         console_panel_->pump();
     }
 
-    if (visible_) {
-        const auto &spec = frame_buffer_->get_specification();
-        if (spec.width != viewport_size_.x || spec.height != viewport_size_.y) {
-            uint32_t w = static_cast<uint32_t>(viewport_size_.x);
-            uint32_t h = static_cast<uint32_t>(viewport_size_.y);
+    const auto &spec = frame_buffer_->get_specification();
+    if (viewport_size_.x >= 1 && viewport_size_.y >= 1 &&
+        (spec.width != viewport_size_.x || spec.height != viewport_size_.y)) {
+        uint32_t w = static_cast<uint32_t>(viewport_size_.x);
+        uint32_t h = static_cast<uint32_t>(viewport_size_.y);
 
-            if (scene_) {
-                scene_->on_viewport_resize(w, h);
-            }
-            frame_buffer_->resize(w, h);
-            editor_camera_.set_viewport_size(w, h);
+        if (scene_) {
+            scene_->on_viewport_resize(w, h);
         }
+        frame_buffer_->resize(w, h);
+        tone_mapping_pass_->resize(w, h);
+        editor_camera_.set_viewport_size(w, h);
     }
 
     if (scene_) {
@@ -124,6 +126,13 @@ void EditLayer::on_update(float dt) {
     }
 
     editor_camera_.on_update(dt);
+
+    // The viewport is hidden (closed, collapsed or on an inactive tab), so
+    // nothing samples the framebuffers: skip the scene pass and the tone
+    // mapping pass entirely.
+    if (!visible_) {
+        return;
+    }
 
     // render
     Renderer2D::reset_stats();
@@ -141,6 +150,11 @@ void EditLayer::on_update(float dt) {
     }
 
     render_pass_->end();
+
+    // Self-contained pass: it binds its own target and state, which is why it
+    // is called with no pass open around it.
+    tone_mapping_pass_->render(frame_buffer_,
+                               scene_ ? scene_->environment().exposure : 1.f);
 }
 
 void EditLayer::on_event(Event &event) {
@@ -536,11 +550,11 @@ void EditLayer::draw_viewport_content() {
 
     viewport_size_ = {w, h};
 
-    ImGui::Image(
-        static_cast<ImTextureID>(frame_buffer_->get_color_attachment(0)),
-        viewport_size_,
-        ImVec2{0.f, 1.f},
-        ImVec2{1.f, 0.f});
+    ImGui::Image(static_cast<ImTextureID>(
+                     tone_mapping_pass_->output()->get_color_attachment(0)),
+                 viewport_size_,
+                 ImVec2{0.f, 1.f},
+                 ImVec2{1.f, 0.f});
 
     const ImVec2 image_min = ImGui::GetItemRectMin();
     const ImVec2 mouse = ImGui::GetIO().MousePos;

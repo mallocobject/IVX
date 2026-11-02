@@ -15,6 +15,8 @@ class OpenGLFrameBuffer : public FrameBuffer {
     // buffers cannot be sampled directly, so unbind() blits them into
     // single-sampled textures that ImGui and the shaders can read.
     virtual uint32_t get_color_attachment(uint32_t index = 0) const override;
+    void bind_color_attachment(uint32_t slot,
+                               uint32_t index = 0) const override;
 
     // Reads the last resolved frame (see unbind()). Coordinates start
     // bottom-left.

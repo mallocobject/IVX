@@ -49,7 +49,9 @@ class Scene : public RefCounted {
     void on_event(Event &event);
 
     // Draws into whatever pass is currently open: the pass owns the target, the
-    // clear values, the camera block and the pipeline state.
+    // clear values, the camera block and the pipeline state. A scene is drawn
+    // by several passes (shadow, picking, main), so it never opens one itself;
+    // a self-contained effect such as ToneMappingPass does.
     void render();
     void render_sprites();
 

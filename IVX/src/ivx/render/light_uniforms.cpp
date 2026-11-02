@@ -12,7 +12,9 @@ LightUniforms::LightUniforms(uint32_t binding) : binding_(binding) {
 
 void LightUniforms::update(const LightSet &lights) {
     GpuLightData next;
-    next.ambient_exposure = glm::vec4{lights.ambient, lights.exposure};
+    // The w channel is padding: exposure is applied by the tone mapping pass,
+    // not here.
+    next.ambient = glm::vec4{lights.ambient, 1.f};
     next.counts.x = static_cast<int>(std::min(lights.count, k_max_lights));
 
     for (uint32_t i = 0; i < static_cast<uint32_t>(next.counts.x); ++i) {

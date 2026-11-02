@@ -20,7 +20,8 @@ struct GpuLight {
 
 // std140 mirror of the LightBlock in mesh.glsl.
 struct GpuLightData {
-    glm::vec4 ambient_exposure{0.f, 0.f, 0.f, 1.f};
+    // rgb ambient; w fills the 16 byte slot and is not read by the shader.
+    glm::vec4 ambient{0.f, 0.f, 0.f, 1.f};
     glm::ivec4 counts{0, 0, 0, 0};
     std::array<GpuLight, k_max_lights> lights{};
 };

@@ -247,6 +247,11 @@ uint32_t OpenGLFrameBuffer::get_color_attachment(uint32_t index) const {
     return color_attachments_[index];
 }
 
+void OpenGLFrameBuffer::bind_color_attachment(uint32_t slot,
+                                              uint32_t index) const {
+    glBindTextureUnit(slot, get_color_attachment(index));
+}
+
 uint32_t
 OpenGLFrameBuffer::read_pixel(uint32_t index, uint32_t x, uint32_t y) const {
     if (index >= color_attachments_.size() || x >= spec_.width ||
