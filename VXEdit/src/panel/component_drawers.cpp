@@ -55,7 +55,9 @@ void axis_marker(const char *glyph, bool *clicked) {
 void axis_fields(const char *id,
                  glm::vec3 &value,
                  float speed,
-                 float reset_value) {
+                 float reset_value,
+                 float min = 0.f,
+                 float max = 0.f) {
     constexpr const char *k_axis[] = {"X", "Y", "Z"};
 
     const float scale = ui::scale();
@@ -94,7 +96,7 @@ void axis_fields(const char *id,
         ImGui::SetNextItemWidth(field_width);
         // The marker already names the axis, so the drag field needs no visible
         // label.
-        ImGui::DragFloat("##value", &value[axis], speed, 0.f, 0.f, "%.3f");
+        ImGui::DragFloat("##value", &value[axis], speed, min, max, "%.3f");
 
         ImGui::PopID();
     }
@@ -109,7 +111,9 @@ void draw_transform(Entity /*entity*/,
     });
 
     glm::vec3 degrees = glm::degrees(transform.rotation);
-    label_row("Rotation", [&] { axis_fields("rotation", degrees, 0.5f, 0.f); });
+    label_row("Rotation", [&] {
+        axis_fields("rotation", degrees, 0.5f, 0.f, -180.f, 180.f);
+    });
     transform.rotation = glm::radians(degrees);
 
     label_row("Scale",
@@ -276,6 +280,63 @@ void draw_mesh_renderer(Entity /*entity*/,
             }
         }
     });
+}
+
+// ---- light -----------------------------------------------------------------
+
+void draw_light(Entity /*entity*/,
+                LightComponent &light,
+                EditorContext & /*context*/) {
+    LightSettings &settings = light.settings;
+
+    int type = static_cast<int>(settings.type);
+    label_row("Type", [&] {
+        if (ImGui::Combo("##light_type", &type, "Directional\0Point\0Spot\0")) {
+            settings.type = static_cast<LightType>(type);
+        }
+    });
+    label_row("Color", [&] {
+        ImGui::ColorEdit3("##light_color",
+                          glm::value_ptr(settings.color),
+                          ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR);
+    });
+    label_row("Intensity", [&] {
+        ImGui::DragFloat(
+            "##light_intensity", &settings.intensity, 0.05f, 0.f, 1e6f);
+    });
+
+    if (settings.type != LightType::IVX_Directional) {
+        label_row("Constant", [&] {
+            ImGui::DragFloat("##light_constant", &settings.constant, 0.01f);
+        });
+        label_row("Linear", [&] {
+            ImGui::DragFloat(
+                "##light_linear", &settings.linear, 0.0001f, 0.f, 1.f, "%.5f");
+        });
+        label_row("Quadratic", [&] {
+            ImGui::DragFloat("##light_quadratic",
+                             &settings.quadratic,
+                             0.000001f,
+                             0.f,
+                             1.f,
+                             "%.6f");
+        });
+        ImGui::TextDisabled("1 / (a0 + a1 * d + a2 * d * d)");
+    }
+    if (settings.type == LightType::IVX_Spot) {
+        label_row("Inner", [&] {
+            ImGui::SliderFloat(
+                "##light_inner", &settings.inner_angle, 0.f, 89.f, "%.0f deg");
+        });
+        label_row("Outer", [&] {
+            ImGui::SliderFloat(
+                "##light_outer", &settings.outer_angle, 0.f, 89.f, "%.0f deg");
+        });
+    }
+
+    ImGui::TextDisabled(settings.type == LightType::IVX_Directional
+                            ? "Direction is the entity's -Z axis"
+                            : "Position is the entity's translation");
 }
 
 // ---- camera ----------------------------------------------------------------
@@ -565,6 +626,7 @@ void register_all_components() {
         {.removable = false, .addable = false, .draw_in_inspector = true});
     // registry.add<SpriteRendererComponent>("Sprite Renderer", draw_sprite);
     registry.add<MeshRendererComponent>("Mesh Renderer", draw_mesh_renderer);
+    registry.add<LightComponent>("Light", draw_light);
     // A camera is just a component: it can be added, edited and removed like
     // any other. Scene Hierarchy's "+ Entity" menu is the shortcut for a fresh
     // camera entity.

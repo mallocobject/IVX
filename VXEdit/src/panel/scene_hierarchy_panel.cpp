@@ -12,7 +12,7 @@ namespace {
 constexpr const char *kDragPayload = "IVX_SCENE_ENTITY";
 
 // Edge length of the default cube, in world units.
-constexpr float k_default_mesh_size = 200.f;
+constexpr float k_default_mesh_size = 2.f;
 
 ImGuiTreeNodeFlags base_flags() {
     return ImGuiTreeNodeFlags_OpenOnArrow |
@@ -92,7 +92,8 @@ void SceneHierarchyPanel::set_default_entity(Entity &entity, bool is_child) {
     mesh_renderer.material.albedo = glm::vec4{0.92f, 0.55f, 0.32f, 1.f};
 
     if (!is_child) {
-        tf.translation = glm::vec3{0.f};
+        // Rest on the ground plane: half the cube height above y = 0.
+        tf.translation = glm::vec3{0.f, k_default_mesh_size * 0.5f, 0.f};
         tf.scale = glm::vec3{1.f};
         return;
     }

@@ -272,15 +272,31 @@ void EditLayer::create_scene() {
     editor_context_.scene = scene_;
     editor_context_.clear_selection();
 
+    // 1 unit = 1 m: a 2 m cube resting on the ground plane, sun 8 m up and to
+    // the side.
     {
         Entity mesh_cube = scene_->create_entity("3D Cube");
         auto &tf = mesh_cube.get_component<TransformComponent>();
-        tf.translation = glm::vec3{0.f};
+        tf.translation = glm::vec3{0.f, 1.f, 0.f};
         tf.scale = glm::vec3{1.f};
 
         auto &mesh_renderer = mesh_cube.add_component<MeshRendererComponent>();
-        mesh_renderer.mesh = Mesh::create_cube(200.f);
+        mesh_renderer.mesh = Mesh::create_cube(2.f);
         mesh_renderer.material.albedo = glm::vec4{0.92f, 0.55f, 0.32f, 1.f};
+    }
+
+    // Direction is the entity's -Z axis; this rotation lights the cube from
+    // above and to the right, close to what the renderer used to hardcode.
+    {
+        Entity sun = scene_->create_entity("Sun");
+        auto &tf = sun.get_component<TransformComponent>();
+        tf.translation = glm::vec3{5.f, 8.f, 5.f};
+        tf.rotation = glm::radians(glm::vec3{-50.f, -30.f, 0.f});
+
+        auto &light = sun.add_component<LightComponent>();
+        light.settings.type = LightType::IVX_Directional;
+        light.settings.color = glm::vec3{1.f};
+        light.settings.intensity = 1.f;
     }
 
     if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {
@@ -597,13 +613,13 @@ void EditLayer::draw_gizmo(const ImVec2 &image_min, const ImVec2 &image_size) {
     if (Input::is_key_pressed(KeyCode::LeftControl) && !camera_modifier) {
         switch (gizmo_operation()) {
         case ImGuizmo::TRANSLATE:
-            snap_value[0] = snap_value[1] = snap_value[2] = 50.f;
+            snap_value[0] = snap_value[1] = snap_value[2] = 0.5f;
             break;
         case ImGuizmo::ROTATE:
             snap_value[0] = 45.0f;
             break;
         case ImGuizmo::SCALE:
-            snap_value[0] = 0.5f;
+            snap_value[0] = 0.1f;
             break;
         }
     }

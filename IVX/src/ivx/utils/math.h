@@ -113,16 +113,21 @@ inline void decompose_transform(const glm::mat4 &transform,
     rotation = euler_from_rotation_matrix(rotation_of(transform));
 }
 
-inline float wrap_angle(float radians) {
+inline float wrap_radians(float radians) {
     return std::remainder(radians, 2.f * glm::pi<float>());
+}
+
+inline float wrap_degrees(float degrees) {
+    return std::remainder(degrees, 360.f);
 }
 
 inline glm::vec3 nearest_equivalent_euler(const glm::vec3 &candidate,
                                           const glm::vec3 &previous) {
     const auto distance = [](const glm::vec3 &a, const glm::vec3 &b) {
         const glm::vec3 delta = a - b;
-        return std::abs(wrap_angle(delta.x)) + std::abs(wrap_angle(delta.y)) +
-               std::abs(wrap_angle(delta.z));
+        return std::abs(wrap_radians(delta.x)) +
+               std::abs(wrap_radians(delta.y)) +
+               std::abs(wrap_radians(delta.z));
     };
 
     const glm::vec3 dual{glm::pi<float>() - candidate.x,
@@ -137,7 +142,7 @@ inline glm::vec3 unwrap_euler(const glm::vec3 &angles,
     glm::vec3 result = angles;
     for (int axis = 0; axis < 3; axis++) {
         result[axis] =
-            previous[axis] + wrap_angle(angles[axis] - previous[axis]);
+            previous[axis] + wrap_radians(angles[axis] - previous[axis]);
     }
     return result;
 }

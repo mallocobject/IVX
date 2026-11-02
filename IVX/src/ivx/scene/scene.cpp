@@ -366,14 +366,25 @@ LightSet Scene::collect_lights() const {
     set.ambient = environment_.ambient;
     set.exposure = environment_.exposure;
 
-    // Stand in sun until lights are entities; it matches what Renderer3D used
-    // to hardcode.
-    Light &sun = set.lights[0];
-    sun.type = LightType::IVX_Directional;
-    sun.direction = glm::normalize(glm::vec3{-0.4f, -1.f, -0.6f});
-    sun.color = glm::vec3{1.f};
-    sun.intensity = 1.f;
-    set.count = 1;
+    for (auto [handle, light, transform] :
+         registry_.view<const LightComponent, const TransformComponent>()
+             .each()) {
+        if (set.count >= k_max_lights) {
+            break;
+        }
+
+        Light &out = set.lights[set.count++];
+        out.settings = light.settings;
+        out.position = glm::vec3{transform.world[3]};
+        // Lights shine along their own -Z axis, like a camera looks along its
+        // -Z.
+        out.direction = -glm::normalize(glm::vec3{transform.world[2]});
+
+        const float inner =
+            std::min(light.settings.inner_angle, light.settings.outer_angle);
+        out.inner_cos = std::cos(glm::radians(inner));
+        out.outer_cos = std::cos(glm::radians(light.settings.outer_angle));
+    }
 
     return set;
 }

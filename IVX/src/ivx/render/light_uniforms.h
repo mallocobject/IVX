@@ -11,8 +11,10 @@ namespace ivx {
 
 struct GpuLight {
     glm::vec4 position_type{0.f};
-    glm::vec4 direction_range{0.f, -1.f, 0.f, 1000.f};
+    glm::vec4 direction_linear{0.f, -1.f, 0.f, 0.f};
     glm::vec4 color_intensity{1.f};
+    // constant, linear, quadratic (see LightSettings).
+    glm::vec4 falloff{1.f, 0.f, 1.f, 0.f};
     glm::vec4 spot_angles{1.f, 0.f, 0.f, 0.f};
 };
 
@@ -22,7 +24,7 @@ struct GpuLightData {
     glm::ivec4 counts{0, 0, 0, 0};
     std::array<GpuLight, k_max_lights> lights{};
 };
-static_assert(sizeof(GpuLightData) == 16 + 16 + k_max_lights * 64,
+static_assert(sizeof(GpuLightData) == 16 + 16 + k_max_lights * 80,
               "GpuLightData must match the std140 layout");
 
 class LightUniforms {

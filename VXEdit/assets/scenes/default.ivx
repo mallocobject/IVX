@@ -1,17 +1,38 @@
 Format: 1
 Scene: Untitled
+Environment:
+  Ambient: [0.15, 0.15, 0.15]
+  Exposure: 1
 Entities:
+  - Entity: 2
+    Tag: Sun
+    Transform:
+      Translation: [5, 8, 5]
+      Rotation: [-50, -30.000002, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: ~
+    Light:
+      Type: Directional
+      Color: [1, 1, 1]
+      Intensity: 1
+      Constant: 1
+      Linear: 0
+      Quadratic: 1
+      InnerAngle: 20
+      OuterAngle: 30
+      CastShadows: false
   - Entity: 1
     Tag: 3D Cube
     Transform:
-      Translation: [0, 0, 0]
+      Translation: [0, 1, 0]
       Rotation: [0, 0, 0]
-      Scale: [200, 200, 200]
+      Scale: [1, 1, 1]
     Relationship:
       Parent: ~
     MeshRenderer:
       Primitive: Cube
-      PrimitiveSize: 1
+      PrimitiveSize: 2
       Albedo: [0.92, 0.55, 0.32, 1]
       TilingFactor: 1
-      HasAlbedoMap: true
+      HasAlbedoMap: false

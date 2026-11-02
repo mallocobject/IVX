@@ -5,6 +5,7 @@
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scriptable_entity.h" // NativeScriptComponent definition
+#include "ivx/utils/math.h"
 #include <yaml-cpp/yaml.h>
 
 #include <algorithm>
@@ -16,6 +17,28 @@
 
 namespace ivx {
 namespace {
+
+const char *light_type_name(LightType type) {
+    switch (type) {
+    case LightType::IVX_Point:
+        return "Point";
+    case LightType::IVX_Spot:
+        return "Spot";
+    case LightType::IVX_Directional:
+    default:
+        return "Directional";
+    }
+}
+
+LightType light_type_from_name(const std::string &name) {
+    if (name == "Point") {
+        return LightType::IVX_Point;
+    }
+    if (name == "Spot") {
+        return LightType::IVX_Spot;
+    }
+    return LightType::IVX_Directional;
+}
 
 // ---- writing ---------------------------------------------------------------
 
@@ -43,7 +66,10 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
                           const TransformComponent &transform) {
     out << YAML::Key << "Transform" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Translation" << YAML::Value << transform.translation;
-    out << YAML::Key << "Rotation" << YAML::Value << transform.rotation;
+    // Degrees on disk: the file is meant to be read and edited by hand, the
+    // engine keeps radians.
+    out << YAML::Key << "Rotation" << YAML::Value
+        << glm::degrees(transform.rotation);
     out << YAML::Key << "Scale" << YAML::Value << transform.scale;
     out << YAML::EndMap;
 
@@ -135,6 +161,26 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
     return out;
 }
 
+YAML::Emitter &operator<<(YAML::Emitter &out,
+                          const LightComponent &light_component) {
+    const LightSettings &settings = light_component.settings;
+
+    out << YAML::Key << "Light" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Type" << YAML::Value << light_type_name(settings.type);
+    out << YAML::Key << "Color" << YAML::Value << settings.color;
+    out << YAML::Key << "Intensity" << YAML::Value << settings.intensity;
+    out << YAML::Key << "Constant" << YAML::Value << settings.constant;
+    out << YAML::Key << "Linear" << YAML::Value << settings.linear;
+    out << YAML::Key << "Quadratic" << YAML::Value << settings.quadratic;
+    out << YAML::Key << "InnerAngle" << YAML::Value << settings.inner_angle;
+    out << YAML::Key << "OuterAngle" << YAML::Value << settings.outer_angle;
+    out << YAML::Key << "CastShadows" << YAML::Value
+        << light_component.cast_shadows;
+    out << YAML::EndMap;
+
+    return out;
+}
+
 YAML::Emitter &operator<<(YAML::Emitter &out, Entity entity) {
     out << YAML::BeginMap;
     out << YAML::Key << "Entity" << YAML::Value
@@ -168,6 +214,9 @@ YAML::Emitter &operator<<(YAML::Emitter &out, Entity entity) {
     }
     if (auto camera = entity.try_get_component<CameraComponent>()) {
         out << *camera;
+    }
+    if (auto light = entity.try_get_component<LightComponent>()) {
+        out << *light;
     }
     if (auto native_script =
             entity.try_get_component<NativeScriptComponent>()) {
@@ -220,7 +269,15 @@ void read_transform(const YAML::Node &node, TransformComponent &transform) {
     }
     transform.translation =
         read_vec3(node["Translation"], transform.translation);
-    transform.rotation = read_vec3(node["Rotation"], transform.rotation);
+
+    // Degrees on disk, radians in the component. Wrapping keeps a hand written
+    // multi turn value showing as a sane angle in the inspector.
+    const glm::vec3 degrees =
+        read_vec3(node["Rotation"], glm::degrees(transform.rotation));
+    transform.rotation = glm::radians(glm::vec3{wrap_degrees(degrees.x),
+                                                wrap_degrees(degrees.y),
+                                                wrap_degrees(degrees.z)});
+
     transform.scale = read_vec3(node["Scale"], transform.scale);
 }
 
@@ -296,6 +353,27 @@ void read_mesh_renderer(const YAML::Node &node,
     }
 }
 
+void read_light(const YAML::Node &node, LightComponent &light_component) {
+    if (!node) {
+        return;
+    }
+
+    LightSettings &settings = light_component.settings;
+    settings.type = light_type_from_name(
+        read_scalar(node["Type"], std::string{"Directional"}));
+    settings.color = read_vec3(node["Color"], settings.color);
+    settings.intensity = read_scalar(node["Intensity"], settings.intensity);
+    settings.constant = read_scalar(node["Constant"], settings.constant);
+    settings.linear = read_scalar(node["Linear"], settings.linear);
+    settings.quadratic = read_scalar(node["Quadratic"], settings.quadratic);
+    settings.inner_angle =
+        read_scalar(node["InnerAngle"], settings.inner_angle);
+    settings.outer_angle =
+        read_scalar(node["OuterAngle"], settings.outer_angle);
+    light_component.cast_shadows =
+        read_scalar(node["CastShadows"], light_component.cast_shadows);
+}
+
 void read_script(const YAML::Node &node, NativeScriptComponent &script) {
     if (!node) {
         return;
@@ -339,6 +417,11 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
     Ref<Scene> scene = make_ref<Scene>();
     if (const YAML::Node name = root["Scene"]) {
         scene->set_name(name.as<std::string>());
+    }
+    if (const YAML::Node environment = root["Environment"]) {
+        Environment &target = scene->environment();
+        target.ambient = read_vec3(environment["Ambient"], target.ambient);
+        target.exposure = read_scalar(environment["Exposure"], target.exposure);
     }
 
     std::unordered_map<std::uint32_t, Entity> by_id;
@@ -384,6 +467,14 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
                                       false)) {
                     ++textured_sprites;
                 }
+            }
+
+            if (node["Light"]) {
+                LightComponent &light =
+                    entity.has_component<LightComponent>()
+                        ? entity.get_component<LightComponent>()
+                        : entity.add_component<LightComponent>();
+                read_light(node["Light"], light);
             }
 
             if (node["Camera"]) {
@@ -489,6 +580,11 @@ void Serializer::serialize(const Ref<Scene> &scene,
     out << YAML::BeginMap;
     out << YAML::Key << "Format" << YAML::Value << k_format_version;
     out << YAML::Key << "Scene" << YAML::Value << world.get_name();
+    out << YAML::Key << "Environment" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Ambient" << YAML::Value << world.environment().ambient;
+    out << YAML::Key << "Exposure" << YAML::Value
+        << world.environment().exposure;
+    out << YAML::EndMap;
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
     for (Entity entity : order) {
         out << entity;

@@ -73,18 +73,18 @@ class EditorCamera : public Camera {
     }
 
     float fov_{glm::radians(45.f)};
-    float near_clip_{0.01f};
-    float far_clip_{10000.f};
+    float near_clip_{0.05f};
+    float far_clip_{2000.f};
     // The aspect ratio is derived from this, never cached: the projection is
     // rebuilt lazily anyway, so a second copy would only have to be kept in
     // sync.
     glm::vec2 viewport_size_{1280.f, 720.f};
 
     glm::vec3 focal_point_{0.f};
-    float distance_{866.03f}; // 500 * sqrt(3): the same three-quarter view the
-                              // cube opens with
+    // 5 * sqrt(3), in a world where 1 unit = 1 m.
+    float distance_{8.66f};
     // Radians. A positive pitch looks down; the initial pair aims the camera at
-    // the origin from (500, 500, 500).
+    // the origin from (5, 5, 5).
     float pitch_{glm::radians(35.264f)};
     float yaw_{glm::radians(-45.f)};
 

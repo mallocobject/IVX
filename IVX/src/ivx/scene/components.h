@@ -5,6 +5,7 @@
 #include "glm/ext/vector_float3.hpp"
 #include "glm/ext/vector_float4.hpp"
 #include "ivx/core/ref.hpp"
+#include "ivx/render/light.h"
 #include "ivx/render/material.h"
 #include "ivx/render/mesh.h"
 #include "ivx/render/sub_texture2d.h"
@@ -91,6 +92,13 @@ struct MeshRendererComponent {
     bool visible{true};
 };
 
+// Position and direction come from the entity's transform: a directional light
+// shines along its -Z axis, a point light sits at its translation.
+struct LightComponent {
+    LightSettings settings;
+    bool cast_shadows{false};
+};
+
 struct NativeScriptComponent;
 
 // Every component type that may cross the script boundary. Scripts call
@@ -109,6 +117,7 @@ struct NativeScriptComponent;
     X(RelationshipComponent)                                                   \
     X(SpriteRendererComponent)                                                 \
     X(MeshRendererComponent)                                                   \
+    X(LightComponent)                                                          \
     X(CameraComponent)                                                         \
     X(NativeScriptComponent)
 
