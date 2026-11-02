@@ -76,7 +76,7 @@ class RendererAPI : public RefCounted {
     // Device wide setup only: debug output, the winding order the meshes are
     // authored with, and the clip convention the projection helpers assume.
     // Anything a single pass could want to change lives in
-    // RenderPassSpecification instead.
+    // RenderScopeSpecification instead.
     virtual void init() = 0;
 
     virtual void set_viewport(int x, int y, int width, int height) = 0;

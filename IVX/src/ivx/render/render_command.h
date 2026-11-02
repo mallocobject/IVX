@@ -35,7 +35,7 @@ struct BlendState {
 
 class RenderCommand {
   public:
-    // The state a pass can change. It is tracked here so RenderPass can put
+    // The state a scope can change. It is tracked here so RenderScope can put
     // back what it found instead of guessing a default: with several passes per
     // frame, the previous values are the only correct ones to restore.
     struct State {

@@ -56,39 +56,37 @@ void EditLayer::on_attach() {
     // auto sub_texture =
     //     SubTexture2D::create(texture, {1.f, 1.f}, {16.f, 16.f}, {1.f, 1.f});
 
-    FrameBufferSpecification spec;
-    spec.width = WIDTH;
-    spec.height = HEIGHT;
-    spec.num_samples = 4;
-    spec.color_formats = {FrameBufferColorFormat::RGBA16F,
-                          FrameBufferColorFormat::RED_INTEGER};
-    // Depth is a separate field on purpose: it is never blended and has its own
-    // attachment point. A renderbuffer is enough here, nothing samples it.
-    spec.depth_format = FrameBufferDepthFormat::Depth24Stencil8;
-
-    frame_buffer_ = FrameBuffer::create(spec);
     tone_mapping_pass_ = make_ref<ToneMappingPass>(WIDTH, HEIGHT);
 
-    // Scene pass writes linear HDR colour and picking IDs. ToneMappingPass
-    // resolves display colour into a separate RGBA8 target afterwards.
-    RenderPassSpecification pass_spec;
-    pass_spec.target = frame_buffer_;
-    // The pass owns its camera block, so a second pass with another camera can
-    // follow.
-    pass_spec.camera = &editor_camera_;
+    // The scene scope owns the HDR + picking target and writes linear radiance
+    // into it. ToneMappingPass resolves display colour into a separate RGBA8
+    // target afterwards.
+    FrameBufferSpecification target;
+    target.width = WIDTH;
+    target.height = HEIGHT;
+    target.num_samples = 4;
+    target.color_formats = {FrameBufferColorFormat::RGBA16F,
+                            FrameBufferColorFormat::RED_INTEGER};
+    // Depth is a separate field on purpose: it is never blended and has its own
+    // attachment point. A renderbuffer is enough here, nothing samples it.
+    target.depth_format = FrameBufferDepthFormat::Depth24Stencil8;
+
+    RenderScopeSpecification scope_spec;
+    scope_spec.target = target;
+    scope_spec.camera = &editor_camera_;
     // Linear radiance, not display colour: the tone mapping pass encodes it.
     // 0.0129 linear is the 0.1 grey the viewport used before HDR, after
     // Reinhard and sRGB.
-    pass_spec.clear_color = glm::vec4{0.0129f, 0.0129f, 0.0129f, 1.f};
+    scope_spec.clear_color = glm::vec4{0.0129f, 0.0129f, 0.0129f, 1.f};
     // Culling was on globally before passes existed, and the 2D demo cube
     // depends on it: without it the back faces would render too.
-    pass_spec.cull = RendererAPI::CullMode::IVX_Back;
-    render_pass_ = make_ref<RenderPass>(std::move(pass_spec));
+    scope_spec.cull = RendererAPI::CullMode::IVX_Back;
+    scene_scope_ = make_ref<RenderScope>(std::move(scope_spec));
 
-    // The editor starts without a scene: the user picks File > New or File >
-    // Open. An auto-created empty scene looks the same as a broken one, and
-    // entities added to it had no file to belong to; the hierarchy panel
-    // refuses to create entities until a scene exists.
+    // The editor starts without a scene: the user picks File > New or File
+    // > Open. An auto-created empty scene looks the same as a broken one,
+    // and entities added to it had no file to belong to; the hierarchy
+    // panel refuses to create entities until a scene exists.
     scene_.reset();
     editor_context_.scene.reset();
 
@@ -110,16 +108,18 @@ void EditLayer::on_update(float dt) {
         console_panel_->pump();
     }
 
-    const auto &spec = frame_buffer_->get_specification();
-    if (viewport_size_.x >= 1 && viewport_size_.y >= 1 &&
-        (spec.width != viewport_size_.x || spec.height != viewport_size_.y)) {
+    auto viewport_target = scene_scope_->target();
+    auto spec =
+        viewport_target ? &viewport_target->get_specification() : nullptr;
+    if (spec != nullptr && viewport_size_.x >= 1 && viewport_size_.y >= 1 &&
+        (spec->width != viewport_size_.x || spec->height != viewport_size_.y)) {
         uint32_t w = static_cast<uint32_t>(viewport_size_.x);
         uint32_t h = static_cast<uint32_t>(viewport_size_.y);
 
         if (scene_) {
             scene_->on_viewport_resize(w, h);
         }
-        frame_buffer_->resize(w, h);
+        scene_scope_->resize(w, h);
         tone_mapping_pass_->resize(w, h);
         editor_camera_.set_viewport_size(w, h);
     }
@@ -141,22 +141,22 @@ void EditLayer::on_update(float dt) {
     Renderer2D::reset_stats();
 
     // The pass owns the target binding, the clear and the pipeline state; the
-    // profile scope for the clear lives inside RenderPass::begin().
+    // profile scope for the clear lives inside RenderScope::begin().
     if (scene_) {
-        render_pass_->set_lights(scene_->collect_lights());
+        scene_scope_->set_lights(scene_->collect_lights());
     }
-    render_pass_->begin();
+    scene_scope_->begin();
 
     if (scene_) {
         IVX_PROFILE_SCOPE("Renderer draw");
         scene_->render();
     }
 
-    render_pass_->end();
+    scene_scope_->end();
 
     // Self-contained pass: it binds its own target and state, which is why it
     // is called with no pass open around it.
-    tone_mapping_pass_->render(frame_buffer_,
+    tone_mapping_pass_->render(scene_scope_->target(),
                                scene_ ? scene_->environment().exposure : 1.f,
                                scene_ ? scene_->environment().tonemap
                                       : ToneMappingCurve::IVX_Reinhard);
@@ -215,7 +215,8 @@ void EditLayer::on_event(Event &event) {
                 // 0 is the background. The id is the entity's uid, not its
                 // handle: after a scene load the two differ, so it has to go
                 // through the uid lookup.
-                const uint32_t uid = frame_buffer_->read_pixel(1, fbo_x, fbo_y);
+                const uint32_t uid =
+                    scene_scope_->target()->read_pixel(1, fbo_x, fbo_y);
                 if (Entity entity = scene_->find_by_uid(uid); entity) {
                     editor_context_.select(entity);
                 } else {

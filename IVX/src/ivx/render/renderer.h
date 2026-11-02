@@ -6,7 +6,7 @@
 namespace ivx {
 
 // Engine level entry points only. Per frame drawing belongs to Renderer2D /
-// Renderer3D inside a RenderPass; this used to carry a submit() plus a
+// Renderer3D inside a RenderScope; this used to carry a submit() plus a
 // SceneData view-projection matrix that nothing ever wrote, which made it look
 // like a renderer while doing nothing.
 class Renderer {

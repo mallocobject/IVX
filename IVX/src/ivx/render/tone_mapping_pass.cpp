@@ -5,25 +5,26 @@
 
 namespace ivx {
 ToneMappingPass::ToneMappingPass(uint32_t width, uint32_t height) {
-    FrameBufferSpecification spec;
-    spec.width = width;
-    spec.height = height;
-    spec.num_samples = 1;
-    // Plain RGBA8 on purpose: the shader already encodes sRGB, so an
-    // SRGB8_ALPHA8 attachment would encode a second time.
-    // No depth attachment: a full screen triangle does not need one.
-    spec.color_formats = {FrameBufferColorFormat::RGBA8};
-    output_ = FrameBuffer::create(spec);
+    RenderScopeSpecification scope_spec;
 
-    RenderPassSpecification pass;
-    pass.target = output_;
-    pass.depth_test = false;
-    pass.depth_write = false;
-    pass.blend.enabled = false;
-    pass.cull = RendererAPI::CullMode::IVX_None;
-    pass.clear_depth = false;
-    pass.clear_color_attachments = false;
-    pass_ = make_ref<RenderPass>(pass);
+    FrameBufferSpecification target;
+    target.width = width;
+    target.height = height;
+    target.num_samples = 1;
+    // Plain RGBA8 on purpose: the shader already encodes sRGB, so an
+    // SRGB8_ALPHA8 attachment would encode a second time. No depth attachment:
+    // a full screen triangle does not need one.
+    target.color_formats = {FrameBufferColorFormat::RGBA8};
+
+    scope_spec.target = target;
+    scope_spec.depth_test = false;
+    scope_spec.depth_write = false;
+    scope_spec.blend.enabled = false;
+    scope_spec.cull = RendererAPI::CullMode::IVX_None;
+    scope_spec.clear_depth = false;
+    scope_spec.clear_color_attachments = false;
+    scope_ = make_ref<RenderScope>(std::move(scope_spec));
+
     shader_ = Shader::create(SHADERS "tone_mapping.glsl");
     triangle_ = VertexArray::create();
     uint32_t indices[]{0, 1, 2};
@@ -31,9 +32,7 @@ ToneMappingPass::ToneMappingPass(uint32_t width, uint32_t height) {
 }
 
 void ToneMappingPass::resize(uint32_t width, uint32_t height) {
-    if (width > 0 && height > 0) {
-        output_->resize(width, height);
-    }
+    scope_->resize(width, height);
 }
 
 void ToneMappingPass::render(const Ref<FrameBuffer> &source,
@@ -43,18 +42,19 @@ void ToneMappingPass::render(const Ref<FrameBuffer> &source,
 
     // A collapsed viewport leaves the output at zero size; there is nothing to
     // write then.
-    const FrameBufferSpecification &spec = output_->get_specification();
+    const FrameBufferSpecification &spec =
+        scope_->target()->get_specification();
     if (!source || spec.width == 0 || spec.height == 0) {
         return;
     }
 
-    pass_->begin();
+    scope_->begin();
     shader_->bind();
     shader_->set("u_Exposure", std::max(exposure, 0.f));
     shader_->set("u_Curve", static_cast<int>(curve));
     source->bind_color_attachment(0);
     triangle_->bind();
     RenderCommand::draw(triangle_);
-    pass_->end();
+    scope_->end();
 }
 } // namespace ivx

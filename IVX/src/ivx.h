@@ -26,7 +26,7 @@
 #include "ivx/render/material.h"
 #include "ivx/render/mesh.h"
 #include "ivx/render/render_command.h"
-#include "ivx/render/render_pass.h"
+#include "ivx/render/render_scope.h"
 #include "ivx/render/renderer.h"
 #include "ivx/render/renderer2d.h"
 #include "ivx/render/renderer3d.h"

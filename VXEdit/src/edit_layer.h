@@ -59,7 +59,7 @@ class EditLayer : public Layer {
     void load_scene(const std::filesystem::path &filepath);
     void save_scene(const std::filesystem::path &filepath);
 
-    Ref<FrameBuffer> frame_buffer_;
+    // Owns the HDR + picking target; the scope hands it out as a Ref.
     Ref<ToneMappingPass> tone_mapping_pass_;
 
     // Shared editor state (scene + selection). Panels reference it, so it must
@@ -103,11 +103,12 @@ class EditLayer : public Layer {
     // the viewport tab is the one currently on screen.
     Ref<Panel> viewport_panel_;
 
-    // The viewport's pass: target, clear values and pipeline state in one
-    // object. Declared before editor_camera_ so it is destroyed after it (the
-    // pass does not reference the camera, but keeping the render state objects
-    // together reads better).
-    Ref<RenderPass> render_pass_;
+    // The viewport's scope: it owns the HDR and picking target and carries the
+    // clear values and pipeline state of one stretch of drawing. Declared
+    // before editor_camera_ so it is destroyed after it (the scope does not
+    // reference the camera, but keeping the render state objects together reads
+    // better).
+    Ref<RenderScope> scene_scope_;
 
     EditorCamera editor_camera_;
 };

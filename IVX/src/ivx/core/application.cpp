@@ -9,7 +9,7 @@
 #include "ivx/event/application_event.h"
 #include "ivx/imgui/imgui_layer.h"
 #include "ivx/render/render_command.h"
-#include "ivx/render/render_pass.h"
+#include "ivx/render/render_scope.h"
 #include "ivx/render/renderer.h"
 #include <glm/glm.hpp>
 #include <memory>
@@ -61,21 +61,22 @@ void Application::run() {
             }
         }
 
-        // The default framebuffer pass. Layers that render do it in on_update()
-        // into their own framebuffer, so this pass owns the screen and nothing
-        // else; the UI is drawn into it by ImGuiLayer::end() below. Clearing
-        // here instead of through RenderCommand keeps a single owner for
-        // "clear" - a pass - whether the target is a framebuffer or the screen.
-        RenderPassSpecification screen_spec;
+        // The final scope. Layers render into their own targets in on_update(),
+        // so this one only owns the screen; the UI is drawn into it by
+        // ImGuiLayer::end() below. Clearing here instead of through
+        // RenderCommand keeps a single owner for "clear", whether the target is
+        // a framebuffer or the window.
+        // No target: this scope draws to the default framebuffer.
+        RenderScopeSpecification screen_spec;
         screen_spec.clear_color = glm::vec4{0.1f, 0.1f, 0.1f, 1.f};
-        // The values RenderCommand::init() pushes, so the first pass that
+        // The values RenderCommand::init() pushes, so the first scope that
         // snapshots the state sees the engine defaults.
         screen_spec.depth_test = true;
         screen_spec.depth_write = true;
         screen_spec.blend.enabled = true;
         screen_spec.cull = RendererAPI::CullMode::IVX_Back;
-        RenderPass screen_pass{screen_spec};
-        screen_pass.begin();
+        RenderScope screen_scope{screen_spec};
+        screen_scope.begin();
 
         // UI phase: the layers only build ImGui commands here, the backend
         // submits them from ImGuiLayer::end() below. Rendering happens in
@@ -90,7 +91,7 @@ void Application::run() {
         }
         imgui_layer_->end();
 
-        screen_pass.end();
+        screen_scope.end();
 
         // roll and swap buffer
         window_->on_update();
