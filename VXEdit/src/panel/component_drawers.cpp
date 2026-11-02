@@ -284,6 +284,15 @@ void draw_mesh_renderer(Entity /*entity*/,
 
 // ---- light -----------------------------------------------------------------
 
+namespace {
+// Attenuation of the physical falloff at one distance, see LightSettings.
+float attenuation_at(const LightSettings &settings, float distance) {
+    const float denominator = settings.constant + settings.linear * distance +
+                              settings.quadratic * distance * distance;
+    return 1.f / std::max(denominator, 1e-4f);
+}
+} // namespace
+
 void draw_light(Entity /*entity*/,
                 LightComponent &light,
                 EditorContext & /*context*/) {
@@ -321,7 +330,14 @@ void draw_light(Entity /*entity*/,
                              1.f,
                              "%.6f");
         });
+
+        // Reads the coefficients back at the distances a scene of this size
+        // actually uses, so tuning does not mean guessing what 1e-5 does.
         ImGui::TextDisabled("1 / (a0 + a1 * d + a2 * d * d)");
+        ImGui::TextDisabled("1 m %.3f   3 m %.3f   10 m %.3f",
+                            attenuation_at(settings, 1.f),
+                            attenuation_at(settings, 3.f),
+                            attenuation_at(settings, 10.f));
     }
     if (settings.type == LightType::IVX_Spot) {
         label_row("Inner", [&] {
