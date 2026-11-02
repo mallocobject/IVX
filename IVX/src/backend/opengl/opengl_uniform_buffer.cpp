@@ -6,7 +6,6 @@ namespace ivx {
 OpenGLUniformBuffer::OpenGLUniformBuffer(uint32_t size, uint32_t binding) {
     glCreateBuffers(1, &ubo_);
     glNamedBufferData(ubo_, size, nullptr, GL_DYNAMIC_DRAW);
-    glBindBufferBase(GL_UNIFORM_BUFFER, binding, ubo_);
 }
 
 OpenGLUniformBuffer::~OpenGLUniformBuffer() {

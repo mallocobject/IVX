@@ -2,7 +2,9 @@
 
 #include "ivx/core/ref_counted.hpp"
 #include "ivx/render/camera.h"
+#include "ivx/render/light.h"
 #include "ivx/scene/components.h"
+#include "ivx/scene/environment.h"
 #include <entt.hpp>
 #include <string>
 #include <string_view>
@@ -55,6 +57,16 @@ class Scene : public RefCounted {
 
     void on_viewport_resize(uint32_t width, uint32_t height);
 
+    Environment &environment() {
+        return environment_;
+    }
+    const Environment &environment() const {
+        return environment_;
+    }
+
+    // World space form of every light in the scene, capped at k_max_lights.
+    LightSet collect_lights() const;
+
     glm::uvec2 get_viewport_size() const {
         return viewport_size_;
     }
@@ -88,6 +100,7 @@ class Scene : public RefCounted {
     glm::uvec2 viewport_size_{0u, 0u};
     // 0 is reserved for "no entity" in the id buffer, so uids start at 1.
     uint32_t next_uid_{1};
+    Environment environment_{};
     entt::registry registry_;
 };
 } // namespace ivx

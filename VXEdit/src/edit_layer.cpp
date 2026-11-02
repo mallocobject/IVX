@@ -130,6 +130,9 @@ void EditLayer::on_update(float dt) {
 
     // The pass owns the target binding, the clear and the pipeline state; the
     // profile scope for the clear lives inside RenderPass::begin().
+    if (scene_) {
+        render_pass_->set_lights(scene_->collect_lights());
+    }
     render_pass_->begin();
 
     if (scene_) {

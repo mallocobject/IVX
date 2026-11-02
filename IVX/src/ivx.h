@@ -22,6 +22,7 @@
 #include "ivx/render/camera.h"
 #include "ivx/render/camera_uniforms.h"
 #include "ivx/render/frame_buffer.h"
+#include "ivx/render/light.h"
 #include "ivx/render/material.h"
 #include "ivx/render/mesh.h"
 #include "ivx/render/render_command.h"
@@ -37,6 +38,7 @@
 
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
+#include "ivx/scene/environment.h"
 #include "ivx/scene/scene.h"
 #include "ivx/scene/scriptable_entity.h"
 

@@ -4,6 +4,8 @@
 #include "ivx/core/ref_counted.hpp"
 #include "ivx/render/camera_uniforms.h"
 #include "ivx/render/frame_buffer.h"
+#include "ivx/render/light.h"
+#include "ivx/render/light_uniforms.h"
 #include "ivx/render/render_command.h"
 #include <glm/glm.hpp>
 
@@ -48,11 +50,17 @@ class RenderPass : public RefCounted {
     void set_camera(const Camera *camera) {
         spec_.camera = camera;
     }
+    // Gathered by the scene every frame, so the pass keeps its own copy.
+    void set_lights(const LightSet &lights) {
+        lights_ = lights;
+    }
 
   private:
     RenderPassSpecification spec_;
     // Per pass camera block, so two passes with different cameras can coexist.
     CameraUniforms camera_uniforms_;
+    LightSet lights_{};
+    LightUniforms light_uniforms_;
     RenderCommand::State saved_state_{};
     bool begun_{false};
 };

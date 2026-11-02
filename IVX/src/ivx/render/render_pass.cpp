@@ -16,6 +16,10 @@ void RenderPass::begin() {
         spec_.target->bind();
     }
 
+    if (!lights_.lights.empty()) {
+        light_uniforms_.update(lights_);
+    }
+
     // Re-claims the binding point: another pass may have taken it since the
     // last frame.
     if (spec_.camera) {

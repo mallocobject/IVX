@@ -361,6 +361,13 @@ void Scene::render_sprites() {
     Renderer2D::end_batch();
 }
 
+LightSet Scene::collect_lights() const {
+    LightSet set;
+    set.ambient = environment_.ambient;
+    set.exposure = environment_.exposure;
+    // Lights are entities from S3 on; nothing to gather yet.
+    return set;
+}
 void Scene::on_viewport_resize(uint32_t width, uint32_t height) {
     // Remembered even when the scene has no camera yet: a camera added later
     // needs the real aspect, not SceneCamera's 16:9 default.
