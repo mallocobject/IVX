@@ -9,13 +9,13 @@ namespace ivx {
 
 // Development-only timing panel: whole-frame cost plus the phase breakdown the
 // layer reports every frame (update / render), a frame-time graph and the
-// Renderer2D counters. Not meant to survive into a shipped editor.
+// renderer counters.
 //
-// Layout: numbers on the left, frame-time graph on the right.
-//
-// It is a floating overlay in the top-right corner rather than a docked panel:
-// it is reference information you glance at, and a dock slot would compete with
-// the console for the bottom strip.
+// It is a floating OS window rather than a docked panel: the numbers are
+// reference information you glance at on a second screen, and a dock slot would
+// compete with the console for the bottom strip. With multi-viewport enabled
+// the first placement puts it outside the main window, which is what makes it a
+// window of its own.
 class StatsPanel : public Panel {
   public:
     StatsPanel();
@@ -39,10 +39,9 @@ class StatsPanel : public Panel {
 
   protected:
     void on_imgui() override;
-    // Pins the window to the top-right corner of the main viewport.
+    // Places the window once, outside the main window when the monitor has
+    // room.
     bool begin_window() override;
-    // Keeps the overlay above the docked panels.
-    void end_window() override;
     bool should_draw() const override {
         return opened_ && host_visible_;
     }
@@ -53,6 +52,11 @@ class StatsPanel : public Panel {
         float ms{0.f};
     };
 
+    // Where the window lands the first time: outside the main window when the
+    // monitor has room, otherwise over its bottom-right corner.
+    static ImVec2 detached_position(ImVec2 size);
+
+    void draw_headline();
     void draw_info_column();
     void draw_graph_column();
 
@@ -65,9 +69,11 @@ class StatsPanel : public Panel {
     int history_offset_{0};
     int history_count_{0};
 
-    // True once the overlay has been placed inside the viewport for the first
-    // time.
+    // True once the window has been placed for the first time; from then on the
+    // user's own position sticks.
     bool placed_{false};
+    // False until the first begin_frame, whose delta is start-up time.
+    bool started_{false};
     bool host_visible_{true};
     // Scale the window was last auto-sized for (see begin_window).
     float sized_for_scale_{0.f};

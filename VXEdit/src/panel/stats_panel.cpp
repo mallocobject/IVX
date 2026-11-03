@@ -1,15 +1,16 @@
 #include "stats_panel.h"
 
-#include <imgui_internal.h> // FindWindowByName: the overlay hangs off the viewport
+#include <imgui_internal.h> // FindWindowByName: anchor at the viewport`s corner
 
 #include "ivx/core/application.h"
-#include "ivx/core/logger.h"
 #include "ivx/core/window.h"
 #include "ivx/render/renderer2d.h"
+#include "ivx/render/renderer3d.h"
 #include "ui/theme.h"
 
 #include <algorithm>
 #include <cmath>
+#include <cstdio>
 #include <imgui.h>
 
 namespace ivx {
@@ -19,6 +20,8 @@ constexpr ImU32 kGood =
     IM_COL32(110, 210, 130, 255); // comfortably inside budget
 constexpr ImU32 kWarn = IM_COL32(235, 200, 90, 255); // near the 60 Hz budget
 constexpr ImU32 kBad = IM_COL32(235, 110, 110, 255); // over budget
+constexpr ImU32 kPhase = IM_COL32(120, 160, 230, 255);
+constexpr ImU32 kRest = IM_COL32(130, 130, 145, 255);
 
 ImU32 budget_color(float ms) {
     if (ms > StatsPanel::kBudgetMs) {
@@ -45,72 +48,74 @@ StatsPanel::StatsPanel() : Panel("Stats") {
     // Sized in begin_window (it has to follow the UI scale), so the base class
     // must not apply its own first-use size.
     set_default_size(ImVec2{0.f, 0.f});
-    // Floating overlay: it must never take a dock slot, and it should not steal
-    // the focus when it appears or when the layout is rebuilt.
+    // A window of its own: never take a dock slot, and do not steal focus when
+    // it appears or when the layout is rebuilt.
     set_window_flags(ImGuiWindowFlags_NoDocking |
                      ImGuiWindowFlags_NoFocusOnAppearing |
                      ImGuiWindowFlags_NoNav);
 }
 
 bool StatsPanel::begin_window() {
-    // Anchored inside the viewport's top-right corner rather than the window's:
-    // the right column belongs to the inspector, and covering it would hide the
-    // panel the overlay is supposed to complement.
-    ImVec2 anchor;
-    if (const ImGuiWindow *viewport_window =
-            ImGui::FindWindowByName("Viewport")) {
-        // +32 skips the viewport's own tab bar, so the overlay starts below it.
-        anchor = ImVec2{viewport_window->Pos.x + viewport_window->Size.x - 18.f,
-                        viewport_window->Pos.y + 32.f};
-    } else {
-        const ImGuiViewport *viewport = ImGui::GetMainViewport();
-        anchor = ImVec2{viewport->WorkPos.x + viewport->WorkSize.x - 18.f,
-                        viewport->WorkPos.y + 18.f};
-    }
+    const float current_scale = ui::scale();
+    const ImVec2 size{520.f * current_scale, 400.f * current_scale};
 
-    // Pivot (1, 0) pins the right edge, so the overlay stays in the corner when
-    // its size changes (e.g. the phase list grows).
-    //
-    // The position is forced until the anchor looks sane: the dock layout is
-    // built over the first frames, and committing FirstUseEver to an anchor
-    // measured before the viewport got its rect would pin the overlay
-    // off-screen for the rest of the session.
-    if (!placed_) {
-        ImGui::SetNextWindowPos(anchor, ImGuiCond_Always, ImVec2{1.f, 0.f});
-        const ImGuiViewport *main = ImGui::GetMainViewport();
-        const bool inside_work_area =
-            anchor.x > main->WorkPos.x + 120.f &&
-            anchor.x < main->WorkPos.x + main->WorkSize.x - 10.f &&
-            anchor.y > main->WorkPos.y &&
-            anchor.y < main->WorkPos.y + main->WorkSize.y - 120.f;
-        if (inside_work_area && ImGui::GetFrameCount() > 2) {
-            placed_ = true;
-        }
-    }
     // The overlay is sized in pixels, so a UI-scale change has to re-size it or
     // the content overflows. Manual resizes still stick: the size is only
     // re-applied when the scale actually changed.
-    const float current_scale = ui::scale();
     if (!(std::abs(sized_for_scale_ - current_scale) < 0.001f)) {
-        ImGui::SetNextWindowSize(
-            ImVec2{560.f * current_scale, 360.f * current_scale},
-            ImGuiCond_Always);
+        ImGui::SetNextWindowSize(size, ImGuiCond_Always);
         sized_for_scale_ = current_scale;
     }
 
-    // Slightly transparent so the scene behind it stays visible.
-    ImGui::SetNextWindowBgAlpha(0.88f);
-    return Panel::begin_window();
+    // Slightly transparent so whatever is behind it stays readable.
+    ImGui::SetNextWindowBgAlpha(0.94f);
+
+    const bool open = Panel::begin_window();
+    if (!open) {
+        return false;
+    }
+
+    // Only the very first placement is forced, and only until the main window
+    // has its real rect (the dock layout is built over the first frames).
+    // Afterwards the window is left alone so a drag sticks, which is also what
+    // lets it leave the main window and become an OS window of its own.
+    if (!placed_) {
+        const ImVec2 target = detached_position(size);
+        ImGui::SetWindowPos(target, ImGuiCond_Always);
+        if (ImGui::GetFrameCount() > 2) {
+            placed_ = true;
+        }
+    }
+
+    return true;
 }
 
-void StatsPanel::end_window() {
-    Panel::end_window();
+ImVec2 StatsPanel::detached_position(ImVec2 size) {
+    const ImGuiViewport *main = ImGui::GetMainViewport();
 
-    // The overlay floats on top of the viewport, so clicking the viewport would
-    // bury it: keep it at the front of the window stack while it is open.
-    if (ImGuiWindow *window = ImGui::FindWindowByName(name_.c_str())) {
-        ImGui::BringWindowToDisplayFront(window);
+    // Preferred spot: just right of the main window, which is exactly what
+    // makes this an OS window of its own once multi-viewport is on. Falls back
+    // to the main window's bottom-right corner when no monitor has room for it.
+    ImVec2 target{main->Pos.x + main->Size.x + 12.f, main->Pos.y + 48.f};
+    for (const ImGuiPlatformMonitor &monitor :
+         ImGui::GetPlatformIO().Monitors) {
+        const ImVec2 limit{monitor.WorkPos.x + monitor.WorkSize.x,
+                           monitor.WorkPos.y + monitor.WorkSize.y};
+        if (target.x >= monitor.WorkPos.x && target.y >= monitor.WorkPos.y &&
+            target.x + size.x <= limit.x && target.y + size.y <= limit.y) {
+            return target;
+        }
     }
+
+    // No monitor room: sit in the viewport`s top-right corner, below its tab
+    // bar, which keeps the console and the inspector visible.
+    if (const ImGuiWindow *viewport = ImGui::FindWindowByName("Viewport")) {
+        return ImVec2{viewport->Pos.x + viewport->Size.x - size.x - 16.f,
+                      viewport->Pos.y + 36.f};
+    }
+
+    return ImVec2{main->Pos.x + main->Size.x - size.x - 24.f,
+                  main->Pos.y + 48.f};
 }
 
 void StatsPanel::begin_frame(float delta_time) {
@@ -118,7 +123,16 @@ void StatsPanel::begin_frame(float delta_time) {
     reported_ = std::move(current_);
     current_.clear();
 
-    frame_ms_ = delta_time * 1000.f;
+    // The very first delta covers start-up, not a frame: it would own the max,
+    // the average and the graph scale for the rest of the session.
+    if (!started_) {
+        started_ = true;
+        return;
+    }
+
+    // Clamping also keeps a hitch (a file dialog, a rebuild) from flattening
+    // the graph.
+    frame_ms_ = std::clamp(delta_time * 1000.f, 0.f, 1000.f);
 
     constexpr float kAlpha = 0.1f;
     smoothed_ms_ += (frame_ms_ - smoothed_ms_) * kAlpha;
@@ -144,10 +158,13 @@ void StatsPanel::submit(const char *phase, float milliseconds) {
 }
 
 void StatsPanel::on_imgui() {
-    // Numbers left, graph right. The info column keeps a readable width, the
-    // graph absorbs the rest.
+    draw_headline();
+    ImGui::Spacing();
+
+    // Numbers left, graph right: the info column keeps a readable width and the
+    // graph absorbs whatever is left.
     const float total_width = ImGui::GetContentRegionAvail().x;
-    const float info_width = std::clamp(total_width * 0.5f, 220.f, 420.f);
+    const float info_width = std::clamp(total_width * 0.52f, 220.f, 420.f);
 
     ImGui::BeginChild("##stats_info", ImVec2{info_width, 0.f});
     draw_info_column();
@@ -160,34 +177,62 @@ void StatsPanel::on_imgui() {
     ImGui::EndChild();
 }
 
-void StatsPanel::draw_info_column() {
+void StatsPanel::draw_headline() {
     const ImU32 color = budget_color(smoothed_ms_);
     const float fps = smoothed_ms_ > 0.f ? 1000.f / smoothed_ms_ : 0.f;
+    const float used = smoothed_ms_ > 0.f ? smoothed_ms_ / kBudgetMs : 0.f;
 
-    // ---- headline ----
-    ImGui::PushStyleColor(ImGuiCol_Text, color);
-    ImGui::Text("%.2f ms", smoothed_ms_);
+    const ImVec4 accent = ImGui::ColorConvertU32ToFloat4(color);
+
+    // A tinted plate behind the numbers, so the panel reads at a glance instead
+    // of being another wall of grey text.
+    ImGui::PushStyleColor(ImGuiCol_ChildBg,
+                          ImVec4{accent.x, accent.y, accent.z, 0.10f});
+    ImGui::BeginChild("##stats_headline",
+                      ImVec2{0.f, 0.f},
+                      ImGuiChildFlags_AutoResizeY |
+                          ImGuiChildFlags_AlwaysUseWindowPadding);
+
+    ImGui::PushStyleColor(ImGuiCol_Text, accent);
+    ImGui::SetWindowFontScale(1.7f);
+    ImGui::Text("%.0f", fps);
+    ImGui::SetWindowFontScale(1.f);
     ImGui::PopStyleColor();
 
     ImGui::SameLine();
-    ImGui::TextDisabled("(%.0f FPS)", fps);
-    ImGui::SameLine(ImGui::GetContentRegionMax().x - 62.f);
+    ImGui::TextDisabled("FPS");
+
+    ImGui::SameLine(ImGui::GetContentRegionMax().x - 74.f);
     bool vsync = Application::get().get_window().is_v_sync();
     if (ImGui::Checkbox("VSync", &vsync)) {
         Application::get().get_window().set_v_sync(vsync);
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip(
-            "Turn off to measure the actual frame cost\n"
-            "(with VSync on the frame is capped to the refresh rate).");
+        ImGui::SetTooltip("Turn off to measure the actual frame cost\n"
+                          "(with VSync on the frame is capped to the refresh "
+                          "rate).");
     }
 
-    ImGui::TextDisabled("budget %.1f ms  |  %.0f%% used",
-                        kBudgetMs,
-                        smoothed_ms_ > 0.f ? smoothed_ms_ / kBudgetMs * 100.f
-                                           : 0.f);
-    ImGui::TextDisabled("last %.2f  avg %.2f", frame_ms_, avg_ms_);
-    ImGui::TextDisabled("min %.2f  max %.2f", min_ms_, max_ms_);
+    // Budget meter: the frame against 16.7 ms, in the headline's accent colour.
+    char label[48] = {};
+    std::snprintf(
+        label, sizeof(label), "%.2f ms   %.0f%%", smoothed_ms_, used * 100.f);
+    ImGui::PushStyleColor(ImGuiCol_PlotHistogram, accent);
+    ImGui::ProgressBar(
+        std::clamp(used, 0.f, 1.f), ImVec2{-FLT_MIN, 0.f}, label);
+    ImGui::PopStyleColor();
+
+    ImGui::EndChild();
+    ImGui::PopStyleColor();
+}
+
+void StatsPanel::draw_info_column() {
+    ImGui::TextDisabled("budget %.1f ms", kBudgetMs);
+    ImGui::TextDisabled("last %.2f   avg %.2f   min %.2f   max %.2f",
+                        frame_ms_,
+                        avg_ms_,
+                        min_ms_,
+                        max_ms_);
 
     // ---- phases ----
     ImGui::SeparatorText("Phases");
@@ -204,8 +249,6 @@ void StatsPanel::draw_info_column() {
         auto row = [this](const char *name, float ms, ImU32 color) {
             const float share = frame_ms_ > 0.f ? ms / frame_ms_ * 100.f : 0.f;
             char label[48] = {};
-            // The phase name already owns the first column, so the bar only
-            // carries the numbers.
             std::snprintf(label, sizeof(label), "%.2f ms   %.1f%%", ms, share);
 
             ImGui::TableNextRow();
@@ -216,42 +259,49 @@ void StatsPanel::draw_info_column() {
             ImGui::PushStyleColor(ImGuiCol_PlotHistogram, color);
             ImGui::ProgressBar(std::clamp(share / 100.f, 0.f, 1.f),
                                ImVec2{-FLT_MIN, 0.f},
-                               label); // phase name is the first column, so
-                                       // repeat only the numbers here
+                               label);
             ImGui::PopStyleColor();
         };
 
         for (const Phase &phase : reported_) {
             measured += phase.ms;
-            row(phase.name.c_str(), phase.ms, IM_COL32(120, 160, 230, 255));
+            row(phase.name.c_str(), phase.ms, kPhase);
         }
 
         // Whatever is left is VSync wait / present / driver time, which no CPU
         // timer inside the layer can see.
         const float rest = std::max(0.f, frame_ms_ - measured);
-        row("rest", rest, IM_COL32(130, 130, 145, 255));
+        row("rest", rest, kRest);
 
         ImGui::EndTable();
     }
 
-    // ---- renderer + imgui ----
-    ImGui::SeparatorText("Renderer2D");
-    const auto stats = Renderer2D::get_stats();
+    // ---- renderers ----
+    ImGui::SeparatorText("Renderers");
+
+    const auto &stats3d = Renderer3D::get_stats();
+    char triangles[16] = {};
+    format_count(
+        triangles, sizeof(triangles), static_cast<float>(stats3d.triangles));
+    ImGui::TextDisabled(
+        "3D   draws %d   tris %s", stats3d.draw_calls, triangles);
+
+    const auto stats2d = Renderer2D::get_stats();
     char verts[16] = {};
     char indices[16] = {};
     format_count(verts,
                  sizeof(verts),
-                 static_cast<float>(stats.get_total_vertex_count()));
+                 static_cast<float>(stats2d.get_total_vertex_count()));
     format_count(indices,
                  sizeof(indices),
-                 static_cast<float>(stats.get_total_index_count()));
-    ImGui::TextDisabled("draw calls %d   quads %d   verts %s   idx %s",
-                        stats.num_draw_calls,
-                        stats.num_quads,
+                 static_cast<float>(stats2d.get_total_index_count()));
+    ImGui::TextDisabled("2D   draws %d   quads %d   verts %s   idx %s",
+                        stats2d.num_draw_calls,
+                        stats2d.num_quads,
                         verts,
                         indices);
 
-    ImGui::SeparatorText("ImGui");
+    // ---- imgui ----
     if (const ImDrawData *draw_data = ImGui::GetDrawData()) {
         char lists[16] = {};
         char vtx[16] = {};
@@ -259,7 +309,7 @@ void StatsPanel::draw_info_column() {
             lists, sizeof(lists), static_cast<float>(draw_data->CmdListsCount));
         format_count(
             vtx, sizeof(vtx), static_cast<float>(draw_data->TotalVtxCount));
-        ImGui::TextDisabled("lists %s   verts %s   windows %d",
+        ImGui::TextDisabled("UI   lists %s   verts %s   windows %d",
                             lists,
                             vtx,
                             ImGui::GetIO().MetricsRenderWindows);
@@ -270,40 +320,51 @@ void StatsPanel::draw_graph_column() {
     // Scale: always keep the 60 Hz budget visible, otherwise fit the window.
     const float scale_max = std::max({kBudgetMs * 1.1f, max_ms_ * 1.1f, 1.f});
 
-    ImGui::PushStyleColor(ImGuiCol_Text,
-                          ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
-    ImGui::Text("frame time (ms)  last %d", history_count_);
-    ImGui::PopStyleColor();
+    ImGui::TextDisabled("frame time (ms)   %d samples", history_count_);
 
     ImGui::PushStyleColor(ImGuiCol_PlotLines, budget_color(smoothed_ms_));
     ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(22, 22, 26, 255));
+    // While the buffer is still filling it is not a ring yet: offset 0 and the
+    // count so far, otherwise PlotLines wraps past the end into zeros.
+    const int offset = history_count_ < kHistorySize ? 0 : history_offset_;
     ImGui::PlotLines("##frame_time",
                      history_,
                      history_count_,
-                     history_offset_,
+                     offset,
                      nullptr,
                      0.f,
                      scale_max,
                      ImVec2{-FLT_MIN, -FLT_MIN});
     ImGui::PopStyleColor(2);
 
-    // Budget reference line, drawn over the graph.
+    // Budget and average reference lines, drawn over the graph.
     const ImVec2 plot_min = ImGui::GetItemRectMin();
     const ImVec2 plot_max = ImGui::GetItemRectMax();
     const float height = plot_max.y - plot_min.y;
-    if (height > 1.f) {
-        const float y = plot_max.y - (kBudgetMs / scale_max) * height;
-        ImDrawList *draw_list = ImGui::GetWindowDrawList();
-        draw_list->AddLine(ImVec2{plot_min.x, y},
-                           ImVec2{plot_max.x, y},
-                           IM_COL32(235, 200, 90, 110),
+    if (height <= 1.f) {
+        return;
+    }
+
+    ImDrawList *draw_list = ImGui::GetWindowDrawList();
+
+    const float budget_y = plot_max.y - (kBudgetMs / scale_max) * height;
+    draw_list->AddLine(ImVec2{plot_min.x, budget_y},
+                       ImVec2{plot_max.x, budget_y},
+                       IM_COL32(235, 200, 90, 110),
+                       1.f);
+    char label[32] = {};
+    std::snprintf(label, sizeof(label), "%.1f ms", kBudgetMs);
+    draw_list->AddText(
+        ImVec2{plot_min.x + 4.f, budget_y - ImGui::GetTextLineHeight()},
+        IM_COL32(235, 200, 90, 180),
+        label);
+
+    if (avg_ms_ > 0.f) {
+        const float avg_y = plot_max.y - (avg_ms_ / scale_max) * height;
+        draw_list->AddLine(ImVec2{plot_min.x, avg_y},
+                           ImVec2{plot_max.x, avg_y},
+                           IM_COL32(150, 150, 165, 90),
                            1.f);
-        char label[32] = {};
-        std::snprintf(label, sizeof(label), "%.1f ms", kBudgetMs);
-        draw_list->AddText(
-            ImVec2{plot_min.x + 4.f, y - ImGui::GetTextLineHeight()},
-            IM_COL32(235, 200, 90, 180),
-            label);
     }
 }
 

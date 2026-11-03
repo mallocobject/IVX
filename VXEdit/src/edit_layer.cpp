@@ -6,6 +6,7 @@
 #include "glm/gtc/type_ptr.hpp"
 #include "ivx/core/application.h"
 #include "ivx/core/input.h"
+#include "ivx/core/scope_timer.h"
 #include "ivx/debug/instrumentor.h"
 #include "ivx/event/event.h"
 #include "ivx/render/render_command.h"
@@ -19,7 +20,6 @@
 
 #include <ImGuizmo.h>
 #include <algorithm>
-#include <chrono>
 #include <cmath>
 #include <cstdint>
 #include <cstdio>
@@ -62,6 +62,16 @@ void EditLayer::on_detach() {
 void EditLayer::on_update(float dt) {
     IVX_PROFILE_FUNCTION();
 
+    if (stats_panel_) {
+        stats_panel_->begin_frame(dt);
+        stats_panel_->set_host_visible(visible_);
+    }
+
+    // FrameTimer owns the frame delta (Application::tick); this only measures
+    // the span inside the frame.
+    float update_ms = 0.f;
+    ScopeTimer update_timer{update_ms};
+
     if (console_panel_) {
         console_panel_->pump();
     }
@@ -87,13 +97,25 @@ void EditLayer::on_update(float dt) {
 
     editor_camera_.on_update(dt);
 
+    update_timer.stop();
+    if (stats_panel_) {
+        stats_panel_->submit("update", update_ms);
+    }
+
     if (!visible_) {
         return;
     }
 
     Renderer2D::reset_stats();
 
-    scene_renderer_->render(scene_.get(), editor_camera_);
+    float render_ms = 0.f;
+    {
+        ScopeTimer render_timer{render_ms};
+        scene_renderer_->render(scene_.get(), editor_camera_);
+    }
+    if (stats_panel_) {
+        stats_panel_->submit("render", render_ms);
+    }
 }
 
 void EditLayer::on_event(Event &event) {
@@ -326,6 +348,7 @@ void EditLayer::setup_panels() {
     console_panel_ = panels_.add<ConsolePanel>();
     content_browser_panel_ = panels_.add<ContentBrowserPanel>();
     environment_panel_ = panels_.add<EnvironmentPanel>(editor_context_);
+    stats_panel_ = panels_.add<StatsPanel>();
 }
 
 void EditLayer::draw_menu_bar() {

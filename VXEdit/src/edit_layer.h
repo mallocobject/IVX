@@ -10,6 +10,7 @@
 #include "panel/inspector_panel.h"
 #include "panel/panel.h"
 #include "panel/scene_hierarchy_panel.h"
+#include "panel/stats_panel.h"
 #include <imgui.h>
 #include <ivx.h>
 #include <vector>
@@ -98,6 +99,8 @@ class EditLayer : public Layer {
     Ref<ConsolePanel> console_panel_;
     Ref<ContentBrowserPanel> content_browser_panel_;
     Ref<EnvironmentPanel> environment_panel_;
+    // Floating timing window; lives outside the dock layout on purpose.
+    Ref<StatsPanel> stats_panel_;
     // The viewport is a LambdaPanel; kept so the input gate can tell whether
     // the viewport tab is the one currently on screen.
     Ref<Panel> viewport_panel_;

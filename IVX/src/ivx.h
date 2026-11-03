@@ -10,6 +10,7 @@
 #include "ivx/core/logger.h"
 #include "ivx/core/mouse_codes.h"
 #include "ivx/core/ref.hpp"
+#include "ivx/core/scope_timer.h"
 
 #include "ivx/event/application_event.h"
 #include "ivx/event/event.h"
