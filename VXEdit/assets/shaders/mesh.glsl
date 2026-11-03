@@ -81,39 +81,38 @@ struct Shadow {
     mat4 light_space;
     vec4 params;  // x enabled, y base bias, z world texel size, w normal bias
     vec4 params2; // x slope scale
-    ivec4 light_index;
 };
 
 layout(std140, binding = 2) uniform ShadowBlock {
-    Shadow shadow;
+    Shadow shadow[kMaxLights];
 };
 
-layout(binding = 2) uniform sampler2D u_ShadowMap;
+layout(binding = 2) uniform sampler2D u_ShadowMap[kMaxLights];
 
-float is_in_shadow(vec2 uv, float reference) {
-    return texture(u_ShadowMap, uv).r > reference ? 1.0 : 0.0;
+float is_in_shadow(vec2 uv, float reference, int index) {
+    return texture(u_ShadowMap[index], uv).r > reference ? 1.0 : 0.0;
 }
 
-float bilinear_shadow(vec2 uv, float reference, vec2 texelUV) {
+float bilinear_shadow(vec2 uv, float reference, vec2 texelUV, int index) {
     // Interpolate comparisons, not depth samples.
     vec2 pixel = uv / texelUV - 0.5;
     vec2 fraction = fract(pixel);
     vec2 base = (floor(pixel) + 0.5) * texelUV;
-    float a = is_in_shadow(base, reference);
-    float b = is_in_shadow(base + vec2(texelUV.x, 0.0), reference);
-    float c = is_in_shadow(base + vec2(0.0, texelUV.y), reference);
-    float d = is_in_shadow(base + texelUV, reference);
+    float a = is_in_shadow(base, reference, index);
+    float b = is_in_shadow(base + vec2(texelUV.x, 0.0), reference, index);
+    float c = is_in_shadow(base + vec2(0.0, texelUV.y), reference, index);
+    float d = is_in_shadow(base + texelUV, reference, index);
     return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
 }
 
-float shadow_calculation(vec3 world, vec3 n, vec3 to_light) {
-    if (shadow.params.x < 0.5) {
+float shadow_calculation(vec3 world, vec3 n, vec3 to_light, int index) {
+    if (shadow[index].params.x < 0.5) {
         return 0.0;
     }
 
     float ndotl = clamp(dot(n, to_light), 0.0, 1.0);
-    vec3 biased = world + n * shadow.params.z * shadow.params.w * (1.0 - ndotl);
-    vec4 clip = shadow.light_space * vec4(biased, 1.0);
+    vec3 biased = world + n * shadow[index].params.z * shadow[index].params.w * (1.0 - ndotl);
+    vec4 clip = shadow[index].light_space * vec4(biased, 1.0);
     if (clip.w <= 0.0) {
         return 0.0;
     }
@@ -127,15 +126,15 @@ float shadow_calculation(vec3 world, vec3 n, vec3 to_light) {
     }
 
     float slope = sqrt(max(1.0 - ndotl * ndotl, 0.0)) / max(ndotl, 0.1);
-    float bias = max(shadow.params.y, shadow.params2.x * slope);
+    float bias = max(shadow[index].params.y, shadow[index].params2.x * slope);
     float reference = projected.z + bias;
 
-    vec2 texelUV = 1.0 / vec2(textureSize(u_ShadowMap, 0));
+    vec2 texelUV = 1.0 / vec2(textureSize(u_ShadowMap[index], 0));
     float visibility = 0.0;
     for (int y = -1; y <= 1; ++y) {
         for (int x = -1; x <= 1; ++x) {
             visibility += bilinear_shadow(uv + vec2(x, y) * texelUV,
-                                          reference, texelUV);
+                                          reference, texelUV, index);
         }
     }
     return visibility / 9.0;
@@ -174,9 +173,7 @@ void main() {
             }
         }
 
-        float visibility = (i == shadow.light_index.x)
-                               ? (1 - shadow_calculation(v_WorldPosition, n, to_light))
-                               : 1.0;
+        float visibility = 1 - shadow_calculation(v_WorldPosition, n, to_light, i);
 
         float ndotl = max(dot(n, to_light), 0.0);
         diffuse += light.color_intensity.rgb * light.color_intensity.w * ndotl *

@@ -5,14 +5,14 @@
 
 namespace ivx {
 ShadowUniforms::ShadowUniforms(uint32_t binding) : binding_(binding) {
-    buffer_ = UniformBuffer::create(sizeof(GpuShadow), binding_);
+    buffer_ = UniformBuffer::create(sizeof(GpuShadowData), binding_);
     buffer_->set_data(&data_, sizeof(data_));
 }
 
-void ShadowUniforms::update(const GpuShadow &shadow) {
-    if (std::memcmp(&shadow, &data_, sizeof(GpuShadow)) != 0) {
+void ShadowUniforms::update(const GpuShadowData &shadow) {
+    if (std::memcmp(&shadow, &data_, sizeof(GpuShadowData)) != 0) {
         data_ = shadow;
-        buffer_->set_data(&data_, sizeof(GpuShadow));
+        buffer_->set_data(&data_, sizeof(GpuShadowData));
     }
     buffer_->bind(binding_);
 }

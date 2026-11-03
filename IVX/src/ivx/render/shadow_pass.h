@@ -41,20 +41,25 @@ class ShadowPass : public RefCounted {
     explicit ShadowPass(uint32_t resolution = 2048);
 
     bool render(Scene &scene, const LightSet &lights, const Camera &view);
-    const GpuShadow &gpu() const {
+    const GpuShadowData &gpu() const {
         return gpu_;
     }
-    const Ref<FrameBuffer> &output() const {
-        return scope_->target();
+    const Ref<FrameBuffer> &output(uint32_t light_index) const {
+        return scopes_[light_index] ? scopes_[light_index]->target()
+                                    : empty_map_;
     }
+    void bind_maps() const;
 
   private:
-    bool
-    fit_directional(const Light &light, const Camera &view, float distance);
+    bool fit_directional(const Light &light,
+                         const Camera &view,
+                         float distance,
+                         GpuShadow &gpu);
     uint32_t resolution_;
-    Ref<RenderScope> scope_;
+    std::array<Ref<RenderScope>, k_max_lights> scopes_{};
+    Ref<FrameBuffer> empty_map_;
     LightSpaceCamera light_camera_;
-    GpuShadow gpu_{};
+    GpuShadowData gpu_{};
 };
 
 } // namespace ivx

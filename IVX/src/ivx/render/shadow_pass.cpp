@@ -11,17 +11,6 @@ namespace ivx {
 namespace {
 static constexpr uint32_t k_min_resolution = 256;
 
-int find_shadow_light(const LightSet &lights) {
-    for (uint32_t i = 0; i < std::min(lights.count, k_max_lights); ++i) {
-        const auto &settings = lights.lights[i].settings;
-        if (settings.cast_shadows &&
-            settings.type == LightType::IVX_Directional) {
-            return static_cast<int>(i);
-        }
-    }
-    return -1;
-}
-
 bool camera_slice(const Camera &view,
                   float distance,
                   std::array<glm::vec3, 8> &corners) {
@@ -62,52 +51,74 @@ bool camera_slice(const Camera &view,
 
 ShadowPass::ShadowPass(uint32_t resolution)
     : resolution_(std::max(resolution, k_min_resolution)) {
-    FrameBufferSpecification target;
-    target.width = target.height = resolution_;
-    target.num_samples =
-        1; // This implementation samples an ordinary sampler2D.
-    target.depth_format = FrameBufferDepthFormat::Depth32F;
-
-    RenderScopeSpecification spec;
-    spec.target = target;
-    spec.clear_color_attachments = false;
-    spec.clear_depth = true;
-    spec.blend.enabled = false;
-    spec.cull = RendererAPI::CullMode::IVX_Back;
-    spec.depth_test = spec.depth_write = true;
-    spec.depth_func = RendererAPI::Cmp::IVX_Greater;
-    scope_ = make_ref<RenderScope>(std::move(spec));
+    FrameBufferSpecification empty;
+    empty.width = empty.height = 1;
+    empty.num_samples = 1;
+    empty.depth_format = FrameBufferDepthFormat::Depth32F;
+    empty_map_ = FrameBuffer::create(empty);
+    empty_map_->clear({}, false, true);
 }
 
 bool ShadowPass::render(Scene &scene,
                         const LightSet &lights,
                         const Camera &view) {
-    gpu_ = GpuShadow{}; // No light or invalid fit must disable stale shadows.
+    gpu_ = GpuShadowData{};
     const auto &settings = scene.environment().shadows;
     const uint32_t resolution =
         shadow_resolution_or_default(settings.resolution);
     if (resolution_ != resolution) {
         resolution_ = resolution;
-        scope_->resize(resolution_, resolution_);
+        for (auto &scope : scopes_) {
+            if (scope) {
+                scope->resize(resolution_, resolution_);
+            }
+        }
     }
     const float distance = std::isfinite(settings.distance)
                                ? std::clamp(settings.distance, 0.1f, 10000.f)
                                : 120.f;
-    const int caster = find_shadow_light(lights);
-    if (caster < 0 || !fit_directional(lights.lights[caster], view, distance)) {
-        return false;
+    bool rendered = false;
+    for (uint32_t i = 0; i < std::min(lights.count, k_max_lights); ++i) {
+        const Light &light = lights.lights[i];
+        if (!light.settings.cast_shadows ||
+            light.settings.type != LightType::IVX_Directional ||
+            !fit_directional(light, view, distance, gpu_.shadows[i])) {
+            continue;
+        }
+        if (!scopes_[i]) {
+            FrameBufferSpecification target;
+            target.width = target.height = resolution_;
+            target.num_samples = 1;
+            target.depth_format = FrameBufferDepthFormat::Depth32F;
+            RenderScopeSpecification spec;
+            spec.target = target;
+            spec.clear_color_attachments = false;
+            spec.clear_depth = true;
+            spec.blend.enabled = false;
+            spec.cull = RendererAPI::CullMode::IVX_Back;
+            spec.depth_test = spec.depth_write = true;
+            spec.depth_func = RendererAPI::Cmp::IVX_Greater;
+            scopes_[i] = make_ref<RenderScope>(std::move(spec));
+        }
+        scopes_[i]->begin(&light_camera_);
+        scene.render(Scene::RenderMode::IVX_DepthOnly);
+        scopes_[i]->end();
+        rendered = true;
     }
-    gpu_.light_index.x = caster;
-
-    scope_->begin(&light_camera_);
-    scene.render(Scene::RenderMode::IVX_DepthOnly);
-    scope_->end();
-    return true;
+    return rendered;
 }
 
+void ShadowPass::bind_maps() const {
+    for (uint32_t i = 0; i < k_max_lights; ++i) {
+        const auto &map =
+            gpu_.shadows[i].params.x > 0.f ? output(i) : empty_map_;
+        map->bind_depth_attachment(k_shadow_texture_unit + i);
+    }
+}
 bool ShadowPass::fit_directional(const Light &light,
                                  const Camera &view,
-                                 float distance) {
+                                 float distance,
+                                 GpuShadow &gpu) {
     std::array<glm::vec3, 8> corners;
     const float direction_length = glm::length(light.direction);
     if (!std::isfinite(direction_length) || direction_length < 1e-6f ||
@@ -145,23 +156,23 @@ bool ShadowPass::fit_directional(const Light &light,
     const glm::mat4 light_projection = ortho_rh_reverse_z(
         -radius, radius, -radius, radius, near_plane, far_plane);
     light_camera_.set(light_view, light_projection, near_plane, far_plane);
-    gpu_.light_space = light_projection * light_view;
+    gpu.light_space = light_projection * light_view;
 
     const float depth_per_texel = world_texel / (far_plane - near_plane);
     // World-space offsets and projected-depth bias use different units.
     const auto bias = [](float value, float fallback) {
         return std::isfinite(value) ? std::clamp(value, 0.f, 10.f) : fallback;
     };
-    gpu_.params = {1.f,
-                   depth_per_texel *
-                       bias(light.settings.shadow_depth_bias, 0.25f),
-                   world_texel,
-                   bias(light.settings.shadow_normal_bias, 0.5f)};
-    gpu_.params2 = {depth_per_texel *
-                        bias(light.settings.shadow_slope_bias, 2.5f),
-                    0.f,
-                    0.f,
-                    0.f};
+    gpu.params = {1.f,
+                  depth_per_texel *
+                      bias(light.settings.shadow_depth_bias, 0.25f),
+                  world_texel,
+                  bias(light.settings.shadow_normal_bias, 0.5f)};
+    gpu.params2 = {depth_per_texel *
+                       bias(light.settings.shadow_slope_bias, 2.5f),
+                   0.f,
+                   0.f,
+                   0.f};
     return true;
 }
 } // namespace ivx

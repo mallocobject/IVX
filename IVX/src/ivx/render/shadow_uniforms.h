@@ -1,7 +1,9 @@
 #pragma once
 
 #include "ivx/core/ref.hpp"
+#include "ivx/render/light.h"
 #include "ivx/render/uniform_buffer.h"
+#include <array>
 
 #include <cstdint>
 #include <glm/glm.hpp>
@@ -14,9 +16,14 @@ struct GpuShadow {
     glm::vec4 params{0.f};
     // x angle-dependent bias in projected depth; independent of screen pixels.
     glm::vec4 params2{0.f};
-    glm::ivec4 light_index{0};
 };
-static_assert(sizeof(GpuShadow) == 64 + 16 + 16 + 16, "std140 layout");
+static_assert(sizeof(GpuShadow) == 64 + 16 + 16, "std140 layout");
+
+struct GpuShadowData {
+    std::array<GpuShadow, k_max_lights> shadows{};
+};
+static_assert(sizeof(GpuShadowData) == 96 * k_max_lights,
+              "std140 array layout");
 
 // The depth map lives on its own texture unit: 0 is the albedo map.
 inline constexpr uint32_t k_shadow_texture_unit = 2;
@@ -25,11 +32,11 @@ class ShadowUniforms {
   public:
     static constexpr uint32_t kBinding = 2;
     explicit ShadowUniforms(uint32_t binding = kBinding);
-    void update(const GpuShadow &shadow);
+    void update(const GpuShadowData &shadow);
 
   private:
     Ref<UniformBuffer> buffer_;
-    GpuShadow data_{};
+    GpuShadowData data_{};
     uint32_t binding_{kBinding};
 };
 } // namespace ivx

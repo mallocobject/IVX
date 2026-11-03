@@ -40,10 +40,8 @@ void SceneRenderer::render(Scene *scene, const Camera &camera) {
     const bool has_shadow = scene && shadows_.render(*scene, lights, camera);
 
     lights_.update(lights);
-    shadow_uniforms_.update(has_shadow ? shadows_.gpu() : GpuShadow{});
-    if (has_shadow) {
-        shadows_.output()->bind_depth_attachment(k_shadow_texture_unit);
-    }
+    shadow_uniforms_.update(has_shadow ? shadows_.gpu() : GpuShadowData{});
+    shadows_.bind_maps();
 
     scene_scope_.begin(&camera);
     if (scene) {

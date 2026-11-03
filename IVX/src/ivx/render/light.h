@@ -12,7 +12,7 @@ enum class LightType : uint8_t {
     IVX_Spot = 2,
 };
 
-constexpr uint32_t k_max_lights = 8;
+inline constexpr uint32_t k_max_lights = 8;
 
 // The part of a light the user authors: shared by the component that stores it
 // and by the resolved light that gets uploaded, so defaults and meanings live
