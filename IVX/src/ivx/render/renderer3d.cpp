@@ -33,6 +33,7 @@ void Renderer3D::shutdown() {
     IVX_PROFILE_FUNCTION();
 
     data.white_texture.reset();
+    data.depth_shader.reset();
     data.default_shader.reset();
 }
 

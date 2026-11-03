@@ -16,7 +16,6 @@ layout(location = 0) in vec3 a_Position;
 layout(location = 1) in vec3 a_Normal;
 layout(location = 2) in vec2 a_TexCoord;
 
-// Per object state, declared identically in both stages.
 struct Object {
     mat4 model;
     mat3 normal_matrix;
@@ -62,27 +61,89 @@ struct Object {
 
 uniform Object u_Object;
 
-// Unit 0; a missing map binds a white 1x1 texture, so no branch is needed.
 layout(binding = 0) uniform sampler2D u_AlbedoMap;
 
 struct Light {
-    vec4 position_type;    // xyz position, w type (0 directional / 1 point / 2 spot)
-    vec4 direction_linear; // xyz direction the light travels in, w linear falloff
+    vec4 position_type;    // xyz position, w type (0 directional / 1 point / 2
+    vec4 direction_linear; // xyz direction the light travels in, w linear
     vec4 color_intensity;  // rgb color, w intensity
     vec4 falloff;          // x constant, y linear, z quadratic
     vec4 spot_angles;      // x inner cos, y outer cos
 };
 
-// std140, 672 bytes. Mirrors GpuLightData in light_uniforms.h.
 layout(std140, binding = 1) uniform LightBlock {
-    vec4 ambient;          // rgb ambient, w padding (exposure is the tonemap pass)
-    ivec4 counts;          // x number of lights
+    vec4 ambient; // rgb ambient, w padding (exposure is the tonemap pass)
+    ivec4 counts; // x number of lights
     Light lights[kMaxLights];
 };
 
+struct Shadow {
+    mat4 light_space;
+    vec4 params;  // x enabled, y base bias, z world texel size, w normal bias
+    vec4 params2; // x slope scale
+    ivec4 light_index;
+};
+
+layout(std140, binding = 2) uniform ShadowBlock {
+    Shadow shadow;
+};
+
+layout(binding = 2) uniform sampler2D u_ShadowMap;
+
+float shadow_visibility(vec2 uv, float reference) {
+    return texture(u_ShadowMap, uv).r <= reference ? 1.0 : 0.0;
+}
+
+float bilinear_shadow(vec2 uv, float reference, vec2 texelUV) {
+    // Interpolate comparisons, not depth samples.
+    vec2 pixel = uv / texelUV - 0.5;
+    vec2 fraction = fract(pixel);
+    vec2 base = (floor(pixel) + 0.5) * texelUV;
+    float a = shadow_visibility(base, reference);
+    float b = shadow_visibility(base + vec2(texelUV.x, 0.0), reference);
+    float c = shadow_visibility(base + vec2(0.0, texelUV.y), reference);
+    float d = shadow_visibility(base + texelUV, reference);
+    return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
+}
+
+float shadow_factor(vec3 world, vec3 n, vec3 to_light) {
+    if (shadow.params.x < 0.5) {
+        return 1.0;
+    }
+
+    float ndotl = clamp(dot(n, to_light), 0.0, 1.0);
+    vec3 biased = world + n * shadow.params.z * shadow.params.w * (1.0 - ndotl);
+    vec4 clip = shadow.light_space * vec4(biased, 1.0);
+    if (clip.w <= 0.0) {
+        return 1.0;
+    }
+    vec3 projected = clip.xyz / clip.w;
+    // Zero-to-one reverse-Z: only XY needs remapping.
+    vec2 uv = projected.xy * 0.5 + 0.5;
+
+    if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0))) ||
+        projected.z < 0.0 || projected.z > 1.0) {
+        return 1.0;
+    }
+
+    float slope = sqrt(max(1.0 - ndotl * ndotl, 0.0)) / max(ndotl, 0.1);
+    float bias = max(shadow.params.y, shadow.params2.x * slope);
+    float reference = projected.z + bias;
+
+    vec2 texelUV = 1.0 / vec2(textureSize(u_ShadowMap, 0));
+    float visibility = 0.0;
+    for (int y = -1; y <= 1; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            visibility += bilinear_shadow(uv + vec2(x, y) * texelUV,
+                                          reference, texelUV);
+        }
+    }
+    return visibility / 9.0;
+}
+
 void main() {
-    vec3 albedo =
-        texture(u_AlbedoMap, v_TexCoord * u_Object.tiling).rgb * u_Object.albedo.rgb;
+    vec3 albedo = texture(u_AlbedoMap, v_TexCoord * u_Object.tiling).rgb *
+                  u_Object.albedo.rgb;
     vec3 n = normalize(v_Normal);
 
     vec3 diffuse = vec3(0.0);
@@ -96,38 +157,33 @@ void main() {
         float attenuation = 1.0;
 
         if (type < 0.5) {
-            // Directional: no falloff, the direction is all that matters.
             to_light = -normalize(direction);
         } else {
             vec3 delta = position - v_WorldPosition;
             float distance = length(delta);
             to_light = delta / max(distance, 1e-4);
 
-            // Physical falloff: 1 / (constant + linear * d + quadratic * d^2). The coefficients
-            // carry the world unit, so a scene measured in hundreds of units needs a quadratic
-            // near 1e-5 rather than 1.
-            float denominator = light.falloff.x +
-                                light.falloff.y * distance +
+            float denominator = light.falloff.x + light.falloff.y * distance +
                                 light.falloff.z * distance * distance;
             attenuation = 1.0 / max(denominator, 1e-4);
 
             if (type > 1.5) {
                 float cos_angle = dot(-to_light, normalize(direction));
-                attenuation *= smoothstep(light.spot_angles.y, light.spot_angles.x, cos_angle);
+                attenuation *= smoothstep(
+                    light.spot_angles.y, light.spot_angles.x, cos_angle);
             }
         }
 
+        float visibility = (i == shadow.light_index.x)
+                               ? shadow_factor(v_WorldPosition, n, to_light)
+                               : 1.0;
+
         float ndotl = max(dot(n, to_light), 0.0);
-        diffuse += light.color_intensity.rgb * light.color_intensity.w * ndotl * attenuation;
+        diffuse += light.color_intensity.rgb * light.color_intensity.w * ndotl *
+                   attenuation * visibility;
     }
 
-    // Ambient is the floor, lights add on top of it scaled by the room the ambient leaves.
-    // A single white light gives ambient + (1 - ambient) * N.L, which is the old formula, while
-    // coloured lights tint the surface instead of washing it towards white. Sums can exceed 1
-    // in the HDR target and are compressed by the final tone mapping pass.
     vec3 lit = albedo * (ambient.rgb + (1.0 - ambient.rgb) * diffuse);
-    // Preserve linear HDR radiance. Exposure and display encoding belong to
-    // the final post-process pass, after MSAA resolve.
     color = vec4(lit, u_Object.albedo.a);
     uid = u_Object.uid;
 }

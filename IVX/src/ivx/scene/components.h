@@ -96,7 +96,6 @@ struct MeshRendererComponent {
 // shines along its -Z axis, a point light sits at its translation.
 struct LightComponent {
     LightSettings settings;
-    bool cast_shadows{false};
 };
 
 struct NativeScriptComponent;

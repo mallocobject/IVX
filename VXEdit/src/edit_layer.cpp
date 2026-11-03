@@ -17,8 +17,6 @@
 #include "scripts/script_registry.h"
 #include "ui/theme.h"
 
-#include <imgui.h>
-// -- -- -- -- -- -- -- -- -- -- -
 #include <ImGuizmo.h>
 #include <algorithm>
 #include <chrono>
@@ -26,6 +24,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
+#include <imgui.h>
 
 #include <imgui_internal.h> // FindWindowByName (viewport focus after a layout reset)
 
@@ -40,53 +39,14 @@ EditLayer::EditLayer() : Layer("EditLayer") {
 void EditLayer::on_attach() {
     IVX_PROFILE_FUNCTION();
 
-    // The editor layout is stored next to the assets instead of the process
-    // working directory, so it survives being launched from anywhere.
     Application::get().imgui_layer()->set_ini_filename(LAYOUT);
-    // A saved ini means the user already has a layout: do not rebuild the
-    // default one over it (Reset Layout in the Layout menu still does).
     layout_initialized_ = std::filesystem::exists(LAYOUT);
 
-    // Photoshop-style dark theme plus the two faces: proportional for the
-    // chrome, monospace for code and logs. Both live in ui/theme.cpp.
     ui::apply_theme();
     ui::load_fonts();
 
-    // auto texture = Texture2D::create(TEXTURES "tilemap.png");
-    // auto sub_texture =
-    //     SubTexture2D::create(texture, {1.f, 1.f}, {16.f, 16.f}, {1.f, 1.f});
+    scene_renderer_ = make_ref<SceneRenderer>(WIDTH, HEIGHT);
 
-    tone_mapping_pass_ = make_ref<ToneMappingPass>(WIDTH, HEIGHT);
-
-    // The scene scope owns the HDR + picking target and writes linear radiance
-    // into it. ToneMappingPass resolves display colour into a separate RGBA8
-    // target afterwards.
-    FrameBufferSpecification target;
-    target.width = WIDTH;
-    target.height = HEIGHT;
-    target.num_samples = 4;
-    target.color_formats = {FrameBufferColorFormat::RGBA16F,
-                            FrameBufferColorFormat::RED_INTEGER};
-    // Depth is a separate field on purpose: it is never blended and has its own
-    // attachment point. A renderbuffer is enough here, nothing samples it.
-    target.depth_format = FrameBufferDepthFormat::Depth24Stencil8;
-
-    RenderScopeSpecification scope_spec;
-    scope_spec.target = target;
-    scope_spec.camera = &editor_camera_;
-    // Linear radiance, not display colour: the tone mapping pass encodes it.
-    // 0.0129 linear is the 0.1 grey the viewport used before HDR, after
-    // Reinhard and sRGB.
-    scope_spec.clear_color = glm::vec4{0.0129f, 0.0129f, 0.0129f, 1.f};
-    // Culling was on globally before passes existed, and the 2D demo cube
-    // depends on it: without it the back faces would render too.
-    scope_spec.cull = RendererAPI::CullMode::IVX_Back;
-    scene_scope_ = make_ref<RenderScope>(std::move(scope_spec));
-
-    // The editor starts without a scene: the user picks File > New or File
-    // > Open. An auto-created empty scene looks the same as a broken one,
-    // and entities added to it had no file to belong to; the hierarchy
-    // panel refuses to create entities until a scene exists.
     scene_.reset();
     editor_context_.scene.reset();
 
@@ -96,19 +56,17 @@ void EditLayer::on_attach() {
 void EditLayer::on_detach() {
     IVX_PROFILE_FUNCTION();
 
-    // Leave the global gate open for whatever runs after the editor layer.
     Input::set_enabled(true);
 }
 
 void EditLayer::on_update(float dt) {
     IVX_PROFILE_FUNCTION();
 
-    // Keeps collecting log output even when the Console panel is closed.
     if (console_panel_) {
         console_panel_->pump();
     }
 
-    auto viewport_target = scene_scope_->target();
+    auto viewport_target = scene_renderer_->hdr_target();
     auto spec =
         viewport_target ? &viewport_target->get_specification() : nullptr;
     if (spec != nullptr && viewport_size_.x >= 1 && viewport_size_.y >= 1 &&
@@ -119,8 +77,7 @@ void EditLayer::on_update(float dt) {
         if (scene_) {
             scene_->on_viewport_resize(w, h);
         }
-        scene_scope_->resize(w, h);
-        tone_mapping_pass_->resize(w, h);
+        scene_renderer_->resize(w, h);
         editor_camera_.set_viewport_size(w, h);
     }
 
@@ -130,36 +87,13 @@ void EditLayer::on_update(float dt) {
 
     editor_camera_.on_update(dt);
 
-    // The viewport is hidden (closed, collapsed or on an inactive tab), so
-    // nothing samples the framebuffers: skip the scene pass and the tone
-    // mapping pass entirely.
     if (!visible_) {
         return;
     }
 
-    // render
     Renderer2D::reset_stats();
 
-    // The pass owns the target binding, the clear and the pipeline state; the
-    // profile scope for the clear lives inside RenderScope::begin().
-    if (scene_) {
-        scene_scope_->set_lights(scene_->collect_lights());
-    }
-    scene_scope_->begin();
-
-    if (scene_) {
-        IVX_PROFILE_SCOPE("Renderer draw");
-        scene_->render();
-    }
-
-    scene_scope_->end();
-
-    // Self-contained pass: it binds its own target and state, which is why it
-    // is called with no pass open around it.
-    tone_mapping_pass_->render(scene_scope_->target(),
-                               scene_ ? scene_->environment().exposure : 1.f,
-                               scene_ ? scene_->environment().tonemap
-                                      : ToneMappingCurve::IVX_Reinhard);
+    scene_renderer_->render(scene_.get(), editor_camera_);
 }
 
 void EditLayer::on_event(Event &event) {
@@ -215,8 +149,7 @@ void EditLayer::on_event(Event &event) {
                 // 0 is the background. The id is the entity's uid, not its
                 // handle: after a scene load the two differ, so it has to go
                 // through the uid lookup.
-                const uint32_t uid =
-                    scene_scope_->target()->read_pixel(1, fbo_x, fbo_y);
+                const uint32_t uid = scene_renderer_->read_entity(fbo_x, fbo_y);
                 if (Entity entity = scene_->find_by_uid(uid); entity) {
                     editor_context_.select(entity);
                 } else {
@@ -305,6 +238,20 @@ void EditLayer::create_scene() {
         mesh_renderer.material.albedo = glm::vec4{0.92f, 0.55f, 0.32f, 1.f};
     }
 
+    { // TEMP-FLOOR: something for the sun to cast a shadow onto. It goes away
+        // once the viewport has a ground grid.
+        Entity floor = scene_->create_entity("Floor");
+        auto &tf = floor.get_component<TransformComponent>();
+        // Sunk by half its thickness, so its top face sits on y = 0 where the
+        // cube rests.
+        tf.translation = glm::vec3{0.f, -0.5f, 0.f};
+        tf.scale = glm::vec3{1.f, 0.05f, 1.f};
+
+        auto &floor_renderer = floor.add_component<MeshRendererComponent>();
+        floor_renderer.mesh = Mesh::create_cube(20.f);
+        floor_renderer.material.albedo = glm::vec4{0.8f, 0.8f, 0.8f, 1.f};
+    }
+
     // Direction is the entity's -Z axis; this rotation lights the cube from
     // above and to the right, close to what the renderer used to hardcode.
     {
@@ -317,6 +264,7 @@ void EditLayer::create_scene() {
         light.settings.type = LightType::IVX_Directional;
         light.settings.color = glm::vec3{1.f};
         light.settings.intensity = 1.f;
+        light.settings.cast_shadows = true;
     }
 
     if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {
@@ -557,7 +505,7 @@ void EditLayer::draw_viewport_content() {
     viewport_size_ = {w, h};
 
     ImGui::Image(static_cast<ImTextureID>(
-                     tone_mapping_pass_->output()->get_color_attachment(0)),
+                     scene_renderer_->output()->get_color_attachment(0)),
                  viewport_size_,
                  ImVec2{0.f, 1.f},
                  ImVec2{1.f, 0.f});

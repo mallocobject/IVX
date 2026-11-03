@@ -21,7 +21,7 @@ Entities:
       Quadratic: 1
       InnerAngle: 20
       OuterAngle: 30
-      CastShadows: false
+      CastShadows: true
   - Entity: 1
     Tag: 3D Cube
     Transform:

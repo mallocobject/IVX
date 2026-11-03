@@ -12,7 +12,7 @@ RenderScope::RenderScope(RenderScopeSpecification spec)
     }
 }
 
-void RenderScope::begin() {
+void RenderScope::begin(const Camera *camera) {
     IVX_CORE_ASSERT(!begun_, "RenderScope::begin() called twice without end()");
     begun_ = true;
 
@@ -20,18 +20,10 @@ void RenderScope::begin() {
         target_->bind();
     }
 
-    if (has_lights_) {
-        light_uniforms_.update(lights_);
+    if (camera) {
+        camera_uniforms_.update(*camera);
     }
 
-    // Re-claims the binding point: another scope may have taken it since the
-    // last frame.
-    if (spec_.camera) {
-        camera_uniforms_.update(*spec_.camera);
-    }
-
-    // Snapshot before touching anything: end() has to put back what the
-    // *previous* scope left, not a hardcoded default.
     saved_state_ = RenderCommand::state();
 
     RenderCommand::State wanted{};
@@ -44,8 +36,6 @@ void RenderScope::begin() {
     RenderCommand::set_state(wanted);
 
     if (target_) {
-        // The framebuffer knows how to clear integer and multisampled
-        // attachments; a global glClearColor cannot reach either.
         target_->clear(spec_.clear_color,
                        spec_.clear_color_attachments,
                        spec_.clear_depth);
@@ -74,8 +64,6 @@ void RenderScope::resize(uint32_t width, uint32_t height) {
         return;
     }
 
-    // Keep the description in step with the live framebuffer, so reading either
-    // one gives the same size.
     if (spec_.target) {
         spec_.target->width = width;
         spec_.target->height = height;

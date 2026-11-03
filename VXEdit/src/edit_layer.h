@@ -1,6 +1,6 @@
 #pragma once
 #include "editor_camera.h"
-#include "ivx/render/tone_mapping_pass.h"
+#include "ivx/render/scene_renderer.h"
 #include "ivx/scene/entity.h"
 #include "ivx/scene/scene.h"
 #include "panel/console_panel.h"
@@ -59,8 +59,7 @@ class EditLayer : public Layer {
     void load_scene(const std::filesystem::path &filepath);
     void save_scene(const std::filesystem::path &filepath);
 
-    // Owns the HDR + picking target; the scope hands it out as a Ref.
-    Ref<ToneMappingPass> tone_mapping_pass_;
+    Ref<SceneRenderer> scene_renderer_;
 
     // Shared editor state (scene + selection). Panels reference it, so it must
     // outlive them: declared before panels_ and never re-assigned afterwards.
@@ -102,13 +101,6 @@ class EditLayer : public Layer {
     // The viewport is a LambdaPanel; kept so the input gate can tell whether
     // the viewport tab is the one currently on screen.
     Ref<Panel> viewport_panel_;
-
-    // The viewport's scope: it owns the HDR and picking target and carries the
-    // clear values and pipeline state of one stretch of drawing. Declared
-    // before editor_camera_ so it is destroyed after it (the scope does not
-    // reference the camera, but keeping the render state objects together reads
-    // better).
-    Ref<RenderScope> scene_scope_;
 
     EditorCamera editor_camera_;
 };

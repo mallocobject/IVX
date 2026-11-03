@@ -129,9 +129,9 @@ void OpenGLFrameBuffer::create_depth_target(int samples) {
             depth_.texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTextureParameteri(
             depth_.texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        // Reverse-Z: 1 is the near plane, so samples outside the map read as
-        // "nothing in front of me" and the fragments there stay lit.
-        const GLfloat border[4]{1.f, 1.f, 1.f, 1.f};
+        // Reverse-Z: zero is the far/empty depth, just like the clear value.
+        // PCF taps outside the map must not invent a near-plane occluder.
+        const GLfloat border[4]{0.f, 0.f, 0.f, 0.f};
         glTextureParameterfv(depth_.texture, GL_TEXTURE_BORDER_COLOR, border);
 
         glNamedFramebufferTexture(fbo_, GL_DEPTH_ATTACHMENT, depth_.texture, 0);

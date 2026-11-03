@@ -4,7 +4,6 @@
 layout(location = 0) out vec2 v_UV;
 
 void main() {
-    // Oversized full-screen triangle; no vertex buffer or diagonal seam.
     vec2 p = vec2((gl_VertexID << 1) & 2, gl_VertexID & 2);
     v_UV = p;
     gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);
@@ -20,8 +19,6 @@ layout(binding = 0) uniform sampler2D u_HDR;
 uniform float u_Exposure;
 uniform int u_Curve; // ToneMappingCurve: 0 Reinhard, 1 ACES, 2 Khronos Neutral
 
-// Mirrored by tonemap_reinhard / tonemap_aces / tonemap_neutral in ivx/utils/math.h: the smoke
-// test compares the two, so they have to stay identical.
 vec3 reinhard(vec3 linear) {
     return linear / (vec3(1.0) + linear);
 }
@@ -57,8 +54,6 @@ vec3 neutral(vec3 linear) {
     return max(mix(color, vec3(1.0), whitepoint), vec3(0.0));
 }
 
-// Exact linear-to-sRGB transfer, applied once, after tone mapping. The target is plain RGBA8,
-// so the encoding has to happen here.
 vec3 encode_srgb(vec3 linear) {
     return mix(1.055 * pow(linear, vec3(1.0 / 2.4)) - 0.055,
                linear * 12.92,

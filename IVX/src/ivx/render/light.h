@@ -34,6 +34,7 @@ struct LightSettings {
 
     float inner_angle{20.f}; // degrees, spot only
     float outer_angle{30.f}; // degrees, spot only
+    bool cast_shadows{false};
 };
 
 // World space form of one light, produced by Scene::collect_lights() every

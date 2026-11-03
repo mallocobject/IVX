@@ -309,12 +309,6 @@ void Scene::update_world_recursive(Entity entity,
 }
 
 void Scene::render(RenderMode mode) {
-    // Without this the sprites are drawn with whatever
-    // TransformComponent::world held last (identity on the first frame): every
-    // quad collapses onto the origin and the viewport shows a single flat card
-    // instead of the scene.
-    update_world_transforms();
-
     Renderer3D::begin_batch();
     for (auto [handle, id, transform, mesh_renderer] :
          registry_
@@ -335,6 +329,7 @@ void Scene::render(RenderMode mode) {
     }
     Renderer3D::end_batch();
 }
+
 void Scene::render_sprites() {
     update_world_transforms();
 

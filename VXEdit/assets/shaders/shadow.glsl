@@ -17,7 +17,6 @@ layout(location = 0) in vec3 a_Position;
 uniform mat4 u_Model;
 
 void main() {
-    // Depth only: the fragment stage writes nothing, so this is the whole pipeline.
     gl_Position = camera.view_projection * u_Model * vec4(a_Position, 1.0);
 }
 

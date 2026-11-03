@@ -174,8 +174,7 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
     out << YAML::Key << "Quadratic" << YAML::Value << settings.quadratic;
     out << YAML::Key << "InnerAngle" << YAML::Value << settings.inner_angle;
     out << YAML::Key << "OuterAngle" << YAML::Value << settings.outer_angle;
-    out << YAML::Key << "CastShadows" << YAML::Value
-        << light_component.cast_shadows;
+    out << YAML::Key << "CastShadows" << YAML::Value << settings.cast_shadows;
     out << YAML::EndMap;
 
     return out;
@@ -370,8 +369,8 @@ void read_light(const YAML::Node &node, LightComponent &light_component) {
         read_scalar(node["InnerAngle"], settings.inner_angle);
     settings.outer_angle =
         read_scalar(node["OuterAngle"], settings.outer_angle);
-    light_component.cast_shadows =
-        read_scalar(node["CastShadows"], light_component.cast_shadows);
+    settings.cast_shadows =
+        read_scalar(node["CastShadows"], settings.cast_shadows);
 }
 
 void read_script(const YAML::Node &node, NativeScriptComponent &script) {

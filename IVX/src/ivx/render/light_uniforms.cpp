@@ -8,6 +8,7 @@ namespace ivx {
 
 LightUniforms::LightUniforms(uint32_t binding) : binding_(binding) {
     buffer_ = UniformBuffer::create(sizeof(GpuLightData), binding_);
+    buffer_->set_data(&data_, sizeof(data_));
 }
 
 void LightUniforms::update(const LightSet &lights) {
