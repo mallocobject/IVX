@@ -3,8 +3,54 @@ Scene: Untitled
 Environment:
   Ambient: [0.15, 0.15, 0.15]
   Exposure: 1
+  ToneMapping: Reinhard
+  Shadows:
+    Resolution: 2048
+    Distance: 120
 Entities:
+  - Entity: 1
+    Tag: 3D Cube
+    Transform:
+      Translation: [3.0830421, 2.3925705, -0.93959856]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: ~
+    MeshRenderer:
+      Primitive: Cube
+      PrimitiveSize: 2
+      Albedo: [0.92, 0.55, 0.32, 1]
+      TilingFactor: 1
+      HasAlbedoMap: false
+  - Entity: 4
+    Tag: Entity
+    Transform:
+      Translation: [1.43643, 0.5431366, 5.23217]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    Relationship:
+      Parent: 1
+    MeshRenderer:
+      Primitive: Cube
+      PrimitiveSize: 2
+      Albedo: [0.92, 0.55, 0.32, 1]
+      TilingFactor: 1
+      HasAlbedoMap: false
   - Entity: 2
+    Tag: Floor
+    Transform:
+      Translation: [0, -0.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 0.05, 1]
+    Relationship:
+      Parent: ~
+    MeshRenderer:
+      Primitive: Cube
+      PrimitiveSize: 20
+      Albedo: [0.8, 0.8, 0.8, 1]
+      TilingFactor: 1
+      HasAlbedoMap: true
+  - Entity: 3
     Tag: Sun
     Transform:
       Translation: [5, 8, 5]
@@ -22,17 +68,6 @@ Entities:
       InnerAngle: 20
       OuterAngle: 30
       CastShadows: true
-  - Entity: 1
-    Tag: 3D Cube
-    Transform:
-      Translation: [0, 1, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    Relationship:
-      Parent: ~
-    MeshRenderer:
-      Primitive: Cube
-      PrimitiveSize: 2
-      Albedo: [0.92, 0.55, 0.32, 1]
-      TilingFactor: 1
-      HasAlbedoMap: false
+      DepthBias: 0.25
+      NormalBias: 0.5
+      SlopeBias: 2.5

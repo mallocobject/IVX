@@ -44,12 +44,38 @@ void EnvironmentPanel::on_imgui() {
     });
 
     ImGui::Spacing();
+    ImGui::SeparatorText("Shadows");
+    int resolution = 2;
+    for (int i = 0; i < static_cast<int>(k_shadow_resolutions.size()); ++i) {
+        if (k_shadow_resolutions[i] == environment.shadows.resolution)
+            resolution = i;
+    }
+    label_row("Resolution", [&] {
+        if (ImGui::Combo("##shadow_resolution",
+                         &resolution,
+                         "512\0"
+                         "1024\0"
+                         "2048\0"
+                         "4096\0")) {
+            environment.shadows.resolution = k_shadow_resolutions[resolution];
+        }
+    });
+    label_row("Distance", [&] {
+        ImGui::DragFloat("##shadow_distance",
+                         &environment.shadows.distance,
+                         1.f,
+                         0.1f,
+                         10000.f,
+                         "%.1f",
+                         ImGuiSliderFlags_AlwaysClamp);
+    });
+
+    ImGui::Spacing();
     if (ImGui::Button("Reset")) {
         environment = Environment{};
     }
     if (ImGui::IsItemHovered()) {
-        ImGui::SetTooltip(
-            "Back to the default ambient light, curve and exposure");
+        ImGui::SetTooltip("Restore environment defaults");
     }
 }
 

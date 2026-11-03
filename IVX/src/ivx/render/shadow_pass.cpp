@@ -10,8 +10,6 @@
 namespace ivx {
 namespace {
 static constexpr uint32_t k_min_resolution = 256;
-static constexpr float k_shadow_distance = 60.f;
-static constexpr float k_normal_bias_texels = 0.5f;
 
 int find_shadow_light(const LightSet &lights) {
     for (uint32_t i = 0; i < std::min(lights.count, k_max_lights); ++i) {
@@ -24,10 +22,12 @@ int find_shadow_light(const LightSet &lights) {
     return -1;
 }
 
-bool camera_slice(const Camera &view, std::array<glm::vec3, 8> &corners) {
+bool camera_slice(const Camera &view,
+                  float distance,
+                  std::array<glm::vec3, 8> &corners) {
     const float near_plane = view.get_near();
     const float far_plane = view.get_far();
-    const float shadow_far = std::min(far_plane, k_shadow_distance);
+    const float shadow_far = std::min(far_plane, distance);
     if (!std::isfinite(near_plane) || !std::isfinite(far_plane) ||
         near_plane < 0.f || far_plane <= near_plane ||
         shadow_far <= near_plane) {
@@ -83,8 +83,18 @@ bool ShadowPass::render(Scene &scene,
                         const LightSet &lights,
                         const Camera &view) {
     gpu_ = GpuShadow{}; // No light or invalid fit must disable stale shadows.
+    const auto &settings = scene.environment().shadows;
+    const uint32_t resolution =
+        shadow_resolution_or_default(settings.resolution);
+    if (resolution_ != resolution) {
+        resolution_ = resolution;
+        scope_->resize(resolution_, resolution_);
+    }
+    const float distance = std::isfinite(settings.distance)
+                               ? std::clamp(settings.distance, 0.1f, 10000.f)
+                               : 120.f;
     const int caster = find_shadow_light(lights);
-    if (caster < 0 || !fit_directional(lights.lights[caster], view)) {
+    if (caster < 0 || !fit_directional(lights.lights[caster], view, distance)) {
         return false;
     }
     gpu_.light_index.x = caster;
@@ -95,11 +105,13 @@ bool ShadowPass::render(Scene &scene,
     return true;
 }
 
-bool ShadowPass::fit_directional(const Light &light, const Camera &view) {
+bool ShadowPass::fit_directional(const Light &light,
+                                 const Camera &view,
+                                 float distance) {
     std::array<glm::vec3, 8> corners;
     const float direction_length = glm::length(light.direction);
     if (!std::isfinite(direction_length) || direction_length < 1e-6f ||
-        !camera_slice(view, corners)) {
+        !camera_slice(view, distance, corners)) {
         return false;
     }
 
@@ -137,9 +149,19 @@ bool ShadowPass::fit_directional(const Light &light, const Camera &view) {
 
     const float depth_per_texel = world_texel / (far_plane - near_plane);
     // World-space offsets and projected-depth bias use different units.
-    gpu_.params = {
-        1.f, depth_per_texel * 0.25f, world_texel, k_normal_bias_texels};
-    gpu_.params2 = {depth_per_texel * 2.5f, 0.f, 0.f, 0.f};
+    const auto bias = [](float value, float fallback) {
+        return std::isfinite(value) ? std::clamp(value, 0.f, 10.f) : fallback;
+    };
+    gpu_.params = {1.f,
+                   depth_per_texel *
+                       bias(light.settings.shadow_depth_bias, 0.25f),
+                   world_texel,
+                   bias(light.settings.shadow_normal_bias, 0.5f)};
+    gpu_.params2 = {depth_per_texel *
+                        bias(light.settings.shadow_slope_bias, 2.5f),
+                    0.f,
+                    0.f,
+                    0.f};
     return true;
 }
 } // namespace ivx

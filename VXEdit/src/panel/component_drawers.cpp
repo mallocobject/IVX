@@ -350,6 +350,54 @@ void draw_light(Entity /*entity*/,
         });
     }
 
+    ImGui::Spacing();
+    ImGui::BeginDisabled(settings.type != LightType::IVX_Directional);
+    label_row("Cast Shadows", [&] {
+        ImGui::Checkbox("##cast_shadows", &settings.cast_shadows);
+    });
+    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) &&
+        settings.type != LightType::IVX_Directional) {
+        ImGui::SetTooltip(
+            "Shadows are currently available for directional lights.");
+    }
+    if (settings.cast_shadows && settings.type == LightType::IVX_Directional &&
+        ImGui::TreeNodeEx("Shadows",
+                          ImGuiTreeNodeFlags_DefaultOpen |
+                              ImGuiTreeNodeFlags_SpanAvailWidth)) {
+        if (ImGui::TreeNodeEx("Advanced", ImGuiTreeNodeFlags_SpanAvailWidth)) {
+            label_row("Depth Bias", [&] {
+                ImGui::DragFloat("##shadow_depth_bias",
+                                 &settings.shadow_depth_bias,
+                                 0.01f,
+                                 0.f,
+                                 10.f,
+                                 "%.2f",
+                                 ImGuiSliderFlags_AlwaysClamp);
+            });
+            label_row("Normal Bias", [&] {
+                ImGui::DragFloat("##shadow_normal_bias",
+                                 &settings.shadow_normal_bias,
+                                 0.01f,
+                                 0.f,
+                                 10.f,
+                                 "%.2f",
+                                 ImGuiSliderFlags_AlwaysClamp);
+            });
+            label_row("Slope Bias", [&] {
+                ImGui::DragFloat("##shadow_slope_bias",
+                                 &settings.shadow_slope_bias,
+                                 0.01f,
+                                 0.f,
+                                 10.f,
+                                 "%.2f",
+                                 ImGuiSliderFlags_AlwaysClamp);
+            });
+            ImGui::TreePop();
+        }
+        ImGui::TreePop();
+    }
+    ImGui::EndDisabled();
+
     ImGui::TextDisabled(settings.type == LightType::IVX_Directional
                             ? "Direction is the entity's -Z axis"
                             : "Position is the entity's translation");

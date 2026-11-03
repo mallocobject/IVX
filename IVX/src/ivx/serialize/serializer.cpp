@@ -175,6 +175,12 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
     out << YAML::Key << "InnerAngle" << YAML::Value << settings.inner_angle;
     out << YAML::Key << "OuterAngle" << YAML::Value << settings.outer_angle;
     out << YAML::Key << "CastShadows" << YAML::Value << settings.cast_shadows;
+    out << YAML::Key << "DepthBias" << YAML::Value
+        << settings.shadow_depth_bias;
+    out << YAML::Key << "NormalBias" << YAML::Value
+        << settings.shadow_normal_bias;
+    out << YAML::Key << "SlopeBias" << YAML::Value
+        << settings.shadow_slope_bias;
     out << YAML::EndMap;
 
     return out;
@@ -371,6 +377,12 @@ void read_light(const YAML::Node &node, LightComponent &light_component) {
         read_scalar(node["OuterAngle"], settings.outer_angle);
     settings.cast_shadows =
         read_scalar(node["CastShadows"], settings.cast_shadows);
+    settings.shadow_depth_bias =
+        read_scalar(node["DepthBias"], settings.shadow_depth_bias);
+    settings.shadow_normal_bias =
+        read_scalar(node["NormalBias"], settings.shadow_normal_bias);
+    settings.shadow_slope_bias =
+        read_scalar(node["SlopeBias"], settings.shadow_slope_bias);
 }
 
 void read_script(const YAML::Node &node, NativeScriptComponent &script) {
@@ -421,6 +433,12 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
         Environment &target = scene->environment();
         target.ambient = read_vec3(environment["Ambient"], target.ambient);
         target.exposure = read_scalar(environment["Exposure"], target.exposure);
+        if (const YAML::Node shadows = environment["Shadows"]) {
+            target.shadows.resolution = shadow_resolution_or_default(
+                read_scalar(shadows["Resolution"], target.shadows.resolution));
+            target.shadows.distance =
+                read_scalar(shadows["Distance"], target.shadows.distance);
+        }
         if (const YAML::Node curve = environment["ToneMapping"]; curve) {
             target.tonemap =
                 tone_mapping_curve_from_name(curve.as<std::string>());
@@ -589,6 +607,12 @@ void Serializer::serialize(const Ref<Scene> &scene,
         << world.environment().exposure;
     out << YAML::Key << "ToneMapping" << YAML::Value
         << tone_mapping_curve_name(world.environment().tonemap);
+    out << YAML::Key << "Shadows" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Resolution" << YAML::Value
+        << world.environment().shadows.resolution;
+    out << YAML::Key << "Distance" << YAML::Value
+        << world.environment().shadows.distance;
+    out << YAML::EndMap;
     out << YAML::EndMap;
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
     for (Entity entity : order) {

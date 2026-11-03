@@ -3,8 +3,8 @@
 #include "ivx/core/ref.hpp"
 #include "ivx/render/camera.h"
 #include "ivx/render/frame_buffer.h"
-#include "ivx/scene/scene.h"
 #include "ivx/render/render_scope.h"
+#include "ivx/scene/scene.h"
 #include "shadow_uniforms.h"
 #include <glm/glm.hpp>
 
@@ -49,7 +49,8 @@ class ShadowPass : public RefCounted {
     }
 
   private:
-    bool fit_directional(const Light &light, const Camera &view);
+    bool
+    fit_directional(const Light &light, const Camera &view, float distance);
     uint32_t resolution_;
     Ref<RenderScope> scope_;
     LightSpaceCamera light_camera_;

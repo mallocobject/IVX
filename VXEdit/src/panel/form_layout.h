@@ -12,15 +12,17 @@ namespace ivx {
 // draws its own label.
 inline float label_column() {
     // Wide enough for the longest row label in use, scaled with the UI.
-    return std::ceil(ImGui::CalcTextSize("Fixed Aspect").x) +
+    return std::ceil(ImGui::CalcTextSize("Cast Shadows").x) +
            14.f * ui::scale();
 }
 
 template <typename Draw>
 void label_row(const char *label, Draw &&draw) {
+    const float indent =
+        ImGui::GetCursorPosX() - ImGui::GetStyle().WindowPadding.x;
     ImGui::AlignTextToFramePadding();
     ImGui::TextUnformatted(label);
-    ImGui::SameLine(label_column());
+    ImGui::SameLine(label_column() + indent);
     ImGui::SetNextItemWidth(-FLT_MIN);
     draw();
 }
