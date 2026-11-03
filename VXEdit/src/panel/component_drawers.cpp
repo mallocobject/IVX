@@ -351,19 +351,39 @@ void draw_light(Entity /*entity*/,
     }
 
     ImGui::Spacing();
-    ImGui::BeginDisabled(settings.type != LightType::IVX_Directional);
+    ImGui::BeginDisabled(settings.type == LightType::IVX_Point);
     label_row("Cast Shadows", [&] {
         ImGui::Checkbox("##cast_shadows", &settings.cast_shadows);
     });
     if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) &&
-        settings.type != LightType::IVX_Directional) {
-        ImGui::SetTooltip(
-            "Shadows are currently available for directional lights.");
+        settings.type == LightType::IVX_Point) {
+        ImGui::SetTooltip("Point light shadows are not available yet.");
     }
-    if (settings.cast_shadows && settings.type == LightType::IVX_Directional &&
+    if (settings.cast_shadows && settings.type != LightType::IVX_Point &&
         ImGui::TreeNodeEx("Shadows",
                           ImGuiTreeNodeFlags_DefaultOpen |
                               ImGuiTreeNodeFlags_SpanAvailWidth)) {
+        if (settings.type == LightType::IVX_Spot) {
+            label_row("Near", [&] {
+                ImGui::DragFloat(
+                    "##shadow_near",
+                    &settings.shadow_near,
+                    0.01f,
+                    0.001f,
+                    std::max(0.001f, settings.shadow_range - 0.001f),
+                    "%.3f",
+                    ImGuiSliderFlags_AlwaysClamp);
+            });
+            label_row("Range", [&] {
+                ImGui::DragFloat("##shadow_range",
+                                 &settings.shadow_range,
+                                 0.1f,
+                                 settings.shadow_near + 0.001f,
+                                 10000.f,
+                                 "%.1f",
+                                 ImGuiSliderFlags_AlwaysClamp);
+            });
+        }
         if (ImGui::TreeNodeEx("Advanced", ImGuiTreeNodeFlags_SpanAvailWidth)) {
             label_row("Depth Bias", [&] {
                 ImGui::DragFloat("##shadow_depth_bias",

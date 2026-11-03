@@ -181,6 +181,8 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
         << settings.shadow_normal_bias;
     out << YAML::Key << "SlopeBias" << YAML::Value
         << settings.shadow_slope_bias;
+    out << YAML::Key << "ShadowNear" << YAML::Value << settings.shadow_near;
+    out << YAML::Key << "ShadowRange" << YAML::Value << settings.shadow_range;
     out << YAML::EndMap;
 
     return out;
@@ -383,6 +385,10 @@ void read_light(const YAML::Node &node, LightComponent &light_component) {
         read_scalar(node["NormalBias"], settings.shadow_normal_bias);
     settings.shadow_slope_bias =
         read_scalar(node["SlopeBias"], settings.shadow_slope_bias);
+    settings.shadow_near =
+        read_scalar(node["ShadowNear"], settings.shadow_near);
+    settings.shadow_range =
+        read_scalar(node["ShadowRange"], settings.shadow_range);
 }
 
 void read_script(const YAML::Node &node, NativeScriptComponent &script) {

@@ -5,24 +5,36 @@
 #include "ivx/render/uniform_buffer.h"
 #include <array>
 
+#include <cstddef>
 #include <cstdint>
 #include <glm/glm.hpp>
 
 namespace ivx {
-struct GpuShadow {
+struct alignas(16) GpuShadow {
     glm::mat4 light_space{1.f}; // world -> light clip
-    // x enabled, y minimum bias in projected depth, z world units per texel,
-    // w normal offset in texels. UV texel size comes from textureSize().
-    glm::vec4 params{0.f};
-    // x angle-dependent bias in projected depth; independent of screen pixels.
-    glm::vec4 params2{0.f};
+    uint32_t enabled{0};
+    uint32_t light_type{0}; // LightType
+    float depth_bias_texels{0.f};
+    float normal_bias_texels{0.f};
+
+    float slope_bias_texels{0.f};
+    float world_texel_size{0.f}; // Constant for directional lights.
+    float near_plane{0.f};
+    float far_plane{0.f};
+
+    float tan_half_fov{0.f}; // Spot lights.
+    float depth_scale{0.f};  // Ortho: 1/(f-n). Perspective: n*f/(f-n).
+    glm::vec2 padding{0.f};
 };
-static_assert(sizeof(GpuShadow) == 64 + 16 + 16, "std140 layout");
+static_assert(sizeof(GpuShadow) == 64 + 16 * 3, "std140 layout");
+static_assert(offsetof(GpuShadow, enabled) == 64);
+static_assert(offsetof(GpuShadow, slope_bias_texels) == 80);
+static_assert(offsetof(GpuShadow, tan_half_fov) == 96);
 
 struct GpuShadowData {
     std::array<GpuShadow, k_max_lights> shadows{};
 };
-static_assert(sizeof(GpuShadowData) == 96 * k_max_lights,
+static_assert(sizeof(GpuShadowData) == 112 * k_max_lights,
               "std140 array layout");
 
 // The depth map lives on its own texture unit: 0 is the albedo map.

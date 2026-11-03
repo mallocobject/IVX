@@ -55,6 +55,17 @@ class ShadowPass : public RefCounted {
                          const Camera &view,
                          float distance,
                          GpuShadow &gpu);
+
+    bool fit_spot(const Light &light,
+                  const Camera &view,
+                  float distance,
+                  GpuShadow &gpu);
+
+    bool fit_point(const Light &light,
+                   const Camera &view,
+                   float distance,
+                   GpuShadow &gpu);
+
     uint32_t resolution_;
     std::array<Ref<RenderScope>, k_max_lights> scopes_{};
     Ref<FrameBuffer> empty_map_;

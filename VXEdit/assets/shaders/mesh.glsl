@@ -79,8 +79,19 @@ layout(std140, binding = 1) uniform LightBlock {
 
 struct Shadow {
     mat4 light_space;
-    vec4 params;  // x enabled, y base bias, z world texel size, w normal bias
-    vec4 params2; // x slope scale
+    uint enabled;
+    uint light_type;
+    float depth_bias_texels;
+    float normal_bias_texels;
+
+    float slope_bias_texels;
+    float world_texel_size;
+    float near_plane;
+    float far_plane;
+
+    float tan_half_fov;
+    float depth_scale;
+    vec2 padding;
 };
 
 layout(std140, binding = 2) uniform ShadowBlock {
@@ -106,13 +117,24 @@ float bilinear_shadow(vec2 uv, float reference, vec2 texelUV, int index) {
 }
 
 float shadow_calculation(vec3 world, vec3 n, vec3 to_light, int index) {
-    if (shadow[index].params.x < 0.5) {
+    if (shadow[index].enabled == 0u || shadow[index].light_type == 1u) {
         return 0.0;
     }
 
     float ndotl = clamp(dot(n, to_light), 0.0, 1.0);
-    vec3 biased = world + n * shadow[index].params.z * shadow[index].params.w * (1.0 - ndotl);
-    vec4 clip = shadow[index].light_space * vec4(biased, 1.0);
+    vec4 clip = shadow[index].light_space * vec4(world, 1.0);
+    if (clip.w <= 0.0) {
+        return 0.0;
+    }
+    bool perspective = shadow[index].light_type == 2u;
+    float worldTexel = shadow[index].world_texel_size;
+    if (perspective) {
+        // For the RH perspective matrix, clip.w is axial light-space distance.
+        worldTexel = 2.0 * clip.w * shadow[index].tan_half_fov /
+                     float(textureSize(u_ShadowMap[index], 0).y);
+    }
+    vec3 biased = world + n * worldTexel * shadow[index].normal_bias_texels * (1.0 - ndotl);
+    clip = shadow[index].light_space * vec4(biased, 1.0);
     if (clip.w <= 0.0) {
         return 0.0;
     }
@@ -126,7 +148,21 @@ float shadow_calculation(vec3 world, vec3 n, vec3 to_light, int index) {
     }
 
     float slope = sqrt(max(1.0 - ndotl * ndotl, 0.0)) / max(ndotl, 0.1);
-    float bias = max(shadow[index].params.y, shadow[index].params2.x * slope);
+    if (perspective) {
+        // Perspective depth varies along the fixed camera axis, not radial distance.
+        vec3 axis = -normalize(lights[index].direction_linear.xyz);
+        float axisCos = clamp(dot(n, axis), -1.0, 1.0);
+        float planeDistance = abs(dot(n, biased - lights[index].position_type.xyz));
+        slope = clip.w * sqrt(max(1.0 - axisCos * axisCos, 0.0)) /
+                max(planeDistance, 1e-4);
+    }
+    float depthPerWorld = shadow[index].depth_scale;
+    if (perspective) {
+        // Reverse-Z z(d) = n*f/((f-n)*d) - n/(f-n).
+        depthPerWorld /= clip.w * clip.w;
+    }
+    float bias = max(shadow[index].depth_bias_texels,
+                     shadow[index].slope_bias_texels * slope) * worldTexel * depthPerWorld;
     float reference = projected.z + bias;
 
     vec2 texelUV = 1.0 / vec2(textureSize(u_ShadowMap[index], 0));
