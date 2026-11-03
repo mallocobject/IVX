@@ -90,8 +90,8 @@ layout(std140, binding = 2) uniform ShadowBlock {
 
 layout(binding = 2) uniform sampler2D u_ShadowMap;
 
-float shadow_visibility(vec2 uv, float reference) {
-    return texture(u_ShadowMap, uv).r <= reference ? 1.0 : 0.0;
+float is_in_shadow(vec2 uv, float reference) {
+    return texture(u_ShadowMap, uv).r > reference ? 1.0 : 0.0;
 }
 
 float bilinear_shadow(vec2 uv, float reference, vec2 texelUV) {
@@ -99,23 +99,23 @@ float bilinear_shadow(vec2 uv, float reference, vec2 texelUV) {
     vec2 pixel = uv / texelUV - 0.5;
     vec2 fraction = fract(pixel);
     vec2 base = (floor(pixel) + 0.5) * texelUV;
-    float a = shadow_visibility(base, reference);
-    float b = shadow_visibility(base + vec2(texelUV.x, 0.0), reference);
-    float c = shadow_visibility(base + vec2(0.0, texelUV.y), reference);
-    float d = shadow_visibility(base + texelUV, reference);
+    float a = is_in_shadow(base, reference);
+    float b = is_in_shadow(base + vec2(texelUV.x, 0.0), reference);
+    float c = is_in_shadow(base + vec2(0.0, texelUV.y), reference);
+    float d = is_in_shadow(base + texelUV, reference);
     return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
 }
 
-float shadow_factor(vec3 world, vec3 n, vec3 to_light) {
+float shadow_calculation(vec3 world, vec3 n, vec3 to_light) {
     if (shadow.params.x < 0.5) {
-        return 1.0;
+        return 0.0;
     }
 
     float ndotl = clamp(dot(n, to_light), 0.0, 1.0);
     vec3 biased = world + n * shadow.params.z * shadow.params.w * (1.0 - ndotl);
     vec4 clip = shadow.light_space * vec4(biased, 1.0);
     if (clip.w <= 0.0) {
-        return 1.0;
+        return 0.0;
     }
     vec3 projected = clip.xyz / clip.w;
     // Zero-to-one reverse-Z: only XY needs remapping.
@@ -123,7 +123,7 @@ float shadow_factor(vec3 world, vec3 n, vec3 to_light) {
 
     if (any(lessThan(uv, vec2(0.0))) || any(greaterThan(uv, vec2(1.0))) ||
         projected.z < 0.0 || projected.z > 1.0) {
-        return 1.0;
+        return 0.0;
     }
 
     float slope = sqrt(max(1.0 - ndotl * ndotl, 0.0)) / max(ndotl, 0.1);
@@ -175,7 +175,7 @@ void main() {
         }
 
         float visibility = (i == shadow.light_index.x)
-                               ? shadow_factor(v_WorldPosition, n, to_light)
+                               ? (1 - shadow_calculation(v_WorldPosition, n, to_light))
                                : 1.0;
 
         float ndotl = max(dot(n, to_light), 0.0);
