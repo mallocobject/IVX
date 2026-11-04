@@ -66,17 +66,6 @@ struct RelationshipComponent {
     std::vector<entt::entity> children;
 };
 
-struct SpriteRendererComponent {
-    Ref<Texture2D> texture;
-    Ref<SubTexture2D> sub_texture;
-    // Size of the quad in world units. Kept here (and not in
-    // TransformComponent::scale) so that scaling a parent does not multiply the
-    // sprite size of its children.
-    glm::vec2 size{1.f};
-    float tiling_factor{1.f};
-    glm::vec4 color{1.f};
-};
-
 // Projection parameters live in SceneCamera, the component only adds the
 // scene-level flags. Default constructible; `primary` defaults to false so that
 // merely adding a camera never takes over rendering.
@@ -114,7 +103,6 @@ struct NativeScriptComponent;
     X(IdComponent)                                                             \
     X(TransformComponent)                                                      \
     X(RelationshipComponent)                                                   \
-    X(SpriteRendererComponent)                                                 \
     X(MeshRendererComponent)                                                   \
     X(LightComponent)                                                          \
     X(CameraComponent)                                                         \

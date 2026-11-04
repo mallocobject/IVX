@@ -2,40 +2,58 @@ Format: 1
 Scene: Untitled
 Environment:
   Ambient: [0.15, 0.15, 0.15]
-  Exposure: 1
+  Exposure: 0.21
   ToneMapping: Reinhard
   Shadows:
     Resolution: 2048
     Distance: 120
 Entities:
-  - Entity: 1
-    Tag: 3D Cube
-    Transform:
-      Translation: [3.0830421, 2.3925705, -0.93959856]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    Relationship:
-      Parent: ~
-    MeshRenderer:
-      Primitive: Cube
-      PrimitiveSize: 2
-      Albedo: [0.92, 0.55, 0.32, 1]
-      TilingFactor: 1
-      HasAlbedoMap: false
   - Entity: 4
     Tag: Entity
     Transform:
-      Translation: [1.43643, 0.5431366, 5.23217]
-      Rotation: [0, 0, 0]
+      Translation: [1.6700196, 5.64221, -1.3849182]
+      Rotation: [-57.340607, 112.99612, -195.48991]
+      Scale: [1.0000001, 0.99999976, 1]
+    Relationship:
+      Parent: ~
+    Light:
+      Type: Spot
+      Color: [1, 1, 1]
+      Intensity: 50
+      Constant: 1
+      Linear: 0
+      Quadratic: 1
+      InnerAngle: 26
+      OuterAngle: 31
+      CastShadows: true
+      DepthBias: 0.25
+      NormalBias: 0.5
+      SlopeBias: 2.5
+      ShadowNear: 0.1
+      ShadowRange: 30
+  - Entity: 3
+    Tag: Sun
+    Transform:
+      Translation: [2.337776, 7.1947174, 8.467498]
+      Rotation: [-50, -30.000002, 0]
       Scale: [1, 1, 1]
     Relationship:
-      Parent: 1
-    MeshRenderer:
-      Primitive: Cube
-      PrimitiveSize: 2
-      Albedo: [0.92, 0.55, 0.32, 1]
-      TilingFactor: 1
-      HasAlbedoMap: false
+      Parent: ~
+    Light:
+      Type: Directional
+      Color: [1, 1, 1]
+      Intensity: 0.55
+      Constant: 1
+      Linear: 0
+      Quadratic: 1
+      InnerAngle: 20
+      OuterAngle: 30
+      CastShadows: true
+      DepthBias: 0.25
+      NormalBias: 0.5
+      SlopeBias: 2.5
+      ShadowNear: 0.1
+      ShadowRange: 30
   - Entity: 2
     Tag: Floor
     Transform:
@@ -50,24 +68,17 @@ Entities:
       Albedo: [0.8, 0.8, 0.8, 1]
       TilingFactor: 1
       HasAlbedoMap: true
-  - Entity: 3
-    Tag: Sun
+  - Entity: 1
+    Tag: 3D Cube
     Transform:
-      Translation: [5, 8, 5]
-      Rotation: [-50, -30.000002, 0]
+      Translation: [-2.8826563, -2.9802322e-08, 0]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     Relationship:
       Parent: ~
-    Light:
-      Type: Directional
-      Color: [1, 1, 1]
-      Intensity: 1
-      Constant: 1
-      Linear: 0
-      Quadratic: 1
-      InnerAngle: 20
-      OuterAngle: 30
-      CastShadows: true
-      DepthBias: 0.25
-      NormalBias: 0.5
-      SlopeBias: 2.5
+    MeshRenderer:
+      Primitive: Cube
+      PrimitiveSize: 2
+      Albedo: [0.92, 0.55, 0.32, 1]
+      TilingFactor: 1
+      HasAlbedoMap: true

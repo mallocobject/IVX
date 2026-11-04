@@ -129,35 +129,6 @@ void draw_transform(Entity /*entity*/,
     }
 }
 
-void draw_sprite(Entity /*entity*/,
-                 SpriteRendererComponent &sprite,
-                 EditorContext & /*context*/) {
-    label_row("Size", [&] {
-        ImGui::DragFloat2("##size", glm::value_ptr(sprite.size), 0.5f);
-    });
-    label_row("Tiling", [&] {
-        ImGui::DragFloat("##tiling", &sprite.tiling_factor, 0.05f, 0.01f, 64.f);
-    });
-    label_row("Color", [&] {
-        ImGui::ColorEdit4("##color", glm::value_ptr(sprite.color));
-    });
-
-    // No asset browser yet, so the texture is reported read-only.
-    if (sprite.sub_texture) {
-        ImGui::TextDisabled("SubTexture (id %u)",
-                            sprite.sub_texture->get_texture()
-                                ? sprite.sub_texture->get_texture()->get_id()
-                                : 0u);
-    } else if (sprite.texture) {
-        ImGui::TextDisabled("Texture (id %u, %ux%u)",
-                            sprite.texture->get_id(),
-                            sprite.texture->get_width(),
-                            sprite.texture->get_height());
-    } else {
-        ImGui::TextDisabled("No texture (flat color)");
-    }
-}
-
 // ---- mesh renderer ---------------------------------------------------------
 
 namespace {

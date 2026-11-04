@@ -29,7 +29,6 @@
 #include "ivx/render/render_command.h"
 #include "ivx/render/render_scope.h"
 #include "ivx/render/renderer.h"
-#include "ivx/render/renderer2d.h"
 #include "ivx/render/renderer3d.h"
 #include "ivx/render/scene_renderer.h"
 #include "ivx/render/shader.h"

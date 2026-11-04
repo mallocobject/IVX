@@ -4,7 +4,6 @@
 
 #include "ivx/core/application.h"
 #include "ivx/core/window.h"
-#include "ivx/render/renderer2d.h"
 #include "ivx/render/renderer3d.h"
 #include "ui/theme.h"
 
@@ -285,21 +284,6 @@ void StatsPanel::draw_info_column() {
         triangles, sizeof(triangles), static_cast<float>(stats3d.triangles));
     ImGui::TextDisabled(
         "3D   draws %d   tris %s", stats3d.draw_calls, triangles);
-
-    const auto stats2d = Renderer2D::get_stats();
-    char verts[16] = {};
-    char indices[16] = {};
-    format_count(verts,
-                 sizeof(verts),
-                 static_cast<float>(stats2d.get_total_vertex_count()));
-    format_count(indices,
-                 sizeof(indices),
-                 static_cast<float>(stats2d.get_total_index_count()));
-    ImGui::TextDisabled("2D   draws %d   quads %d   verts %s   idx %s",
-                        stats2d.num_draw_calls,
-                        stats2d.num_quads,
-                        verts,
-                        indices);
 
     // ---- imgui ----
     if (const ImDrawData *draw_data = ImGui::GetDrawData()) {

@@ -5,7 +5,6 @@
 #include "ivx/core/logger.h"
 #include "ivx/event/key_event.h"
 #include "ivx/event/mouse_event.h"
-#include "ivx/render/renderer2d.h"
 #include "ivx/render/renderer3d.h"
 #include "ivx/scene/components.h"
 #include "ivx/scene/entity.h"
@@ -328,38 +327,6 @@ void Scene::render(RenderMode mode) {
         }
     }
     Renderer3D::end_batch();
-}
-
-void Scene::render_sprites() {
-    update_world_transforms();
-
-    Renderer2D::begin_batch();
-    for (auto [handle, id, transform, sprite] :
-         registry_
-             .view<IdComponent, TransformComponent, SpriteRendererComponent>()
-             .each()) {
-        // The quad is unit sized, the sprite's own size is applied here so
-        // that a parent's TransformComponent::scale does not scale it.
-        const glm::mat4 model =
-            transform.world *
-            glm::scale(glm::mat4{1.f}, glm::vec3{sprite.size, 1.f});
-        if (sprite.sub_texture) {
-            Renderer2D::draw_quad(model,
-                                  sprite.sub_texture,
-                                  sprite.tiling_factor,
-                                  sprite.color,
-                                  id.uid);
-        } else if (sprite.texture) {
-            Renderer2D::draw_quad(model,
-                                  sprite.texture,
-                                  sprite.tiling_factor,
-                                  sprite.color,
-                                  id.uid);
-        } else {
-            Renderer2D::draw_quad(model, sprite.color, id.uid);
-        }
-    }
-    Renderer2D::end_batch();
 }
 
 LightSet Scene::collect_lights() const {

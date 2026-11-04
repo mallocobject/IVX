@@ -22,7 +22,7 @@ class SceneRenderer : public RefCounted {
     RenderScope scene_scope_;
     ShadowPass shadows_;
     ToneMappingPass tone_mapping_;
-    LightUniforms lights_;
+    LightUniforms light_uniforms_;
     ShadowUniforms shadow_uniforms_;
 };
 } // namespace ivx

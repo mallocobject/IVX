@@ -106,8 +106,6 @@ void EditLayer::on_update(float dt) {
         return;
     }
 
-    Renderer2D::reset_stats();
-
     float render_ms = 0.f;
     {
         ScopeTimer render_timer{render_ms};

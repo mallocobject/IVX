@@ -112,23 +112,6 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
 }
 
 YAML::Emitter &operator<<(YAML::Emitter &out,
-                          const SpriteRendererComponent &sprite) {
-    out << YAML::Key << "SpriteRenderer" << YAML::Value << YAML::BeginMap;
-    out << YAML::Key << "Size" << YAML::Value << sprite.size;
-    out << YAML::Key << "TilingFactor" << YAML::Value << sprite.tiling_factor;
-    out << YAML::Key << "Color" << YAML::Value << sprite.color;
-
-    // Informational only: it tells the reader that this quad *had* a texture,
-    // so loading can warn instead of pretending the flat colour version is the
-    // original.
-    out << YAML::Key << "HasTexture" << YAML::Value
-        << static_cast<bool>(sprite.sub_texture || sprite.texture);
-    out << YAML::EndMap;
-
-    return out;
-}
-
-YAML::Emitter &operator<<(YAML::Emitter &out,
                           const NativeScriptComponent &script) {
     out << YAML::Key << "NativeScript" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Script" << YAML::Value << script.script_name;
@@ -212,9 +195,6 @@ YAML::Emitter &operator<<(YAML::Emitter &out, Entity entity) {
     }
     out << YAML::EndMap;
 
-    if (auto sprite = entity.try_get_component<SpriteRendererComponent>()) {
-        out << *sprite;
-    }
     if (auto mesh_renderer =
             entity.try_get_component<MeshRendererComponent>()) {
         out << *mesh_renderer;
@@ -324,16 +304,6 @@ void read_camera(const YAML::Node &node, CameraComponent &component) {
     component.primary = read_scalar(node["Primary"], component.primary);
     component.fixed_aspect_ratio =
         read_scalar(node["FixedAspectRatio"], component.fixed_aspect_ratio);
-}
-
-void read_sprite(const YAML::Node &node, SpriteRendererComponent &sprite) {
-    if (!node) {
-        return;
-    }
-    sprite.size = read_vec2(node["Size"], sprite.size);
-    sprite.tiling_factor =
-        read_scalar(node["TilingFactor"], sprite.tiling_factor);
-    sprite.color = read_vec4(node["Color"], sprite.color);
 }
 
 void read_mesh_renderer(const YAML::Node &node,
@@ -482,18 +452,6 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
             if (auto *transform =
                     entity.try_get_component<TransformComponent>()) {
                 read_transform(node["Transform"], *transform);
-            }
-
-            if (node["SpriteRenderer"]) {
-                SpriteRendererComponent &sprite =
-                    entity.has_component<SpriteRendererComponent>()
-                        ? entity.get_component<SpriteRendererComponent>()
-                        : entity.add_component<SpriteRendererComponent>();
-                read_sprite(node["SpriteRenderer"], sprite);
-                if (read_scalar<bool>(node["SpriteRenderer"]["HasTexture"],
-                                      false)) {
-                    ++textured_sprites;
-                }
             }
 
             if (node["Light"]) {

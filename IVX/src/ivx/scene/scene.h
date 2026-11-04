@@ -61,7 +61,6 @@ class Scene : public RefCounted {
     // by several passes (shadow, picking, main), so it never opens one itself;
     // a self-contained effect such as ToneMappingPass does.
     void render(RenderMode mode = RenderMode::IVX_Lit);
-    void render_sprites();
 
     void update_world_transforms();
 
