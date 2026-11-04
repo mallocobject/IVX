@@ -20,6 +20,7 @@ class OpenGLFrameBuffer : public FrameBuffer {
 
     virtual uint32_t get_depth_attachment() const override;
     virtual void bind_depth_attachment(uint32_t slot) const override;
+    void set_depth_face(uint32_t face) override;
 
     // Reads the last resolved frame (see unbind()). Coordinates start
     // bottom-left.

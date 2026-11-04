@@ -1,5 +1,6 @@
 #pragma once
 
+#include "ivx/render/camera_uniforms.h"
 #include "ivx/render/light_uniforms.h"
 #include "ivx/render/shadow_pass.h"
 #include "ivx/render/tone_mapping_pass.h"
@@ -22,6 +23,8 @@ class SceneRenderer : public RefCounted {
     RenderScope scene_scope_;
     ShadowPass shadows_;
     ToneMappingPass tone_mapping_;
+
+    CameraUniforms camera_uniforms_;
     LightUniforms light_uniforms_;
     ShadowUniforms shadow_uniforms_;
 };

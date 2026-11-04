@@ -308,7 +308,7 @@ void Scene::update_world_recursive(Entity entity,
 }
 
 void Scene::render(RenderMode mode) {
-    Renderer3D::begin_batch();
+    Renderer3D::begin();
     for (auto [handle, id, transform, mesh_renderer] :
          registry_
              .view<IdComponent, TransformComponent, MeshRendererComponent>()
@@ -326,7 +326,7 @@ void Scene::render(RenderMode mode) {
                                id.uid);
         }
     }
-    Renderer3D::end_batch();
+    Renderer3D::end();
 }
 
 LightSet Scene::collect_lights() const {

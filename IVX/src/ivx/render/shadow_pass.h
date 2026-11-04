@@ -2,6 +2,7 @@
 
 #include "ivx/core/ref.hpp"
 #include "ivx/render/camera.h"
+#include "ivx/render/camera_uniforms.h"
 #include "ivx/render/frame_buffer.h"
 #include "ivx/render/render_scope.h"
 #include "ivx/scene/scene.h"
@@ -9,6 +10,7 @@
 #include <glm/glm.hpp>
 
 namespace ivx {
+
 class LightSpaceCamera : public Camera {
   public:
     void
@@ -61,15 +63,16 @@ class ShadowPass : public RefCounted {
                   float distance,
                   GpuShadow &gpu);
 
-    bool fit_point(const Light &light,
-                   const Camera &view,
-                   float distance,
-                   GpuShadow &gpu);
+    bool fit_point(const Light &light, GpuShadow &gpu);
 
     uint32_t resolution_;
     std::array<Ref<RenderScope>, k_max_lights> scopes_{};
     Ref<FrameBuffer> empty_map_;
+    Ref<FrameBuffer> empty_cube_;
     LightSpaceCamera light_camera_;
+    CameraUniforms camera_uniforms_;
+    std::array<glm::mat4, 6> point_views_{};
+    glm::mat4 point_projection_{1.f};
     GpuShadowData gpu_{};
 };
 

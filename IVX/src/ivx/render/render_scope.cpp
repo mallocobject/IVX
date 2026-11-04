@@ -12,16 +12,12 @@ RenderScope::RenderScope(RenderScopeSpecification spec)
     }
 }
 
-void RenderScope::begin(const Camera *camera) {
+void RenderScope::begin() {
     IVX_CORE_ASSERT(!begun_, "RenderScope::begin() called twice without end()");
     begun_ = true;
 
     if (target_) {
         target_->bind();
-    }
-
-    if (camera) {
-        camera_uniforms_.update(*camera);
     }
 
     saved_state_ = RenderCommand::state();

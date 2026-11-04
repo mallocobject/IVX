@@ -2,15 +2,12 @@
 
 #include "ivx/core/ref.hpp"
 #include "ivx/core/ref_counted.hpp"
-#include "ivx/render/camera_uniforms.h"
 #include "ivx/render/frame_buffer.h"
 #include "ivx/render/render_command.h"
 #include <glm/glm.hpp>
 #include <optional>
 
 namespace ivx {
-
-class Camera;
 
 struct RenderScopeSpecification {
     // No target means the window framebuffer.
@@ -33,8 +30,7 @@ class RenderScope : public RefCounted {
     explicit RenderScope(RenderScopeSpecification spec);
     ~RenderScope() = default;
 
-    // Camera/UBO bindings are replaced per pass, not restored by end().
-    void begin(const Camera *camera = nullptr);
+    void begin();
     void end();
 
     const Ref<FrameBuffer> &target() const {
@@ -49,7 +45,6 @@ class RenderScope : public RefCounted {
   private:
     RenderScopeSpecification spec_;
     Ref<FrameBuffer> target_;
-    CameraUniforms camera_uniforms_;
     RenderCommand::State saved_state_{};
     bool begun_{false};
 };

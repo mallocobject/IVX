@@ -322,19 +322,14 @@ void draw_light(Entity /*entity*/,
     }
 
     ImGui::Spacing();
-    ImGui::BeginDisabled(settings.type == LightType::IVX_Point);
     label_row("Cast Shadows", [&] {
         ImGui::Checkbox("##cast_shadows", &settings.cast_shadows);
     });
-    if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled) &&
-        settings.type == LightType::IVX_Point) {
-        ImGui::SetTooltip("Point light shadows are not available yet.");
-    }
-    if (settings.cast_shadows && settings.type != LightType::IVX_Point &&
+    if (settings.cast_shadows &&
         ImGui::TreeNodeEx("Shadows",
                           ImGuiTreeNodeFlags_DefaultOpen |
                               ImGuiTreeNodeFlags_SpanAvailWidth)) {
-        if (settings.type == LightType::IVX_Spot) {
+        if (settings.type != LightType::IVX_Directional) {
             label_row("Near", [&] {
                 ImGui::DragFloat(
                     "##shadow_near",
@@ -387,7 +382,6 @@ void draw_light(Entity /*entity*/,
         }
         ImGui::TreePop();
     }
-    ImGui::EndDisabled();
 
     ImGui::TextDisabled(settings.type == LightType::IVX_Directional
                             ? "Direction is the entity's -Z axis"

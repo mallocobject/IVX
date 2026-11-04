@@ -8,6 +8,7 @@ namespace ivx {
 class OpenGLRendererAPI : public RendererAPI {
   public:
     virtual void init() override;
+    uint32_t max_fragment_texture_units() const override;
     virtual void set_viewport(int x, int y, int width, int height) override;
     virtual void set_clear_color(const glm::vec4 &color) override;
     virtual void set_depth_test(bool enabled = true) override;

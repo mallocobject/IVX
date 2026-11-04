@@ -78,6 +78,7 @@ class RendererAPI : public RefCounted {
     // Anything a single pass could want to change lives in
     // RenderScopeSpecification instead.
     virtual void init() = 0;
+    virtual uint32_t max_fragment_texture_units() const = 0;
 
     virtual void set_viewport(int x, int y, int width, int height) = 0;
     virtual void set_clear_color(const glm::vec4 &color) = 0;

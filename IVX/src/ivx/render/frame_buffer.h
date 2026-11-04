@@ -22,6 +22,8 @@ enum class FrameBufferDepthFormat : std::uint8_t {
     Depth32F,        // texture, sampleable: shadow maps (1 near, 0 far)
 };
 
+enum class DepthTextureType : std::uint8_t { Texture2D, CubeMap };
+
 // A framebuffer is described completely here: the colour attachments in draw
 // order, plus at most one depth attachment. Depth is a separate field because
 // GL treats it separately - it is never blended, it has its own attachment
@@ -37,6 +39,8 @@ struct FrameBufferSpecification {
 
     std::vector<FrameBufferColorFormat> color_formats;
     FrameBufferDepthFormat depth_format{FrameBufferDepthFormat::None};
+    DepthTextureType depth_texture_type{DepthTextureType::Texture2D};
+    bool depth_compare{false};
 };
 
 class FrameBuffer : public RefCounted {
@@ -51,6 +55,7 @@ class FrameBuffer : public RefCounted {
     // 0 when there is no depth attachment, or when it is a renderbuffer.
     virtual uint32_t get_depth_attachment() const = 0;
     virtual void bind_depth_attachment(uint32_t slot) const = 0;
+    virtual void set_depth_face(uint32_t face) = 0;
 
     // Reads one pixel of an integer attachment (an entity id, normally). The
     // origin is bottom-left, like OpenGL's

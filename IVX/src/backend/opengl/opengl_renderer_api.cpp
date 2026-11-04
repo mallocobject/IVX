@@ -144,10 +144,17 @@ void OpenGLRendererAPI::init() {
     // default comes from RenderCommand::init(), which pushes State{} once.
     glFrontFace(GL_CCW);
     glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+    glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 }
 
 void OpenGLRendererAPI::set_viewport(int x, int y, int width, int height) {
     glViewport(x, y, width, height);
+}
+
+uint32_t OpenGLRendererAPI::max_fragment_texture_units() const {
+    GLint count = 0;
+    glGetIntegerv(GL_MAX_TEXTURE_IMAGE_UNITS, &count);
+    return static_cast<uint32_t>(count);
 }
 
 void OpenGLRendererAPI::set_clear_color(const glm::vec4 &color) {

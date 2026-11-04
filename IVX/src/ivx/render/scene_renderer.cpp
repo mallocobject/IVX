@@ -39,11 +39,12 @@ void SceneRenderer::render(Scene *scene, const Camera &camera) {
     const LightSet lights = scene ? scene->collect_lights() : LightSet{};
     const bool has_shadow = scene && shadows_.render(*scene, lights, camera);
 
+    camera_uniforms_.update(camera);
     light_uniforms_.update(lights);
     shadow_uniforms_.update(has_shadow ? shadows_.gpu() : GpuShadowData{});
     shadows_.bind_maps();
 
-    scene_scope_.begin(&camera);
+    scene_scope_.begin();
     if (scene) {
         scene->render();
     }

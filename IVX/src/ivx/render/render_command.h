@@ -53,6 +53,9 @@ class RenderCommand {
     // init() pushes State{} through the same setters a pass uses. That leaves
     // the tracked copy truthful before the first pass diffs against it.
     static void init();
+    static uint32_t max_fragment_texture_units() {
+        return renderer_api_->max_fragment_texture_units();
+    }
 
     static void set_viewport(int x, int y, int width, int height);
     static void set_clear_color(const glm::vec4 &color);

@@ -1,5 +1,6 @@
 #include "ivxpch.h"
 #include "shadow_pass.h"
+#include "ivx/render/renderer3d.h"
 
 #include "ivx/utils/math.h"
 #include <algorithm>
@@ -57,6 +58,13 @@ ShadowPass::ShadowPass(uint32_t resolution)
     empty.depth_format = FrameBufferDepthFormat::Depth32F;
     empty_map_ = FrameBuffer::create(empty);
     empty_map_->clear({}, false, true);
+    empty.depth_texture_type = DepthTextureType::CubeMap;
+    empty.depth_compare = true;
+    empty_cube_ = FrameBuffer::create(empty);
+    for (uint32_t face = 0; face < 6; ++face) {
+        empty_cube_->set_depth_face(face);
+        empty_cube_->clear({}, false, true);
+    }
 }
 
 bool ShadowPass::render(Scene &scene,
@@ -95,7 +103,7 @@ bool ShadowPass::render(Scene &scene,
             fits = fit_spot(light, view, distance, gpu_.shadows[i]);
             break;
         case IVX_Point:
-            fits = fit_point(light, view, distance, gpu_.shadows[i]);
+            fits = fit_point(light, gpu_.shadows[i]);
             break;
         default:
             break;
@@ -104,11 +112,21 @@ bool ShadowPass::render(Scene &scene,
             continue;
         }
 
+        const bool point = light.settings.type == LightType::IVX_Point;
+        const auto texture_type =
+            point ? DepthTextureType::CubeMap : DepthTextureType::Texture2D;
+        if (scopes_[i] &&
+            scopes_[i]->target()->get_specification().depth_texture_type !=
+                texture_type) {
+            scopes_[i].reset();
+        }
         if (!scopes_[i]) {
             FrameBufferSpecification target;
             target.width = target.height = resolution_;
             target.num_samples = 1;
             target.depth_format = FrameBufferDepthFormat::Depth32F;
+            target.depth_texture_type = texture_type;
+            target.depth_compare = point;
             RenderScopeSpecification spec;
             spec.target = target;
             spec.clear_color_attachments = false;
@@ -119,9 +137,28 @@ bool ShadowPass::render(Scene &scene,
             spec.depth_func = RendererAPI::Cmp::IVX_Greater;
             scopes_[i] = make_ref<RenderScope>(std::move(spec));
         }
-        scopes_[i]->begin(&light_camera_);
-        scene.render(Scene::RenderMode::IVX_DepthOnly);
-        scopes_[i]->end();
+        DepthDrawContext depth;
+        if (point) {
+            depth.encoding = DepthDrawContext::Encoding::RadialReverseZ;
+            depth.light_position = light.position;
+            depth.near_plane = gpu_.shadows[i].near_plane;
+            depth.far_plane = gpu_.shadows[i].far_plane;
+        }
+        Renderer3D::begin_depth(depth);
+        for (uint32_t face = 0; face < (point ? 6u : 1u); ++face) {
+            if (point) {
+                scopes_[i]->target()->set_depth_face(face);
+                light_camera_.set(point_views_[face],
+                                  point_projection_,
+                                  depth.near_plane / std::sqrt(3.f),
+                                  depth.far_plane);
+            }
+            scopes_[i]->begin();
+            camera_uniforms_.update(light_camera_);
+            scene.render(Scene::RenderMode::IVX_DepthOnly);
+            scopes_[i]->end();
+        }
+        Renderer3D::end_depth();
         rendered = true;
     }
     return rendered;
@@ -129,8 +166,13 @@ bool ShadowPass::render(Scene &scene,
 
 void ShadowPass::bind_maps() const {
     for (uint32_t i = 0; i < k_max_lights; ++i) {
-        const auto &map = gpu_.shadows[i].enabled != 0 ? output(i) : empty_map_;
+        const bool enabled = gpu_.shadows[i].enabled != 0;
+        const bool point = gpu_.shadows[i].light_type ==
+                           static_cast<uint32_t>(LightType::IVX_Point);
+        const auto &map = (enabled && !point) ? output(i) : empty_map_;
+        const auto &cube = (enabled && point) ? output(i) : empty_cube_;
         map->bind_depth_attachment(k_shadow_texture_unit + i);
+        cube->bind_depth_attachment(k_point_shadow_texture_unit + i);
     }
 }
 
@@ -251,11 +293,50 @@ bool ShadowPass::fit_spot(const Light &light,
     return true;
 }
 
-bool ShadowPass::fit_point(const Light &light,
-                           const Camera &view,
-                           float distance,
-                           GpuShadow &gpu) {
-    return {};
+bool ShadowPass::fit_point(const Light &light, GpuShadow &gpu) {
+    if (!std::isfinite(light.settings.shadow_near) ||
+        !std::isfinite(light.settings.shadow_range) ||
+        !std::isfinite(light.position.x) || !std::isfinite(light.position.y) ||
+        !std::isfinite(light.position.z)) {
+        return false;
+    }
+    const float near_plane =
+        std::clamp(light.settings.shadow_near, 0.001f, 9999.f);
+    const float far_plane =
+        std::clamp(light.settings.shadow_range, 0.002f, 10000.f);
+    if (far_plane <= near_plane) {
+        return false;
+    }
+
+    static const std::array<glm::vec3, 6> directions{
+        {{1, 0, 0}, {-1, 0, 0}, {0, 1, 0}, {0, -1, 0}, {0, 0, 1}, {0, 0, -1}}};
+    static const std::array<glm::vec3, 6> ups{{{0, -1, 0},
+                                               {0, -1, 0},
+                                               {0, 0, 1},
+                                               {0, 0, -1},
+                                               {0, -1, 0},
+                                               {0, -1, 0}}};
+    // Face clipping must enclose the radial near sphere, including cube
+    // corners.
+    point_projection_ = perspective_rh_reverse_z(
+        glm::radians(90.f), 1.f, near_plane / std::sqrt(3.f), far_plane);
+    for (uint32_t face = 0; face < 6; ++face) {
+        point_views_[face] = glm::lookAt(
+            light.position, light.position + directions[face], ups[face]);
+    }
+
+    const auto bias = [](float value, float fallback) {
+        return std::isfinite(value) ? std::clamp(value, 0.f, 10.f) : fallback;
+    };
+    gpu.enabled = 1;
+    gpu.depth_bias_texels = bias(light.settings.shadow_depth_bias, 0.25f);
+    gpu.normal_bias_texels = bias(light.settings.shadow_normal_bias, 0.5f);
+    gpu.slope_bias_texels = bias(light.settings.shadow_slope_bias, 2.5f);
+    gpu.near_plane = near_plane;
+    gpu.far_plane = far_plane;
+    gpu.tan_half_fov = 1.f;
+    gpu.depth_scale = 1.f / (far_plane - near_plane);
+    return true;
 }
 
 } // namespace ivx

@@ -115,16 +115,34 @@ void OpenGLFrameBuffer::create_depth_target(int samples) {
         IVX_CORE_ASSERT(samples == 1,
                         "A sampleable depth attachment cannot be multisampled");
 
-        glCreateTextures(GL_TEXTURE_2D, 1, &depth_.texture);
+        const bool cube = spec_.depth_texture_type == DepthTextureType::CubeMap;
+        IVX_CORE_ASSERT(!cube || spec_.width == spec_.height,
+                        "Depth cubemap must be square");
+        glCreateTextures(
+            cube ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, 1, &depth_.texture);
         glTextureStorage2D(depth_.texture,
                            1,
                            GL_DEPTH_COMPONENT32F,
                            spec_.width,
                            spec_.height);
-        // A shadow map is compared with manual taps, never filtered by the
-        // sampler.
-        glTextureParameteri(depth_.texture, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTextureParameteri(depth_.texture, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        const GLint filter = spec_.depth_compare ? GL_LINEAR : GL_NEAREST;
+        glTextureParameteri(depth_.texture, GL_TEXTURE_MIN_FILTER, filter);
+        glTextureParameteri(depth_.texture, GL_TEXTURE_MAG_FILTER, filter);
+        if (spec_.depth_compare) {
+            glTextureParameteri(depth_.texture,
+                                GL_TEXTURE_COMPARE_MODE,
+                                GL_COMPARE_REF_TO_TEXTURE);
+            glTextureParameteri(
+                depth_.texture, GL_TEXTURE_COMPARE_FUNC, GL_GEQUAL);
+        }
+        if (cube) {
+            for (GLenum axis :
+                 {GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R})
+                glTextureParameteri(depth_.texture, axis, GL_CLAMP_TO_EDGE);
+            set_depth_face(0);
+            return;
+        }
         glTextureParameteri(
             depth_.texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
         glTextureParameteri(
@@ -307,6 +325,20 @@ uint32_t OpenGLFrameBuffer::get_depth_attachment() const {
 
 void OpenGLFrameBuffer::bind_depth_attachment(uint32_t slot) const {
     glBindTextureUnit(slot, depth_.texture);
+}
+
+void OpenGLFrameBuffer::set_depth_face(uint32_t face) {
+    IVX_CORE_ASSERT(spec_.depth_texture_type == DepthTextureType::CubeMap &&
+                        depth_.texture != 0 && face < 6,
+                    "Invalid depth cubemap face");
+    if (spec_.depth_texture_type != DepthTextureType::CubeMap ||
+        depth_.texture == 0 || face >= 6)
+        return;
+    glNamedFramebufferTextureLayer(
+        fbo_, GL_DEPTH_ATTACHMENT, depth_.texture, 0, face);
+    IVX_CORE_ASSERT(glCheckNamedFramebufferStatus(fbo_, GL_FRAMEBUFFER) ==
+                        GL_FRAMEBUFFER_COMPLETE,
+                    "Depth cubemap framebuffer is incomplete");
 }
 
 uint32_t

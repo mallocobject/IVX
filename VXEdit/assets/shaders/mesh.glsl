@@ -99,6 +99,7 @@ layout(std140, binding = 2) uniform ShadowBlock {
 };
 
 layout(binding = 2) uniform sampler2D u_ShadowMap[kMaxLights];
+layout(binding = 10) uniform samplerCubeShadow u_PointShadowMaps[kMaxLights];
 
 float is_in_shadow(vec2 uv, float reference, int index) {
     return texture(u_ShadowMap[index], uv).r > reference ? 1.0 : 0.0;
@@ -116,9 +117,49 @@ float bilinear_shadow(vec2 uv, float reference, vec2 texelUV, int index) {
     return mix(mix(a, b, fraction.x), mix(c, d, fraction.x), fraction.y);
 }
 
+float point_shadow_calculation(vec3 world, vec3 n, vec3 to_light, int index) {
+    vec3 lightPosition = lights[index].position_type.xyz;
+    vec3 delta = world - lightPosition;
+    float radius = length(delta);
+    float nearPlane = shadow[index].near_plane;
+    float farPlane = shadow[index].far_plane;
+    if (radius < nearPlane || radius >= farPlane) return 0.0;
+
+    float ndotl = clamp(dot(n, to_light), 0.0, 1.0);
+    float resolution = float(textureSize(u_PointShadowMaps[index], 0).x);
+    float worldTexel = 2.0 * radius / resolution;
+    vec3 biased = world + n * worldTexel * shadow[index].normal_bias_texels * (1.0 - ndotl);
+    delta = biased - lightPosition;
+    radius = length(delta);
+    if (radius < nearPlane || radius >= farPlane) return 0.0;
+
+    float slope = sqrt(max(1.0 - ndotl * ndotl, 0.0)) / max(ndotl, 0.1);
+    float bias = max(shadow[index].depth_bias_texels,
+                     shadow[index].slope_bias_texels * slope) * worldTexel * shadow[index].depth_scale;
+    // The point depth shader writes reverse linear RADIAL depth.
+    float reference = (farPlane - radius) * shadow[index].depth_scale + bias;
+    vec3 direction = delta / radius;
+    vec3 up = abs(direction.y) > 0.99 ? vec3(0, 0, 1) : vec3(0, 1, 0);
+    vec3 tangent = normalize(cross(direction, up));
+    vec3 bitangent = cross(direction, tangent);
+    float visibility = 0.0;
+    for (int y = -1; y <= 1; ++y) {
+        for (int x = -1; x <= 1; ++x) {
+            vec3 sampleDirection = direction +
+                (tangent * float(x) + bitangent * float(y)) * (2.0 / resolution);
+            // GEQUAL comparison + linear filtering interpolates visibility.
+            visibility += texture(u_PointShadowMaps[index], vec4(sampleDirection, reference));
+        }
+    }
+    return 1.0 - visibility / 9.0;
+}
+
 float shadow_calculation(vec3 world, vec3 n, vec3 to_light, int index) {
-    if (shadow[index].enabled == 0u || shadow[index].light_type == 1u) {
+    if (shadow[index].enabled == 0u) {
         return 0.0;
+    }
+    if (shadow[index].light_type == 1u) {
+        return point_shadow_calculation(world, n, to_light, index);
     }
 
     float ndotl = clamp(dot(n, to_light), 0.0, 1.0);

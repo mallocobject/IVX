@@ -22,8 +22,9 @@ struct alignas(16) GpuShadow {
     float near_plane{0.f};
     float far_plane{0.f};
 
-    float tan_half_fov{0.f}; // Spot lights.
-    float depth_scale{0.f};  // Ortho: 1/(f-n). Perspective: n*f/(f-n).
+    float tan_half_fov{
+        0.f}; // Spot: cone half angle; point: 1 (90-degree faces).
+    float depth_scale{0.f}; // Ortho/radial: 1/(f-n). Perspective: n*f/(f-n).
     glm::vec2 padding{0.f};
 };
 static_assert(sizeof(GpuShadow) == 64 + 16 * 3, "std140 layout");
@@ -39,6 +40,8 @@ static_assert(sizeof(GpuShadowData) == 112 * k_max_lights,
 
 // The depth map lives on its own texture unit: 0 is the albedo map.
 inline constexpr uint32_t k_shadow_texture_unit = 2;
+inline constexpr uint32_t k_point_shadow_texture_unit =
+    k_shadow_texture_unit + k_max_lights;
 
 class ShadowUniforms {
   public:
