@@ -155,8 +155,18 @@ void SceneHierarchyPanel::draw_entity_node(Entity entity) {
             const auto dragged =
                 *static_cast<const entt::entity *>(payload->Data);
             if (context_.scene->registry().valid(dragged)) {
-                context_.scene->set_parent(
-                    Entity{dragged, context_.scene.get()}, entity);
+                Entity child_entity = Entity{dragged, context_.scene.get()};
+                context_.scene->set_parent(child_entity, entity);
+
+                const auto &parent_world =
+                    entity.get_component<TransformComponent>().world;
+                auto &child_tf =
+                    child_entity.get_component<TransformComponent>();
+                auto child_local = glm::inverse(parent_world) * child_tf.world;
+                decompose_transform(child_local,
+                                    child_tf.translation,
+                                    child_tf.rotation,
+                                    child_tf.scale);
             }
         }
         ImGui::EndDragDropTarget();
@@ -189,6 +199,16 @@ void SceneHierarchyPanel::draw_node_context_menu(Entity entity) {
     if (ImGui::MenuItem("Create Child")) {
         auto child_entity = scene.create_child(entity, "Entity");
         set_default_entity(child_entity, true);
+
+        const auto &parent_world =
+            entity.get_component<TransformComponent>().world;
+        auto &child_tf = child_entity.get_component<TransformComponent>();
+        auto child_local = glm::inverse(parent_world) * child_tf.world;
+        decompose_transform(child_local,
+                            child_tf.translation,
+                            child_tf.rotation,
+                            child_tf.scale);
+
         set_selected(child_entity);
     }
     if (ImGui::MenuItem("Add Sibling")) {
@@ -200,6 +220,12 @@ void SceneHierarchyPanel::draw_node_context_menu(Entity entity) {
     }
     if (ImGui::MenuItem("Unparent", nullptr, false, entity.has_parent())) {
         scene.set_parent(entity, {});
+
+        auto &child_tf = entity.get_component<TransformComponent>();
+        decompose_transform(child_tf.world,
+                            child_tf.translation,
+                            child_tf.rotation,
+                            child_tf.scale);
     }
 
     ImGui::Separator();
