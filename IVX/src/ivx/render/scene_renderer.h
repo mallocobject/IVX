@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ivx/render/camera_uniforms.h"
+#include "ivx/render/ground_renderer.h"
 #include "ivx/render/light_uniforms.h"
 #include "ivx/render/shadow_pass.h"
 #include "ivx/render/tone_mapping_pass.h"
@@ -10,7 +11,7 @@ class SceneRenderer : public RefCounted {
   public:
     SceneRenderer(uint32_t width, uint32_t height);
     void resize(uint32_t width, uint32_t height);
-    void render(Scene *scene, const Camera &camera);
+    void render(Scene &scene, const Camera &camera);
     uint32_t read_entity(uint32_t x, uint32_t y) const;
     const Ref<FrameBuffer> &output() const {
         return tone_mapping_.output();
@@ -23,6 +24,7 @@ class SceneRenderer : public RefCounted {
     RenderScope scene_scope_;
     ShadowPass shadows_;
     ToneMappingPass tone_mapping_;
+    GroundRenderer ground_;
 
     CameraUniforms camera_uniforms_;
     LightUniforms light_uniforms_;

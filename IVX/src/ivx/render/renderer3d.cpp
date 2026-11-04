@@ -4,7 +4,6 @@
 #include "ivx/core/logger.h"
 #include "ivx/render/render_command.h"
 #include "ivx/render/shadow_uniforms.h"
-#include <stdexcept>
 
 namespace ivx {
 namespace {

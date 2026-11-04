@@ -17,7 +17,7 @@ inline constexpr uint32_t k_max_lights = 8;
 // The part of a light the user authors: shared by the component that stores it
 // and by the resolved light that gets uploaded, so defaults and meanings live
 // in exactly one place.
-struct LightSettings {
+struct LightProperties {
     LightType type{LightType::IVX_Directional};
     glm::vec3 color{1.f};
     float intensity{1.f};
@@ -45,7 +45,7 @@ struct LightSettings {
 // World space form of one light, produced by Scene::collect_lights() every
 // frame.
 struct Light {
-    LightSettings settings;
+    LightProperties properties;
     glm::vec3 position{0.f};
     glm::vec3 direction{0.f, -1.f, 0.f}; // the direction the light travels in
     float inner_cos{1.f};

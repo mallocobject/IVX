@@ -84,7 +84,7 @@ struct MeshRendererComponent {
 // Position and direction come from the entity's transform: a directional light
 // shines along its -Z axis, a point light sits at its translation.
 struct LightComponent {
-    LightSettings settings;
+    LightProperties properties;
 };
 
 struct NativeScriptComponent;

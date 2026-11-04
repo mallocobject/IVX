@@ -88,14 +88,14 @@ bool ShadowPass::render(Scene &scene,
     bool rendered = false;
     for (uint32_t i = 0; i < std::min(lights.count, k_max_lights); ++i) {
         const Light &light = lights.lights[i];
-        gpu_.shadows[i].light_type = static_cast<uint32_t>(light.settings.type);
-        if (!light.settings.cast_shadows) {
+        gpu_.shadows[i].light_type = static_cast<uint32_t>(light.properties.type);
+        if (!light.properties.cast_shadows) {
             continue;
         }
 
         bool fits = false;
         using enum LightType;
-        switch (light.settings.type) {
+        switch (light.properties.type) {
         case IVX_Directional:
             fits = fit_directional(light, view, distance, gpu_.shadows[i]);
             break;
@@ -112,7 +112,7 @@ bool ShadowPass::render(Scene &scene,
             continue;
         }
 
-        const bool point = light.settings.type == LightType::IVX_Point;
+        const bool point = light.properties.type == LightType::IVX_Point;
         const auto texture_type =
             point ? DepthTextureType::CubeMap : DepthTextureType::Texture2D;
         if (scopes_[i] &&
@@ -223,9 +223,9 @@ bool ShadowPass::fit_directional(const Light &light,
         return std::isfinite(value) ? std::clamp(value, 0.f, 10.f) : fallback;
     };
     gpu.enabled = 1;
-    gpu.depth_bias_texels = bias(light.settings.shadow_depth_bias, 0.25f);
-    gpu.normal_bias_texels = bias(light.settings.shadow_normal_bias, 0.5f);
-    gpu.slope_bias_texels = bias(light.settings.shadow_slope_bias, 2.5f);
+    gpu.depth_bias_texels = bias(light.properties.shadow_depth_bias, 0.25f);
+    gpu.normal_bias_texels = bias(light.properties.shadow_normal_bias, 0.5f);
+    gpu.slope_bias_texels = bias(light.properties.shadow_slope_bias, 2.5f);
     gpu.world_texel_size = world_texel;
     gpu.near_plane = near_plane;
     gpu.far_plane = far_plane;
@@ -239,23 +239,23 @@ bool ShadowPass::fit_spot(const Light &light,
                           GpuShadow &gpu) {
     const float direction_length = glm::length(light.direction);
     if (!std::isfinite(direction_length) || direction_length < 1e-6f ||
-        !std::isfinite(light.settings.shadow_near) ||
-        !std::isfinite(light.settings.shadow_range) ||
-        !std::isfinite(light.settings.outer_angle)) {
+        !std::isfinite(light.properties.shadow_near) ||
+        !std::isfinite(light.properties.shadow_range) ||
+        !std::isfinite(light.properties.outer_angle)) {
         return false;
     }
 
     const float near_plane =
-        std::clamp(light.settings.shadow_near, 0.001f, 9999.f);
+        std::clamp(light.properties.shadow_near, 0.001f, 9999.f);
     const float far_plane =
-        std::clamp(light.settings.shadow_range, 0.002f, 10000.f);
+        std::clamp(light.properties.shadow_range, 0.002f, 10000.f);
 
     if (far_plane <= near_plane) {
         return false;
     }
 
     const float outer_angle =
-        glm::clamp(light.settings.outer_angle, 0.1f, 89.f);
+        glm::clamp(light.properties.outer_angle, 0.1f, 89.f);
 
     const float fov = glm::radians(outer_angle * 2.f);
 
@@ -282,9 +282,9 @@ bool ShadowPass::fit_spot(const Light &light,
         return std::isfinite(value) ? std::clamp(value, 0.f, 10.f) : fallback;
     };
     gpu.enabled = 1;
-    gpu.depth_bias_texels = bias(light.settings.shadow_depth_bias, 0.25f);
-    gpu.normal_bias_texels = bias(light.settings.shadow_normal_bias, 0.5f);
-    gpu.slope_bias_texels = bias(light.settings.shadow_slope_bias, 2.5f);
+    gpu.depth_bias_texels = bias(light.properties.shadow_depth_bias, 0.25f);
+    gpu.normal_bias_texels = bias(light.properties.shadow_normal_bias, 0.5f);
+    gpu.slope_bias_texels = bias(light.properties.shadow_slope_bias, 2.5f);
     gpu.near_plane = near_plane;
     gpu.far_plane = far_plane;
     gpu.tan_half_fov = std::tan(fov * 0.5f);
@@ -294,16 +294,16 @@ bool ShadowPass::fit_spot(const Light &light,
 }
 
 bool ShadowPass::fit_point(const Light &light, GpuShadow &gpu) {
-    if (!std::isfinite(light.settings.shadow_near) ||
-        !std::isfinite(light.settings.shadow_range) ||
+    if (!std::isfinite(light.properties.shadow_near) ||
+        !std::isfinite(light.properties.shadow_range) ||
         !std::isfinite(light.position.x) || !std::isfinite(light.position.y) ||
         !std::isfinite(light.position.z)) {
         return false;
     }
     const float near_plane =
-        std::clamp(light.settings.shadow_near, 0.001f, 9999.f);
+        std::clamp(light.properties.shadow_near, 0.001f, 9999.f);
     const float far_plane =
-        std::clamp(light.settings.shadow_range, 0.002f, 10000.f);
+        std::clamp(light.properties.shadow_range, 0.002f, 10000.f);
     if (far_plane <= near_plane) {
         return false;
     }
@@ -329,9 +329,9 @@ bool ShadowPass::fit_point(const Light &light, GpuShadow &gpu) {
         return std::isfinite(value) ? std::clamp(value, 0.f, 10.f) : fallback;
     };
     gpu.enabled = 1;
-    gpu.depth_bias_texels = bias(light.settings.shadow_depth_bias, 0.25f);
-    gpu.normal_bias_texels = bias(light.settings.shadow_normal_bias, 0.5f);
-    gpu.slope_bias_texels = bias(light.settings.shadow_slope_bias, 2.5f);
+    gpu.depth_bias_texels = bias(light.properties.shadow_depth_bias, 0.25f);
+    gpu.normal_bias_texels = bias(light.properties.shadow_normal_bias, 0.5f);
+    gpu.slope_bias_texels = bias(light.properties.shadow_slope_bias, 2.5f);
     gpu.near_plane = near_plane;
     gpu.far_plane = far_plane;
     gpu.tan_half_fov = 1.f;

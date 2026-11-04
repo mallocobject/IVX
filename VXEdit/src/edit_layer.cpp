@@ -109,7 +109,10 @@ void EditLayer::on_update(float dt) {
     float render_ms = 0.f;
     {
         ScopeTimer render_timer{render_ms};
-        scene_renderer_->render(scene_.get(), editor_camera_);
+
+        if (scene_) {
+            scene_renderer_->render(*scene_, editor_camera_);
+        }
     }
     if (stats_panel_) {
         stats_panel_->submit("render", render_ms);
@@ -245,12 +248,12 @@ void EditLayer::create_scene() {
     editor_context_.scene = scene_;
     editor_context_.clear_selection();
 
-    // 1 unit = 1 m: a 2 m cube resting on the ground plane, sun 8 m up and to
-    // the side.
+    scene_->environment().ground.enabled = true;
+
     {
         Entity mesh_cube = scene_->create_entity("3D Cube");
         auto &tf = mesh_cube.get_component<TransformComponent>();
-        tf.translation = glm::vec3{0.f, 0.f, 0.f};
+        tf.translation = glm::vec3{0.f, 1.f, 0.f};
         tf.scale = glm::vec3{1.f};
 
         auto &mesh_renderer = mesh_cube.add_component<MeshRendererComponent>();
@@ -258,22 +261,6 @@ void EditLayer::create_scene() {
         mesh_renderer.material.albedo = glm::vec4{0.92f, 0.55f, 0.32f, 1.f};
     }
 
-    { // TEMP-FLOOR: something for the sun to cast a shadow onto. It goes away
-        // once the viewport has a ground grid.
-        Entity floor = scene_->create_entity("Floor");
-        auto &tf = floor.get_component<TransformComponent>();
-        // Sunk by half its thickness, so its top face sits on y = 0 where the
-        // cube rests.
-        tf.translation = glm::vec3{0.f, -0.5f, 0.f};
-        tf.scale = glm::vec3{1.f, 0.05f, 1.f};
-
-        auto &floor_renderer = floor.add_component<MeshRendererComponent>();
-        floor_renderer.mesh = Mesh::create_cube(20.f);
-        floor_renderer.material.albedo = glm::vec4{0.8f, 0.8f, 0.8f, 1.f};
-    }
-
-    // Direction is the entity's -Z axis; this rotation lights the cube from
-    // above and to the right, close to what the renderer used to hardcode.
     {
         Entity sun = scene_->create_entity("Sun");
         auto &tf = sun.get_component<TransformComponent>();
@@ -281,10 +268,10 @@ void EditLayer::create_scene() {
         tf.rotation = glm::radians(glm::vec3{-50.f, -30.f, 0.f});
 
         auto &light = sun.add_component<LightComponent>();
-        light.settings.type = LightType::IVX_Directional;
-        light.settings.color = glm::vec3{1.f};
-        light.settings.intensity = 1.f;
-        light.settings.cast_shadows = true;
+        light.properties.type = LightType::IVX_Directional;
+        light.properties.color = glm::vec3{1.f};
+        light.properties.intensity = 1.f;
+        light.properties.cast_shadows = true;
     }
 
     if (viewport_size_.x > 0.f && viewport_size_.y > 0.f) {

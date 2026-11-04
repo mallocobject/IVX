@@ -23,6 +23,14 @@ struct ShadowSettings {
     float distance{120.f};
 };
 
+struct GroundSettings {
+    bool enabled{false};
+    float height{0.f};
+    float grid_spacing{1.f};
+    glm::vec3 color{0.4f};
+    glm::vec3 grid_color{0.2f};
+};
+
 // Scene wide imaging settings: what has no position or direction of its own.
 // Lights are entities and live in LightComponent.
 struct Environment {
@@ -30,6 +38,7 @@ struct Environment {
     float exposure{1.f};
     ToneMappingCurve tonemap{ToneMappingCurve::IVX_Reinhard};
     ShadowSettings shadows{};
+    GroundSettings ground{};
 };
 
 } // namespace ivx

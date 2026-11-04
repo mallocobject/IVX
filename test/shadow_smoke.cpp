@@ -180,7 +180,7 @@ void main() {
             cube.get_component<ivx::TransformComponent>().translation.y = 1;
             ivx::LightSet lights;
             lights.count = 1;
-            lights.lights[0].settings.cast_shadows = true;
+            lights.lights[0].properties.cast_shadows = true;
             lights.lights[0].direction =
                 glm::normalize(glm::vec3{-0.4f, -1, -0.25f});
             const auto to_light = -lights.lights[0].direction;
@@ -221,7 +221,7 @@ void main() {
                                    to_light) < 0.3f,
                             "Caster shadow missing");
             }
-            lights.lights[0].settings.cast_shadows = false;
+            lights.lights[0].properties.cast_shadows = false;
             require(!pass.render(scene, lights, camera) &&
                         pass.gpu().params.x == 0,
                     "Disabled light left stale shadows");
@@ -229,7 +229,7 @@ void main() {
                 sample(pass.output(), pass.gpu(), {-1.4f, 0, -0.5f}, to_light) >
                     0.99f,
                 "Disabled light still darkens its former shadow");
-            lights.lights[0].settings.cast_shadows = true;
+            lights.lights[0].properties.cast_shadows = true;
             lights.lights[0].direction = glm::vec3{0};
             require(!pass.render(scene, lights, camera) &&
                         pass.gpu().params.x == 0,

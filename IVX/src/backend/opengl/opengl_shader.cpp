@@ -29,6 +29,57 @@ static std::string read_file(const std::filesystem::path &filepath) {
     return stream.str();
 }
 
+static std::string
+expand_includes(const std::filesystem::path &filepath,
+                std::vector<std::filesystem::path> &stack,
+                std::vector<std::filesystem::path> &sources) {
+    const auto path = std::filesystem::absolute(filepath).lexically_normal();
+    if (std::find(stack.begin(), stack.end(), path) != stack.end()) {
+        IVX_CORE_ASSERT(false, "Cyclic shader include: {}", path.string());
+        return {};
+    }
+    if (!std::filesystem::is_regular_file(path)) {
+        IVX_CORE_ASSERT(false, "Missing shader source: {}", path.string());
+        return {};
+    }
+    const auto source_id = sources.size();
+    sources.push_back(path);
+    stack.push_back(path);
+    std::istringstream input(read_file(path));
+    std::ostringstream output;
+    std::string line;
+    size_t line_number = 0;
+    while (std::getline(input, line)) {
+        ++line_number;
+        const auto begin = line.find_first_not_of(" \t");
+        if (begin != std::string::npos &&
+            line.compare(begin, 8, "#include") == 0) {
+            const auto first = line.find('"', begin + 8);
+            const auto last =
+                first == std::string::npos ? first : line.find('"', first + 1);
+            if (last == std::string::npos) {
+                IVX_CORE_ASSERT(false,
+                                "Invalid shader include: {}:{}",
+                                path.string(),
+                                line_number);
+                stack.pop_back();
+                return {};
+            }
+            const auto included_id = sources.size();
+            output << "#line 1 " << included_id << '\n';
+            output << expand_includes(
+                path.parent_path() / line.substr(first + 1, last - first - 1),
+                stack,
+                sources);
+            output << "#line " << line_number + 1 << ' ' << source_id << '\n';
+        } else {
+            output << line << '\n';
+        }
+    }
+    stack.pop_back();
+    return output.str();
+}
+
 static void
 compile_and_link_shader(GLuint program,
                         const std::unordered_map<GLenum, std::string> &mp) {
@@ -151,7 +202,10 @@ OpenGLShader::OpenGLShader(const std::filesystem::path &filepath,
     IVX_PROFILE_FUNCTION();
 
     label_ = label.empty() ? filepath.stem().string() : label;
-    std::string src = read_file(filepath);
+    std::vector<std::filesystem::path> stack, sources;
+    std::string src = expand_includes(filepath, stack, sources);
+    for (size_t i = 0; i < sources.size(); ++i)
+        IVX_CORE_VERBOSE("Shader source {}: {}", i, sources[i].string());
     std::unordered_map<GLuint, std::string> mp = pre_process(src);
 
     GLuint program = glCreateProgram();

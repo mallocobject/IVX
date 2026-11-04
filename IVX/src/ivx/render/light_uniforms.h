@@ -13,7 +13,7 @@ struct GpuLight {
     glm::vec4 position_type{0.f};
     glm::vec4 direction_linear{0.f, -1.f, 0.f, 0.f};
     glm::vec4 color_intensity{1.f};
-    // constant, linear, quadratic (see LightSettings).
+    // constant, linear, quadratic (see LightProperties).
     glm::vec4 falloff{1.f, 0.f, 1.f, 0.f};
     glm::vec4 spot_angles{1.f, 0.f, 0.f, 0.f};
 };

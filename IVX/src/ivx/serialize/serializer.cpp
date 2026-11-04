@@ -146,7 +146,7 @@ YAML::Emitter &operator<<(YAML::Emitter &out,
 
 YAML::Emitter &operator<<(YAML::Emitter &out,
                           const LightComponent &light_component) {
-    const LightSettings &settings = light_component.settings;
+    const LightProperties &settings = light_component.properties;
 
     out << YAML::Key << "Light" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Type" << YAML::Value << light_type_name(settings.type);
@@ -335,7 +335,7 @@ void read_light(const YAML::Node &node, LightComponent &light_component) {
         return;
     }
 
-    LightSettings &settings = light_component.settings;
+    LightProperties &settings = light_component.properties;
     settings.type = light_type_from_name(
         read_scalar(node["Type"], std::string{"Directional"}));
     settings.color = read_vec3(node["Color"], settings.color);
@@ -409,6 +409,16 @@ Ref<Scene> Serializer::deserialize(const std::filesystem::path &filepath) {
         Environment &target = scene->environment();
         target.ambient = read_vec3(environment["Ambient"], target.ambient);
         target.exposure = read_scalar(environment["Exposure"], target.exposure);
+        if (const YAML::Node ground = environment["Ground"]) {
+            auto &settings = target.ground;
+            settings.enabled = read_scalar(ground["Enabled"], settings.enabled);
+            settings.height = read_scalar(ground["Height"], settings.height);
+            settings.grid_spacing =
+                read_scalar(ground["GridSpacing"], settings.grid_spacing);
+            settings.color = read_vec3(ground["Color"], settings.color);
+            settings.grid_color =
+                read_vec3(ground["GridColor"], settings.grid_color);
+        }
         if (const YAML::Node shadows = environment["Shadows"]) {
             target.shadows.resolution = shadow_resolution_or_default(
                 read_scalar(shadows["Resolution"], target.shadows.resolution));
@@ -571,6 +581,14 @@ void Serializer::serialize(const Ref<Scene> &scene,
         << world.environment().exposure;
     out << YAML::Key << "ToneMapping" << YAML::Value
         << tone_mapping_curve_name(world.environment().tonemap);
+    const auto &ground = world.environment().ground;
+    out << YAML::Key << "Ground" << YAML::Value << YAML::BeginMap;
+    out << YAML::Key << "Enabled" << YAML::Value << ground.enabled;
+    out << YAML::Key << "Height" << YAML::Value << ground.height;
+    out << YAML::Key << "GridSpacing" << YAML::Value << ground.grid_spacing;
+    out << YAML::Key << "Color" << YAML::Value << ground.color;
+    out << YAML::Key << "GridColor" << YAML::Value << ground.grid_color;
+    out << YAML::EndMap;
     out << YAML::Key << "Shadows" << YAML::Value << YAML::BeginMap;
     out << YAML::Key << "Resolution" << YAML::Value
         << world.environment().shadows.resolution;

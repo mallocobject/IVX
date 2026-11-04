@@ -341,16 +341,16 @@ LightSet Scene::collect_lights() const {
         }
 
         Light &out = set.lights[set.count++];
-        out.settings = light.settings;
+        out.properties = light.properties;
         out.position = glm::vec3{transform.world[3]};
         // Lights shine along their own -Z axis, like a camera looks along its
         // -Z.
         out.direction = -glm::normalize(glm::vec3{transform.world[2]});
 
         const float inner =
-            std::min(light.settings.inner_angle, light.settings.outer_angle);
+            std::min(light.properties.inner_angle, light.properties.outer_angle);
         out.inner_cos = std::cos(glm::radians(inner));
-        out.outer_cos = std::cos(glm::radians(light.settings.outer_angle));
+        out.outer_cos = std::cos(glm::radians(light.properties.outer_angle));
     }
 
     return set;

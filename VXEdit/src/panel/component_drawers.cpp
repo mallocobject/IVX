@@ -256,8 +256,8 @@ void draw_mesh_renderer(Entity /*entity*/,
 // ---- light -----------------------------------------------------------------
 
 namespace {
-// Attenuation of the physical falloff at one distance, see LightSettings.
-float attenuation_at(const LightSettings &settings, float distance) {
+// Attenuation of the physical falloff at one distance, see LightProperties.
+float attenuation_at(const LightProperties &settings, float distance) {
     const float denominator = settings.constant + settings.linear * distance +
                               settings.quadratic * distance * distance;
     return 1.f / std::max(denominator, 1e-4f);
@@ -267,7 +267,7 @@ float attenuation_at(const LightSettings &settings, float distance) {
 void draw_light(Entity /*entity*/,
                 LightComponent &light,
                 EditorContext & /*context*/) {
-    LightSettings &settings = light.settings;
+    LightProperties &settings = light.properties;
 
     int type = static_cast<int>(settings.type);
     label_row("Type", [&] {

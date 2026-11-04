@@ -71,6 +71,33 @@ void EnvironmentPanel::on_imgui() {
     });
 
     ImGui::Spacing();
+    ImGui::SeparatorText("Ground");
+    auto &ground = environment.ground;
+    label_row("Enabled",
+              [&] { ImGui::Checkbox("##ground_enabled", &ground.enabled); });
+    if (ground.enabled) {
+        label_row("Height", [&] {
+            ImGui::DragFloat("##ground_height", &ground.height, 0.1f);
+        });
+        label_row("Grid spacing", [&] {
+            ImGui::DragFloat("##ground_spacing",
+                             &ground.grid_spacing,
+                             0.1f,
+                             0.01f,
+                             10000.f,
+                             "%.2f",
+                             ImGuiSliderFlags_AlwaysClamp);
+        });
+        label_row("Color", [&] {
+            ImGui::ColorEdit3("##ground_color", glm::value_ptr(ground.color));
+        });
+        label_row("Grid color", [&] {
+            ImGui::ColorEdit3("##ground_grid_color",
+                              glm::value_ptr(ground.grid_color));
+        });
+    }
+
+    ImGui::Spacing();
     if (ImGui::Button("Reset")) {
         environment = Environment{};
     }

@@ -20,7 +20,7 @@ void LightUniforms::update(const LightSet &lights) {
 
     for (uint32_t i = 0; i < static_cast<uint32_t>(next.counts.x); ++i) {
         const Light &light = lights.lights[i];
-        const LightSettings &settings = light.settings;
+        const LightProperties &settings = light.properties;
         GpuLight &gpu = next.lights[i];
         gpu.position_type =
             glm::vec4{light.position, static_cast<float>(settings.type)};

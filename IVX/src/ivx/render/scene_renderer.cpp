@@ -31,27 +31,26 @@ void SceneRenderer::resize(uint32_t width, uint32_t height) {
     tone_mapping_.resize(width, height);
 }
 
-void SceneRenderer::render(Scene *scene, const Camera &camera) {
+void SceneRenderer::render(Scene &scene, const Camera &camera) {
     IVX_PROFILE_FUNCTION();
-    if (scene) {
-        scene->update_world_transforms();
-    }
-    const LightSet lights = scene ? scene->collect_lights() : LightSet{};
-    const bool has_shadow = scene && shadows_.render(*scene, lights, camera);
+
+    scene.update_world_transforms();
+
+    const LightSet lights = scene.collect_lights();
+    const bool has_shadow = shadows_.render(scene, lights, camera);
 
     camera_uniforms_.update(camera);
     light_uniforms_.update(lights);
     shadow_uniforms_.update(has_shadow ? shadows_.gpu() : GpuShadowData{});
     shadows_.bind_maps();
 
+    const Environment &environment = scene.environment();
+
     scene_scope_.begin();
-    if (scene) {
-        scene->render();
-    }
+    ground_.render(camera, environment.ground);
+    scene.render();
     scene_scope_.end();
 
-    const Environment environment =
-        scene ? scene->environment() : Environment{};
     tone_mapping_.render(
         hdr_target(), environment.exposure, environment.tonemap);
 }
